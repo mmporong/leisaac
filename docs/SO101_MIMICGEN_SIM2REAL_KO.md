@@ -71,6 +71,11 @@ SO101 팔로워 1대 실물 평가
 | 손목카메라 MimicGen 본 생성 | 성공 50회·실패 75회, 성공률 40%, 성공 데이터 27,217프레임 | `datasets/pick_cube_into_box_mimic_generated_wrist_50_20260911.hdf5` |
 | 본 생성 실패 궤적 | 실패 75회, 학습 입력에서 제외 | `datasets/pick_cube_into_box_mimic_generated_wrist_50_20260911_failed.hdf5` |
 | 본 생성 확인 영상 | 전면·손목 나란히 보기 MP4 3개와 비교 시트 | `outputs/portfolio/pick_cube_into_box/mimic_generated_wrist_50/` |
+| 6관절 복원 | 성공 50회, 27,217프레임, action 8차원→6차원 | `datasets/pick_cube_into_box_mimic_joint_wrist_50_20260911.hdf5` |
+| 학습·검증 분리 | 공간 분산 방식 train 40회 / validation 10회 | `datasets/pick_cube_into_box_mimic_joint_front_wrist_50_84x84_20260912.split.json` |
+| BC-RNN 학습 | Robomimic 0.4.0, 전면+손목+6관절 문맥, 최저 validation loss 0.0972 | `outputs/robomimic/so101_pick_cube_into_box_bc_rnn_front_wrist_context6_84x84_long/20260912021237/` |
+| 미학습 시드 평가 | 5회 중 성공 0회, 관절 제한 clipping 0회 | `outputs/evaluation/so101_bc_rnn_context6_long_5seeds/evaluation.json` |
+| 정책 실패 영상 | 새 시드 1000·1001 각 1개 | `outputs/evaluation/so101_bc_rnn_context6_long_5seeds/rollout_00{1,2}_failure.mp4` |
 
 원본 HDF5의 초기 실패 1회는 관절→IK 변환 단계에서 자동 제외됐다. 삭제하거나 성공 데이터로 바꾸지 않았다.
 
@@ -107,7 +112,7 @@ MimicGen 도구의 UI 모듈 요구사항을 설치할 때는 Isaac Sim이 요�
   --device cuda:0 \
   --enable_cameras \
   --record \
-  --dataset_file ./datasets/pick_cube_into_box_source_10.hdf5 \
+  --dataset_file ./datasets/pick_cube_into_box_source_10_20260911.hdf5 \
   --num_demos 10
 ```
 
@@ -117,8 +122,8 @@ MimicGen 도구의 UI 모듈 요구사항을 설치할 때는 Isaac Sim이 요�
 
 ```bash
 "$LEISAAC_PYTHON" scripts/mimic/eef_action_process.py \
-  --input_file ./datasets/pick_cube_into_box_source_10.hdf5 \
-  --output_file ./datasets/pick_cube_into_box_source_10_ik.hdf5 \
+  --input_file ./datasets/pick_cube_into_box_source_10_20260911.hdf5 \
+  --output_file ./datasets/pick_cube_into_box_source_10_ik_20260911.hdf5 \
   --to_ik \
   --headless
 ```
@@ -131,8 +136,8 @@ MimicGen은 물체 기준의 말단 자세 궤적을 변형하므로 이 변환�
 "$LEISAAC_PYTHON" scripts/mimic/annotate_demos.py \
   --device cuda:0 \
   --task LeIsaac-SO101-PickCubeIntoBox-Mimic-v0 \
-  --input_file ./datasets/pick_cube_into_box_source_10_ik.hdf5 \
-  --output_file ./datasets/pick_cube_into_box_annotated_wrist_10.hdf5 \
+  --input_file ./datasets/pick_cube_into_box_source_10_ik_20260911.hdf5 \
+  --output_file ./datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5 \
   --auto \
   --headless \
   --enable_cameras
@@ -152,8 +157,8 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
   --task LeIsaac-SO101-PickCubeIntoBox-Mimic-v0 \
   --num_envs 1 \
   --generation_num_trials 50 \
-  --input_file ./datasets/pick_cube_into_box_annotated_wrist_10.hdf5 \
-  --output_file ./datasets/pick_cube_into_box_mimic_generated_wrist_50.hdf5 \
+  --input_file ./datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5 \
+  --output_file ./datasets/pick_cube_into_box_mimic_generated_wrist_50_20260911.hdf5 \
   --headless \
   --enable_cameras
 ```
@@ -166,39 +171,110 @@ RTX 5050 Laptop 8GB 환경에서는 `--num_envs 1`을 사용한다. 640×480 전
 
 ```bash
 "$LEISAAC_PYTHON" scripts/mimic/eef_action_process.py \
-  --input_file ./datasets/pick_cube_into_box_mimic_generated_wrist_50.hdf5 \
-  --output_file ./datasets/pick_cube_into_box_mimic_joint_wrist_50.hdf5 \
+  --input_file ./datasets/pick_cube_into_box_mimic_generated_wrist_50_20260911.hdf5 \
+  --output_file ./datasets/pick_cube_into_box_mimic_joint_wrist_50_20260911.hdf5 \
   --to_joint \
   --headless
 ```
 
 이 파일이 정책 학습 또는 시뮬레이션 재생에 쓰이는 최종 관절 명령 데이터다.
 
-## 지금부터의 실행 계획
+### 6. BC-RNN 학습 데이터 준비
 
-현재 성공 10회 생성은 **MimicGen 파이프라인 검증 데이터**다. 복사 영상이 아니라 서로 다른 초기 위치와 궤적을 가진 학습 가능한 시연이 만들어졌다는 것까지 확인했다. 아직 정책을 학습했거나 실물 팔로워가 자율로 집은 단계는 아니다.
+Robomimic 0.4.0을 설치한다. LeIsaac의 `mimic` extra에도 같은 버전이 고정돼 있다.
 
-실물 손목 카메라를 사용할 계획이므로 아래 순서를 지킨다. 지금 데이터의 전면 카메라만으로 먼저 정책을 학습하면 시뮬레이션 평가는 가능하지만, 손목 카메라를 쓰는 실물 입력과 관측 규격이 달라 다시 데이터를 만들어야 한다.
+```bash
+"$LEISAAC_PYTHON" -m pip install \
+  'robomimic @ git+https://github.com/ARISE-Initiative/robomimic.git@v0.4.0'
+```
+
+320×240 전면·손목 영상을 84×84로 축소한다. 큰 영상에서 작은 영역을 바로 무작위 crop하면 큐브나 박스가 관측에서 빠질 수 있기 때문이다.
+
+```bash
+"$LEISAAC_PYTHON" scripts/imitation_learning/resize_robomimic_images.py \
+  --input ./datasets/pick_cube_into_box_mimic_joint_wrist_50_20260911.hdf5 \
+  --output ./datasets/pick_cube_into_box_mimic_joint_front_wrist_50_84x84_20260912.hdf5 \
+  --height 84 \
+  --width 84
+```
+
+IK→관절 복원 결과의 각 에피소드 0번 행동에는 이전 상태가 섞인 이상치가 있었다. 다음 관절 목표로 0번 행동을 복구하고, 8차원 IK `obs/actions`는 실물에서도 얻을 수 있는 직전 6관절 목표로 바꾼다. 원래 관절 목표는 `joint_position_targets`에 보존된다.
+
+```bash
+"$LEISAAC_PYTHON" scripts/imitation_learning/prepare_so101_bc_dataset.py \
+  --dataset ./datasets/pick_cube_into_box_mimic_joint_front_wrist_50_84x84_20260912.hdf5 \
+  --validation-count 10
+
+"$LEISAAC_PYTHON" scripts/imitation_learning/convert_robomimic_joint_actions.py \
+  --representation joint_target \
+  --input ./datasets/pick_cube_into_box_mimic_joint_front_wrist_50_84x84_20260912.hdf5 \
+  --output ./datasets/pick_cube_into_box_mimic_joint_target_context6_front_wrist_50_84x84_20260912.hdf5
+```
+
+분리는 초기 큐브 XY에 대한 farthest-point sampling으로 공간 전체를 덮는 validation 10회를 고른다. 생성 HDF5에는 원본 시연 계보가 남아 있지 않으므로 **원본 계보가 완전히 분리됐다고 주장할 수 없다.** 최종 일반화 판정은 별도 시드의 시뮬레이터 롤아웃으로 한다.
+
+### 7. Robomimic BC-RNN 학습
+
+입력은 `front`, `wrist`, 현재 관절 위치·속도, 직전 6관절 명령이다. 출력은 다음 6관절 목표다. ACT나 강화학습은 이 단계에 사용하지 않았다.
+
+```bash
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+"$LEISAAC_PYTHON" scripts/imitation_learning/train_robomimic.py \
+  --config source/leisaac/leisaac/tasks/pick_cube_into_box/agents/robomimic/bc_rnn_front_wrist.json \
+  --dataset ./datasets/pick_cube_into_box_mimic_joint_target_context6_front_wrist_50_84x84_20260912.hdf5
+```
+
+실행에서는 45 epoch까지 확인했고 30 epoch에서 최저 validation loss 0.0971587을 기록했다. 이후 학습 loss가 약 0.10에서 정체돼 최종 설정은 40 epoch로 제한했다. GMM 행동 출력과 관절 delta 출력도 시험했지만 각각 오프라인 오차와 누적 drift가 커서 최종 경로에서 제외했다.
+
+### 8. 미학습 큐브 위치 평가
+
+```bash
+CHECKPOINT=./outputs/robomimic/so101_pick_cube_into_box_bc_rnn_front_wrist_context6_84x84_long/20260912021237/models/model_epoch_30_best_validation_0.09715865477919579.pth
+
+"$LEISAAC_PYTHON" scripts/evaluation/robomimic_so101.py \
+  --checkpoint "$CHECKPOINT" \
+  --action-mode joint_target \
+  --num-rollouts 5 \
+  --horizon 1200 \
+  --seed 1000 \
+  --output-dir ./outputs/evaluation/so101_bc_rnn_context6_long_5seeds \
+  --video-count 2 \
+  --headless \
+  --enable_cameras \
+  --device cuda:0
+```
+
+2026-09-12 결과는 **0/5 성공**이다. 모든 시도에서 관절 제한 clipping은 0회였고, 시드 1001에서는 큐브를 약 8mm 밀었지만 파지하지 못했다. 영상에서는 팔이 큐브 부근까지 접근하고 손목 카메라가 큐브를 포착하지만 정밀 파지로 이어지지 않는다. 따라서 현재 증거로 말할 수 있는 범위는 다음과 같다.
+
+- MimicGen 성공 50회 생성, 6관절 학습 변환, BC-RNN 학습, 새 시드 자율 평가까지 파이프라인은 실행된다.
+- 현재 50회 데이터와 BC-RNN 설정은 자율 집기 성공에 충분하지 않다.
+- 이 결과를 “모방학습 성공” 또는 “실물 전이 준비 완료”라고 표현하면 안 된다.
+- 다음 비교 실험은 ACT 같은 action chunking, 더 많은 독립 원본 시연, 파지 구간 가중 샘플링 순서가 적절하다. 강화학습은 이 실패를 자동으로 해결한 단계가 아니며 아직 수행하지 않았다.
+
+## 실행 게이트 상태
+
+초기 10회 생성은 **MimicGen 파이프라인 검증**이었고, 이후 본 생성에서 전면·손목 카메라가 함께 든 성공 50회를 확보했다. 이 50회로 BC-RNN을 학습했으나 새 시드 자율 평가는 0/5였다. 정책 학습 파이프라인은 완주했지만 자율 집기 성능과 실물 팔로워 검증은 완료되지 않았다.
 
 | 게이트 | 수행 내용 | 완료 증거 | 현재 상태 |
 |---|---|---|---|
 | G0 증강 검증 | 원본 10회로 MimicGen 성공 10회 생성 | HDF5 무결성, 서로 다른 초기 위치·궤적, 비교 영상 | 완료 |
 | G1 관측 일치 | 시뮬레이션 SO101에 손목 카메라 추가하고 기존 시연 재생 | HDF5 10/10에 `obs/wrist`, 총 5,640프레임, 영상 10개 | 완료 |
 | G2 본 데이터 생성 | 주석된 원본 10회에서 성공 합성 시연 50회 생성 | 성공 50/50, 초기 위치·궤적 50개 고유, HDF5 무결성, 표본 영상 | 완료 |
-| G3 관절 복원·데이터 분리 | IK action을 6관절 action으로 복원하고 출처 계보 기준으로 train/validation 분리 | action 6차원, 같은 원본 파생 시연이 양쪽에 섞이지 않음 | 다음 작업 |
-| G4 모방학습 | 손목 영상과 관절 상태로 다음 6개 관절 목표를 예측하는 BC-RNN 학습 | 설정 파일, 체크포인트, 학습·검증 곡선 | 대기 |
-| G5 시뮬레이션 평가 | 학습에 쓰지 않은 큐브 위치에서 자율 롤아웃 | 시도 수·성공 수·실패 유형·영상 | 대기 |
-| G6 실물 평가 | 카메라 입력과 SO101 팔로워 출력을 잇는 추론 어댑터로 단계 평가 | 접근·집기·배치 단계별 실측 결과와 영상 | 대기 |
+| G3 관절 복원·데이터 분리 | IK action을 6관절 action으로 복원하고 공간 분산 train/validation 분리 | action 6차원, train 40 / validation 10, 계보 정보 부재 명시 | 완료 |
+| G4 모방학습 | 전면·손목 영상과 관절 문맥으로 다음 6개 관절 목표를 예측하는 BC-RNN 학습 | 설정 파일, 체크포인트, 학습·검증 로그 | 완료 |
+| G5 시뮬레이션 평가 | 학습에 쓰지 않은 시드의 큐브 위치에서 자율 롤아웃 | 0/5 성공, 실패 영상 2개, clipping 0회 | 완료·성능 미달 |
+| G6 실물 평가 | 카메라 입력과 SO101 팔로워 출력을 잇는 추론 어댑터로 단계 평가 | 접근·집기·배치 단계별 실측 결과와 영상 | 이번 작업 제외 |
 
-### 다음 작업의 구체적인 순서
+### 단계별 수행 기록
 
 1. **완료:** SO101 손목 링크에 LeIsaac 기본 SO101 손목카메라를 복원했다. 원본 재생 검증은 640×480 RGB로 수행했다. 8GB GPU에서 두 카메라를 포함한 MimicGen 생성 시 내보내기 OOM이 확인되어 본 생성과 학습용 관측은 전면·손목 모두 320×240으로 조정했다.
 2. **완료:** 기존 원본 10회를 새 손목 시점으로 재생·재주석했다. 성공 10/10, 총 5,640프레임이며 모든 에피소드에 `obs/front`와 `obs/wrist`가 함께 있다. 이 검증 HDF5는 640×480이고, 50회 생성 결과는 320×240으로 기록한다.
 3. **완료:** 손목 영상이 포함된 `pick_cube_into_box_annotated_wrist_10_20260911.hdf5`로 MimicGen 성공 50회를 만들었다. 성공 파일은 27,217프레임이며 50개의 초기 큐브 위치와 관절 궤적이 모두 서로 달랐다.
-4. **다음 작업:** 8차원 IK action을 SO101의 6차원 관절 action으로 복원한다. 이어서 데이터는 무작위 에피소드 단위가 아니라 **원본 시연 계보 단위**로 학습·검증 세트를 나눈다. 같은 원본에서 파생된 합성 시연이 양쪽에 들어가면 검증 성능이 부풀려진다.
-5. ACT 대신 작은 BC-RNN을 먼저 학습한다. 이 저장소에는 현재 이 HDF5를 바로 학습하는 완성된 BC 명령이 없으므로, 학습기와 데이터 로더를 추가한 뒤 실제 명령을 문서화한다.
-6. 시뮬레이션에서 보지 않은 큐브 위치로 자율 평가하고 성공률뿐 아니라 `접근 실패 / 파지 실패 / 운반 중 이탈 / 박스 밖 배치`를 나눠 기록한다.
-7. 실물에서는 팔로워를 곧바로 전체 속도로 실행하지 않는다. 출력 관절 순서와 캘리브레이션 범위를 확인한 뒤 무부하 저속 동작, 접근, 집기, 배치 순으로 범위를 넓힌다.
+4. **완료:** 8차원 IK action을 SO101 6관절 목표로 복원하고 train 40회 / validation 10회로 나눴다. 원본 계보가 HDF5에 없어 계보 독립성은 검증하지 못했으며 이 한계를 manifest에 기록했다.
+5. **완료:** Robomimic 0.4.0 BC-RNN 학습기·설정·데이터 전처리를 추가하고 최저 validation loss 0.0972 체크포인트를 만들었다.
+6. **완료·성능 미달:** 보지 않은 시드 5개에서 자율 평가했으나 0/5였다. 실패는 큐브 접근 후 파지 실패 유형이다.
+7. **이번 작업 제외:** 실물 팔로워는 실행하지 않았다. 시뮬레이션 성공 기준을 통과하기 전에는 이 정책을 실물 성공 정책으로 취급하지 않는다.
 
 G0의 비교 영상은 데이터 증강 검증 자료로 바로 사용할 수 있다. 포트폴리오에서는 이를 “MimicGen으로 정책 학습을 완료했다”가 아니라 **“리더 시연 10회를 물체 위치와 궤적이 다른 성공 시연으로 증강하는 파이프라인을 검증했다”**고 설명한다.
 
@@ -240,7 +316,7 @@ MimicGen HDF5를 팔로워에 그대로 재생하는 것은 실물 정책 배포
    - 집기
    - 박스 배치와 그리퍼 해제
 
-현재까지 검증된 것은 리더가 시뮬레이션 SO101을 조작하고, 그 10회가 MimicGen 입력으로 변환되는 구간이다. 학습 정책이 실제 팔로워에서 큐브를 집었다는 결과는 아직 없다.
+현재까지 검증된 것은 리더 시연 10회, MimicGen 성공 50회, 6관절 변환, BC-RNN 학습, 미학습 시드 5회 평가까지다. 자율 평가는 0/5였고 실제 팔로워는 실행하지 않았다.
 
 실물 완료 기준은 횟수를 숨기지 않고 기록하는 것이다. 고정 위치와 변경 위치 각각에서 총 시도 수, 성공 수, 실패 유형을 남긴다. 실제 측정 전에는 목표 성공률을 달성했다고 쓰지 않는다.
 
@@ -263,7 +339,7 @@ MimicGen HDF5를 팔로워에 그대로 재생하는 것은 실물 정책 배포
 Windows에는 Git 저장소와 대용량 산출물을 분리해서 전달한다.
 
 - Git 저장소: 태스크 코드, MimicGen 호환 패치, 이 문서
-- 별도 복사: `datasets/*.hdf5`, `outputs/portfolio/pick_cube_into_box/**/*.mp4`
+- 별도 복사: `datasets/*.hdf5`, `outputs/portfolio/pick_cube_into_box/**/*.mp4`, 선택한 `outputs/robomimic/**/*.pth`, `outputs/evaluation/**/*.json`, `outputs/evaluation/**/*.mp4`
 - 캘리브레이션 JSON: 보드별 파일이므로 저장소에 포함하지 않고 해당 Linux 장비에 보관
 
 HDF5와 MP4는 Git에 넣지 않는다. 복사 후 양쪽에서 SHA-256을 비교해 파일 손상을 확인한다. Windows는 우선 결과 열람·보관·포트폴리오 편집 대상으로 사용하고, 리더를 이용한 원본 녹화는 현재 검증된 Linux 환경에서 수행한다.
@@ -273,8 +349,8 @@ HDF5와 MP4는 Git에 넣지 않는다. 복사 후 양쪽에서 SHA-256을 비�
 1. 원본 사람이 조작한 시연 영상
 2. 같은 태스크에서 초기 큐브 위치가 달라진 MimicGen 생성 영상
 3. 원본 10회와 생성 데이터 수, 자동 주석 통과 수
-4. 시뮬레이션의 보지 않은 위치 성공률
-5. 동일 정책의 실물 팔로워 성공·실패 영상
-6. 시뮬레이션과 실물 간 실패 원인 및 수정 전후 비교
+4. 시뮬레이션의 보지 않은 위치 성공률과 실패 영상
+5. GMM·관절 delta·절대 관절 목표 모델의 실패 원인과 수정 과정
+6. 이후 성공 정책이 확보됐을 때 동일 정책의 실물 팔로워 결과
 
-단순히 “MimicGen을 사용했다”보다 `10회 원본 → 증강 → 정책 학습 → 미학습 위치 평가 → 실물 검증`의 수치와 영상이 연결돼야 포트폴리오 가치가 생긴다.
+현재 포트폴리오 표현은 `10회 원본 → 성공 50회 증강 → BC-RNN 학습 → 미학습 위치 0/5와 실패 분석`까지가 정확하다. 실물 검증이나 모방학습 성공은 다음 결과가 나오기 전까지 포함하지 않는다.
