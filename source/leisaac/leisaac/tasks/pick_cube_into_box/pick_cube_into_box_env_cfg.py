@@ -4,6 +4,7 @@ from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
+from isaaclab.sensors import TiledCameraCfg
 from isaaclab.utils import configclass
 from leisaac.tasks.lift_cube.lift_cube_env_cfg import (
     LiftCubeEnvCfg,
@@ -11,6 +12,7 @@ from leisaac.tasks.lift_cube.lift_cube_env_cfg import (
     ObservationsCfg as LiftCubeObservationsCfg,
 )
 from leisaac.tasks.template import SingleArmTerminationsCfg
+from leisaac.tasks.template import mdp as template_mdp
 
 from . import mdp
 
@@ -19,6 +21,29 @@ BOX_Y = -0.35
 TABLE_TOP_Z = 0.0415
 BOX_FLOOR_Z = TABLE_TOP_Z + 0.004
 BOX_WALL_Z = TABLE_TOP_Z + 0.04
+
+
+def _wrist_camera_cfg() -> TiledCameraCfg:
+    """Return the SO101 wrist camera used for visual-policy observations."""
+    return TiledCameraCfg(
+        prim_path="{ENV_REGEX_NS}/Robot/gripper/wrist_camera",
+        offset=TiledCameraCfg.OffsetCfg(
+            pos=(-0.001, 0.1, -0.04),
+            rot=(-0.404379, -0.912179, -0.0451242, 0.0486914),
+            convention="ros",
+        ),
+        data_types=["rgb"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=36.5,
+            focus_distance=400.0,
+            horizontal_aperture=36.83,
+            clipping_range=(0.01, 50.0),
+            lock_camera=True,
+        ),
+        width=640,
+        height=480,
+        update_period=1 / 30.0,
+    )
 
 
 def _box_material():
@@ -39,6 +64,10 @@ def _static_box_part(name: str, size: tuple[float, float, float], pos: tuple[flo
 
 @configclass
 class PickCubeIntoBoxSceneCfg(LiftCubeSceneCfg):
+    # LiftCube removes the shared wrist camera. This task restores it because
+    # the real SO101 deployment uses a wrist-mounted camera.
+    wrist: TiledCameraCfg = _wrist_camera_cfg()
+
     box_target = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/BoxTarget",
         init_state=RigidObjectCfg.InitialStateCfg(pos=(BOX_X, BOX_Y, BOX_FLOOR_Z)),
@@ -53,6 +82,10 @@ class PickCubeIntoBoxSceneCfg(LiftCubeSceneCfg):
     box_wall_right = _static_box_part("WallRight", (0.012, 0.132, 0.07), (BOX_X + 0.066, BOX_Y, BOX_WALL_Z))
     box_wall_front = _static_box_part("WallFront", (0.12, 0.012, 0.07), (BOX_X, BOX_Y - 0.066, BOX_WALL_Z))
     box_wall_back = _static_box_part("WallBack", (0.12, 0.012, 0.07), (BOX_X, BOX_Y + 0.066, BOX_WALL_Z))
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.wrist = _wrist_camera_cfg()
 
 
 @configclass
@@ -81,6 +114,13 @@ class ObservationsCfg(LiftCubeObservationsCfg):
             self.concatenate_terms = False
 
     subtask_terms: SubtaskCfg = SubtaskCfg()
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.policy.wrist = ObsTerm(
+            func=template_mdp.image,
+            params={"sensor_cfg": SceneEntityCfg("wrist"), "data_type": "rgb", "normalize": False},
+        )
 
 
 @configclass
