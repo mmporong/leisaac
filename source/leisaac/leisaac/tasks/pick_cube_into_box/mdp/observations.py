@@ -12,7 +12,7 @@ def cube_placed_in_box(
     half_extent_xy: float = 0.045,
     min_height: float = 0.012,
     max_height: float = 0.075,
-    open_threshold: float = 0.45,
+    open_threshold: float = 0.26,
 ) -> torch.Tensor:
     """큐브가 박스 내부에 있고 그리퍼가 열린 상태인지 판정한다."""
     cube: RigidObject = env.scene[cube_cfg.name]

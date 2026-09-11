@@ -101,3 +101,16 @@ class PickCubeIntoBoxEnvCfg(LiftCubeEnvCfg):
     observations: ObservationsCfg = ObservationsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
     task_description: str = "Pick the red cube and place it inside the blue box, then open the gripper."
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+
+        # This single-arm scene does not need IsaacLab's large-population PhysX buffer defaults.
+        self.sim.physx.gpu_max_rigid_contact_count = 2**18
+        self.sim.physx.gpu_max_rigid_patch_count = 2**13
+        self.sim.physx.gpu_found_lost_pairs_capacity = 2**16
+        self.sim.physx.gpu_found_lost_aggregate_pairs_capacity = 2**18
+        self.sim.physx.gpu_total_aggregate_pairs_capacity = 2**16
+        self.sim.physx.gpu_collision_stack_size = 2**22
+        self.sim.physx.gpu_heap_capacity = 2**22
+        self.sim.physx.gpu_temp_buffer_capacity = 2**20

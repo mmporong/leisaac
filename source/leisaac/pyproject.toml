@@ -39,6 +39,7 @@ zip-safe = false
 
 [project.optional-dependencies]
 isaaclab = ["isaaclab[isaacsim,all]==2.3.0"]
+mimic = ["ipython>=8,<9", "ipywidgets>=8,<9", "psutil==5.9.8"]
 gr00t = ["pyzmq>=27.0.0", "pydantic==2.10.6", "msgpack>=1.0.5"]
 remote = ["pyzmq>=27.0.0"]
 lerobot-async = ["grpcio==1.74.0", "protobuf==6.32.0"] # original isaaclab install protobuf version is 3.20.3
