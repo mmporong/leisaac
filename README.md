@@ -34,6 +34,10 @@ Please refer to our [documentation](https://lightwheelai.github.io/leisaac/) to 
 - [Policy Inference](https://lightwheelai.github.io/leisaac/docs/getting_started/policy_support)
 - [Available Robots](https://lightwheelai.github.io/leisaac/resources/available_robots), [Environments](https://lightwheelai.github.io/leisaac/resources/available_env) and [Policy](https://lightwheelai.github.io/leisaac/resources/available_policy)
 
+### SO101 cube-to-box MimicGen workflow
+
+The custom 4 cm cube pick-and-place task, its verified 10-demonstration MimicGen pipeline, and the remaining simulation-to-real steps are documented in [SO101 MimicGen Sim-to-Real Workflow (Korean)](docs/SO101_MIMICGEN_SIM2REAL_KO.md).
+
 ## Contributing 🤝
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues and submit pull requests.
