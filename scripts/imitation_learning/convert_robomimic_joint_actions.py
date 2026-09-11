@@ -1,4 +1,4 @@
-"""Repair the first action and optionally convert joint targets to deltas."""
+"""Convert SO101 demonstrations to a selected 6D joint action representation."""
 
 import argparse
 import shutil
@@ -11,7 +11,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--representation", choices=("joint_delta", "joint_target"), default="joint_delta")
+    parser.add_argument(
+        "--representation",
+        choices=("joint_delta", "joint_target", "joint_next_state"),
+        default="joint_delta",
+    )
     return parser.parse_args()
 
 
@@ -47,21 +51,27 @@ def main() -> None:
                     converted[0] = targets[1] - current[0]
                     hdf.attrs["action_representation"] = "joint_position_delta"
                     hdf.attrs["action_reference"] = "obs/joint_pos"
-                else:
+                elif args.representation == "joint_target":
                     converted = targets.copy()
                     converted[0] = targets[1]
                     hdf.attrs["action_representation"] = "joint_position_target"
+                else:
+                    converted = current.copy()
+                    converted[:-1] = current[1:]
+                    hdf.attrs["action_representation"] = "next_observed_joint_position"
+                    hdf.attrs["action_reference"] = "obs/joint_pos[t+1], final frame repeated"
                 actions[...] = converted
                 previous_actions = converted.copy()
                 previous_actions[0] = 0.0
                 previous_actions[1:] = converted[:-1]
                 del demo["obs/actions"]
                 demo["obs"].create_dataset("actions", data=previous_actions)
-            hdf.attrs["first_action_repair"] = (
-                "next_joint_target_minus_current_joint_position"
-                if args.representation == "joint_delta"
-                else "next_joint_target"
-            )
+            first_action_repairs = {
+                "joint_delta": "next_joint_target_minus_current_joint_position",
+                "joint_target": "next_joint_target",
+                "joint_next_state": "not_required_next_observed_state",
+            }
+            hdf.attrs["first_action_repair"] = first_action_repairs[args.representation]
             hdf.attrs["observation_actions"] = "previous_applied_6d_action"
     except BaseException:
         output_path.unlink(missing_ok=True)

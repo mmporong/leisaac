@@ -8,7 +8,7 @@
 - `cyclo_lab`을 참고하는 이유: ROBOTIS가 공개한 `실물 시연 → MimicGen → BC 학습 → 실물 추론` 구조를 확인할 수 있다.
 - 그대로 쓰지 않는 이유: `cyclo_lab`의 실물 인터페이스와 데이터 변환기는 OMY·FFW 계열용이며 SO101 포트, 관절 수, 카메라 키와 맞지 않는다.
 - MimicGen은 강화학습이 아니다. 사람이 만든 시연을 분할·재조합해 시연 데이터를 늘리는 도구다.
-- ACT는 필수가 아니다. 우선 BC 또는 BC-RNN으로 검증할 수 있다. 강화학습은 별도 선택 단계다.
+- ACT는 MimicGen의 필수 구성요소는 아니다. 이 프로젝트에서는 BC-RNN 0/5 실패 뒤 action chunking 비교 모델로 추가했고, 정제된 관절 궤적으로 새 시드 1/5 성공을 확인했다.
 
 ROBOTIS의 공개 예제도 같은 큰 흐름을 사용한다. OMY 예제는 실물 시연 10회를 받고 MimicGen 500회를 생성한 뒤 학습과 실물 추론으로 연결한다. 다만 대상 로봇이 SO101이 아니므로 구조만 참고한다.
 
@@ -29,7 +29,7 @@ MimicGen 주석 데이터 10회
 합성 시연 N회
   ↓ IK action → joint action
 학습용 HDF5
-  ↓ BC 또는 BC-RNN 학습
+  ↓ BC-RNN 기준선 → ACT action-chunking 비교
 시뮬레이션 롤아웃 평가
   ↓ 카메라·관절 규격과 안전 범위를 맞춘 추론 어댑터
 SO101 팔로워 1대 실물 평가
@@ -54,7 +54,7 @@ SO101 팔로워 1대 실물 평가
 
 ## 현재 실행 결과와 증거
 
-2026-09-11 실행 기준이다. 실행 결과는 코드 주석이 아니라 이 문서와 산출물에 기록한다.
+2026-09-11~12 실행 기준이다. 실행 결과는 코드 주석이 아니라 이 문서와 산출물에 기록한다.
 
 | 단계 | 결과 | 파일 |
 |---|---:|---|
@@ -76,6 +76,12 @@ SO101 팔로워 1대 실물 평가
 | BC-RNN 학습 | Robomimic 0.4.0, 전면+손목+6관절 문맥, 최저 validation loss 0.0972 | `outputs/robomimic/so101_pick_cube_into_box_bc_rnn_front_wrist_context6_84x84_long/20260912021237/` |
 | 미학습 시드 평가 | 5회 중 성공 0회, 관절 제한 clipping 0회 | `outputs/evaluation/so101_bc_rnn_context6_long_5seeds/evaluation.json` |
 | 정책 실패 영상 | 새 시드 1000·1001 각 1개 | `outputs/evaluation/so101_bc_rnn_context6_long_5seeds/rollout_00{1,2}_failure.mp4` |
+| LeRobot v3 변환 | 성공 50회·27,217프레임, 전면+손목 84×84, 상태·행동 6차원 | `datasets/lerobot/so101_mimic_joint_next_state_front_wrist_50_20260912/` |
+| ACT 설정 게이트 | 2회 과적합 비교에서 VAE+학습률 1e-4 채택 | `outputs/lerobot/so101_act_front_wrist_overfit2_vae_lr1e4_3000/offline_evaluation.json` |
+| ACT 관절 라벨 점검 | IK 목표는 8/50 에피소드에서 프레임 간 1 rad 초과, 다음 관측 상태는 0/50 | `datasets/pick_cube_into_box_mimic_joint_next_state_context6_front_wrist_50_84x84_20260912.hdf5` |
+| ACT 본 학습 | train 40회, VAE, chunk 100, 30,000 step, 약 10.9 epoch | `outputs/lerobot/so101_act_next_state_mimic50_chunk100_30000/` |
+| ACT 미학습 시드 평가 | 5회 중 성공 1회, 성공 회차 clipping 0회 | `outputs/evaluation/so101_act_next_state_chunk100_replan30_matched_resize_5seeds/evaluation.json` |
+| ACT 성공 영상 | seed 3001, 1,078 step에 배치·그리퍼 해제 성공 | `outputs/evaluation/so101_act_next_state_chunk100_replan30_matched_resize_5seeds/rollout_002_success.mp4` |
 
 원본 HDF5의 초기 실패 1회는 관절→IK 변환 단계에서 자동 제외됐다. 삭제하거나 성공 데이터로 바꾸지 않았다.
 
@@ -252,6 +258,85 @@ CHECKPOINT=./outputs/robomimic/so101_pick_cube_into_box_bc_rnn_front_wrist_conte
 - 이 결과를 “모방학습 성공” 또는 “실물 전이 준비 완료”라고 표현하면 안 된다.
 - 다음 비교 실험은 ACT 같은 action chunking, 더 많은 독립 원본 시연, 파지 구간 가중 샘플링 순서가 적절하다. 강화학습은 이 실패를 자동으로 해결한 단계가 아니며 아직 수행하지 않았다.
 
+### 9. ACT용 관절 라벨 정제와 LeRobot 변환
+
+BC-RNN 실패 뒤 원본 관절 목표를 검사했다. MimicGen의 IK→관절 변환 결과는 물리적으로 성공한 에피소드여도 IK 해가 바뀌면서 관절 목표가 불연속일 수 있다. 실제로 50회 중 8회에서 연속 프레임 행동 차이의 L2 norm이 1 rad를 넘었고 최댓값은 3.87 rad였다. 성공한 물리 궤적의 다음 관측 관절 위치를 목표로 쓰면 1 rad 초과 에피소드는 0회이며 최댓값은 0.320 rad다.
+
+```bash
+"$LEISAAC_PYTHON" scripts/imitation_learning/convert_robomimic_joint_actions.py \
+  --representation joint_next_state \
+  --input ./datasets/pick_cube_into_box_mimic_joint_front_wrist_50_84x84_20260912.hdf5 \
+  --output ./datasets/pick_cube_into_box_mimic_joint_next_state_context6_front_wrist_50_84x84_20260912.hdf5
+
+export LEROBOT_PYTHON="${LEROBOT_PYTHON:-$HOME/miniforge3/envs/lerobot/bin/python}"
+
+"$LEROBOT_PYTHON" scripts/imitation_learning/convert_hdf5_to_lerobot.py \
+  --input ./datasets/pick_cube_into_box_mimic_joint_next_state_context6_front_wrist_50_84x84_20260912.hdf5 \
+  --output-root ./datasets/lerobot/so101_mimic_joint_next_state_front_wrist_50_20260912 \
+  --repo-id local/so101_mimic_joint_next_state_front_wrist_50 \
+  --fps 60 \
+  --max-action-step-norm 1.0
+```
+
+변환기는 성공 플래그, 6차원 상태·행동, finite 값, 두 카메라의 84×84 RGB 규격을 확인하고 1 rad를 넘는 행동 점프가 있으면 출력 생성 전에 중단한다.
+
+### 10. ACT 학습
+
+현재 LeRobot 소스는 Python 3.12 문법을 사용하므로 Isaac Sim의 Python 3.11 환경에 억지로 섞지 않는다. 데이터 변환·ACT 학습·ACT 추론 서버는 LeRobot 환경에서 실행하고, Isaac 평가는 로컬 TCP로 6관절 행동만 받는다.
+
+설정 게이트에서는 2개 에피소드에 3,000 step 과적합해 VAE 사용 여부와 학습률을 비교했다. `VAE + lr 1e-4`가 첫 프레임 RMSE 0.088 rad, 균등 샘플 RMSE 0.057 rad로 가장 좋아 본 학습에 사용했다. 본 학습은 공간 분산 validation 10회를 제외한 기존 40회만 사용했다.
+
+```bash
+CUDA_VISIBLE_DEVICES=0 "$HOME/miniforge3/envs/lerobot/bin/lerobot-train" \
+  --dataset.repo_id=local/so101_mimic_joint_next_state_front_wrist_50 \
+  --dataset.root="$LEISAAC_ROOT/datasets/lerobot/so101_mimic_joint_next_state_front_wrist_50_20260912" \
+  --dataset.episodes='[0,1,2,3,4,5,6,8,9,10,11,12,13,14,15,17,19,20,21,22,26,27,28,29,30,32,33,35,37,38,39,40,41,42,44,45,46,47,48,49]' \
+  --policy.type=act \
+  --policy.device=cuda \
+  --policy.repo_id=local/so101_act_next_state_mimic50_chunk100 \
+  --policy.push_to_hub=false \
+  --policy.chunk_size=100 \
+  --policy.n_action_steps=100 \
+  --policy.dim_model=256 \
+  --policy.n_heads=8 \
+  --policy.dim_feedforward=1024 \
+  --policy.n_encoder_layers=4 \
+  --policy.use_vae=true \
+  --policy.optimizer_lr=0.0001 \
+  --policy.optimizer_lr_backbone=0.00001 \
+  --batch_size=8 \
+  --num_workers=2 \
+  --steps=30000 \
+  --eval_steps=0 \
+  --save_freq=5000 \
+  --output_dir="$LEISAAC_ROOT/outputs/lerobot/so101_act_next_state_mimic50_chunk100_30000" \
+  --wandb.enable=false \
+  --cudnn_deterministic=true
+```
+
+30,000-step 모델의 validation 균등 샘플 RMSE는 0.084 rad였다. 5,000-step 모델의 0.133 rad보다 낮다. 첫 프레임 RMSE는 0.235 rad이며 그리퍼 오차가 0.509 rad로 가장 크므로 초기 상태 가중 보강은 남은 개선 항목이다.
+
+### 11. ACT 폐루프 평가
+
+학습 입력과 같은 투영을 유지하려면 카메라는 320×240으로 렌더한 뒤 OpenCV `INTER_AREA`로 84×84에 축소한다. 카메라 자체를 84×84로 바꾸면 종횡비와 투영이 달라지고 Isaac의 저해상도 DLSS 보정까지 들어간다. 평가기는 이 전처리를 자동 수행한다.
+
+```bash
+CHECKPOINT="$LEISAAC_ROOT/outputs/lerobot/so101_act_next_state_mimic50_chunk100_30000/checkpoints/030000/pretrained_model"
+
+"$LEISAAC_PYTHON" scripts/evaluation/lerobot_act_so101.py \
+  --checkpoint "$CHECKPOINT" \
+  --num-rollouts 5 \
+  --horizon 1200 \
+  --seed 3000 \
+  --n-action-steps 30 \
+  --server-device cuda \
+  --video-count 2 \
+  --output-dir ./outputs/evaluation/so101_act_next_state_chunk100_replan30_matched_resize_5seeds \
+  --headless
+```
+
+동일한 100-step 예측 모델에서 100개를 모두 열린 고리로 실행하면 0/5였다. 30-step마다 다시 관측하고 계획하도록 바꾸면 1/5가 성공했다. seed 3001은 1,078 step에 성공했고 관절 제한 clipping은 0회였다. 나머지 4회는 접근 중 큐브를 밀거나 파지를 놓쳤다. 따라서 **ACT 폐루프 실행 가능성과 첫 성공은 검증됐지만 실물 전이 기준을 충족한 것은 아니다.** 다음 우선순위는 초기·파지 구간 가중 샘플링, 서로 독립적인 원본 시연 추가, 그 뒤 성공률 재평가다. 강화학습은 아직 수행하지 않았다.
+
 ## 실행 게이트 상태
 
 초기 10회 생성은 **MimicGen 파이프라인 검증**이었고, 이후 본 생성에서 전면·손목 카메라가 함께 든 성공 50회를 확보했다. 이 50회로 BC-RNN을 학습했으나 새 시드 자율 평가는 0/5였다. 정책 학습 파이프라인은 완주했지만 자율 집기 성능과 실물 팔로워 검증은 완료되지 않았다.
@@ -262,8 +347,8 @@ CHECKPOINT=./outputs/robomimic/so101_pick_cube_into_box_bc_rnn_front_wrist_conte
 | G1 관측 일치 | 시뮬레이션 SO101에 손목 카메라 추가하고 기존 시연 재생 | HDF5 10/10에 `obs/wrist`, 총 5,640프레임, 영상 10개 | 완료 |
 | G2 본 데이터 생성 | 주석된 원본 10회에서 성공 합성 시연 50회 생성 | 성공 50/50, 초기 위치·궤적 50개 고유, HDF5 무결성, 표본 영상 | 완료 |
 | G3 관절 복원·데이터 분리 | IK action을 6관절 action으로 복원하고 공간 분산 train/validation 분리 | action 6차원, train 40 / validation 10, 계보 정보 부재 명시 | 완료 |
-| G4 모방학습 | 전면·손목 영상과 관절 문맥으로 다음 6개 관절 목표를 예측하는 BC-RNN 학습 | 설정 파일, 체크포인트, 학습·검증 로그 | 완료 |
-| G5 시뮬레이션 평가 | 학습에 쓰지 않은 시드의 큐브 위치에서 자율 롤아웃 | 0/5 성공, 실패 영상 2개, clipping 0회 | 완료·성능 미달 |
+| G4 모방학습 | BC-RNN 기준선과 ACT action-chunking 모델 학습 | 설정·체크포인트·오프라인 validation 결과 | 완료 |
+| G5 시뮬레이션 평가 | 학습에 쓰지 않은 시드의 큐브 위치에서 자율 롤아웃 | BC-RNN 0/5, 정제 ACT 1/5, ACT 성공 영상 1개 | 완료·부분 성공·성능 미달 |
 | G6 실물 평가 | 카메라 입력과 SO101 팔로워 출력을 잇는 추론 어댑터로 단계 평가 | 접근·집기·배치 단계별 실측 결과와 영상 | 이번 작업 제외 |
 
 ### 단계별 수행 기록
@@ -273,7 +358,7 @@ CHECKPOINT=./outputs/robomimic/so101_pick_cube_into_box_bc_rnn_front_wrist_conte
 3. **완료:** 손목 영상이 포함된 `pick_cube_into_box_annotated_wrist_10_20260911.hdf5`로 MimicGen 성공 50회를 만들었다. 성공 파일은 27,217프레임이며 50개의 초기 큐브 위치와 관절 궤적이 모두 서로 달랐다.
 4. **완료:** 8차원 IK action을 SO101 6관절 목표로 복원하고 train 40회 / validation 10회로 나눴다. 원본 계보가 HDF5에 없어 계보 독립성은 검증하지 못했으며 이 한계를 manifest에 기록했다.
 5. **완료:** Robomimic 0.4.0 BC-RNN 학습기·설정·데이터 전처리를 추가하고 최저 validation loss 0.0972 체크포인트를 만들었다.
-6. **완료·성능 미달:** 보지 않은 시드 5개에서 자율 평가했으나 0/5였다. 실패는 큐브 접근 후 파지 실패 유형이다.
+6. **완료·성능 미달:** BC-RNN은 보지 않은 시드에서 0/5였다. IK 목표의 불연속을 발견해 다음 실제 관절 상태로 라벨을 정제하고 ACT를 학습했다. 100-step 모델을 30-step마다 재계획한 결과 동일 seed 5개에서 1/5가 성공했다.
 7. **이번 작업 제외:** 실물 팔로워는 실행하지 않았다. 시뮬레이션 성공 기준을 통과하기 전에는 이 정책을 실물 성공 정책으로 취급하지 않는다.
 
 G0의 비교 영상은 데이터 증강 검증 자료로 바로 사용할 수 있다. 포트폴리오에서는 이를 “MimicGen으로 정책 학습을 완료했다”가 아니라 **“리더 시연 10회를 물체 위치와 궤적이 다른 성공 시연으로 증강하는 파이프라인을 검증했다”**고 설명한다.
@@ -290,7 +375,7 @@ G0의 비교 영상은 데이터 증강 검증 자료로 바로 사용할 수 �
 4. 평가: 보지 않은 큐브 초기 위치에서 시뮬레이션 성공률 측정
 5. 통과 후: 실물 카메라 입력과 팔로워 출력을 연결
 
-ACT는 긴 시간 구간의 동작 묶음을 예측하는 선택지다. 이 프로젝트의 첫 증명에는 필수가 아니다. BC-RNN이 실패하거나 장시간 동작의 흔들림이 클 때 비교 대상으로 추가한다.
+ACT는 긴 시간 구간의 동작 묶음을 예측한다. 이 프로젝트에서는 BC-RNN 0/5 뒤 실제 비교 대상으로 추가했고, 30-step 재계획에서 1/5 성공했다. 이는 모방학습 파이프라인과 폐루프 성공 사례의 증거지만 안정적인 정책이나 실물 준비 완료의 증거는 아니다.
 
 강화학습은 별도 실험이다. MimicGen 데이터 자체가 강화학습을 수행하지 않는다. 필요하다면 BC 정책을 초기 정책으로 사용하거나, 동일 태스크의 보상·종료 조건으로 시뮬레이션 RL을 추가할 수 있지만 현재 실물 연결의 필수 단계는 아니다.
 
@@ -316,7 +401,7 @@ MimicGen HDF5를 팔로워에 그대로 재생하는 것은 실물 정책 배포
    - 집기
    - 박스 배치와 그리퍼 해제
 
-현재까지 검증된 것은 리더 시연 10회, MimicGen 성공 50회, 6관절 변환, BC-RNN 학습, 미학습 시드 5회 평가까지다. 자율 평가는 0/5였고 실제 팔로워는 실행하지 않았다.
+현재까지 검증된 것은 리더 시연 10회, MimicGen 성공 50회, 6관절 변환, BC-RNN 0/5, 정제 ACT 1/5까지다. 실제 팔로워는 실행하지 않았다.
 
 실물 완료 기준은 횟수를 숨기지 않고 기록하는 것이다. 고정 위치와 변경 위치 각각에서 총 시도 수, 성공 수, 실패 유형을 남긴다. 실제 측정 전에는 목표 성공률을 달성했다고 쓰지 않는다.
 
@@ -353,4 +438,4 @@ HDF5와 MP4는 Git에 넣지 않는다. 복사 후 양쪽에서 SHA-256을 비�
 5. GMM·관절 delta·절대 관절 목표 모델의 실패 원인과 수정 과정
 6. 이후 성공 정책이 확보됐을 때 동일 정책의 실물 팔로워 결과
 
-현재 포트폴리오 표현은 `10회 원본 → 성공 50회 증강 → BC-RNN 학습 → 미학습 위치 0/5와 실패 분석`까지가 정확하다. 실물 검증이나 모방학습 성공은 다음 결과가 나오기 전까지 포함하지 않는다.
+현재 포트폴리오 표현은 `10회 원본 → 성공 50회 증강 → BC-RNN 0/5 → IK 관절 목표 불연속 발견·라벨 정제 → ACT 1/5 첫 폐루프 성공`이 정확하다. “안정적 자율 파지”나 “실물 전이 완료”로 표현하면 안 된다.
