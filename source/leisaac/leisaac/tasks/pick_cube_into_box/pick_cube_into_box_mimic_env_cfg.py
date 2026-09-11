@@ -16,7 +16,6 @@ class PickCubeIntoBoxMimicEnvCfg(PickCubeIntoBoxEnvCfg, MimicEnvCfg):
         self.datagen_config.generation_transform_first_robot_pose = False
         self.datagen_config.generation_interpolate_from_last_target_pose = True
         self.datagen_config.generation_relative = True
-        self.datagen_config.max_num_failures = 100
         self.datagen_config.seed = 42
 
         self.subtask_configs["so101_follower"] = [

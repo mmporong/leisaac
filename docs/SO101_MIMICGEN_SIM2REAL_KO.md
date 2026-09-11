@@ -35,7 +35,7 @@ MimicGen 주석 데이터 10회
 SO101 팔로워 1대 실물 평가
 ```
 
-`10회`는 증강 전 사람이 제공하는 원본 시연 수다. 10회가 자동으로 정확히 50회가 되는 규칙은 없다. 현재 설정은 `generation_guarantee=True`이므로 생성 명령의 `--generation_num_trials`은 성공 데이터 목표 수로 동작한다. 실패하면 `max_num_failures` 한도까지 추가 시도하므로 실제 총 시도 수는 목표 수보다 많을 수 있다.
+`10회`는 증강 전 사람이 제공하는 원본 시연 수다. 10회가 자동으로 정확히 50회가 되는 규칙은 없다. 현재 설정은 `generation_guarantee=True`이므로 생성 명령의 `--generation_num_trials`은 성공 데이터 목표 수로 동작한다. 현재 IsaacLab 생성 루프는 `max_num_failures`를 종료 조건으로 사용하지 않으므로 성공 목표에 도달하거나 실행 오류·사용자 중단이 발생할 때까지 재시도한다.
 
 ## 현재 태스크 정의
 
@@ -68,6 +68,9 @@ SO101 팔로워 1대 실물 평가
 | 원본·생성 비교 영상 | 1개 | `outputs/portfolio/pick_cube_into_box/source_vs_mimic.mp4` |
 | 손목카메라 재생·재주석 | 성공 10회, 총 5,640프레임, `front`·`wrist` 동시 기록 | `datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5` |
 | 손목카메라 재생 영상 | MP4 10개와 전면·손목 비교 시트 | `outputs/portfolio/pick_cube_into_box/wrist_replay/` |
+| 손목카메라 MimicGen 본 생성 | 성공 50회·실패 75회, 성공률 40%, 성공 데이터 27,217프레임 | `datasets/pick_cube_into_box_mimic_generated_wrist_50_20260911.hdf5` |
+| 본 생성 실패 궤적 | 실패 75회, 학습 입력에서 제외 | `datasets/pick_cube_into_box_mimic_generated_wrist_50_20260911_failed.hdf5` |
+| 본 생성 확인 영상 | 전면·손목 나란히 보기 MP4 3개와 비교 시트 | `outputs/portfolio/pick_cube_into_box/mimic_generated_wrist_50/` |
 
 원본 HDF5의 초기 실패 1회는 관절→IK 변환 단계에서 자동 제외됐다. 삭제하거나 성공 데이터로 바꾸지 않았다.
 
@@ -139,28 +142,32 @@ MimicGen은 물체 기준의 말단 자세 궤적을 변형하므로 이 변환�
 
 ### 4. MimicGen 생성
 
-작은 시험은 성공 10회, 본 생성은 성공 50회 이상으로 나눈다. 실패가 계속되어 설정된 최대 실패 수에 도달하면 목표 수보다 적게 종료될 수 있으므로 결과 HDF5의 성공 에피소드 수를 다시 센다.
+작은 시험은 성공 10회, 본 생성은 성공 50회 이상으로 나눈다. `generation_guarantee=True`에서는 성공 수가 목표에 도달할 때까지 재시도한다. 비정상 종료나 디스크·GPU 오류가 있을 수 있으므로 종료 로그만 믿지 않고 결과 HDF5의 성공 에피소드 수를 다시 센다.
 
 ```bash
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
 "$LEISAAC_PYTHON" scripts/mimic/generate_dataset.py \
   --device cuda:0 \
   --task LeIsaac-SO101-PickCubeIntoBox-Mimic-v0 \
   --num_envs 1 \
   --generation_num_trials 50 \
   --input_file ./datasets/pick_cube_into_box_annotated_wrist_10.hdf5 \
-  --output_file ./datasets/pick_cube_into_box_mimic_generated_50.hdf5 \
+  --output_file ./datasets/pick_cube_into_box_mimic_generated_wrist_50.hdf5 \
   --headless \
   --enable_cameras
 ```
 
-RTX 5050 Laptop 8GB 환경에서는 `--num_envs 1`부터 검증한다. 환경 수를 크게 올리는 것은 속도 설정이지 데이터 의미를 높이는 조건이 아니다. VRAM을 넘기면 에피소드가 손상될 수 있으므로 성공 파일 수와 HDF5 무결성을 먼저 확인한다.
+RTX 5050 Laptop 8GB 환경에서는 `--num_envs 1`을 사용한다. 640×480 전면·손목 영상을 함께 기록하면 에피소드 내보내기의 `torch.stack`에서 약 958MB 추가 할당이 발생해 OOM으로 실패했다. 두 카메라를 320×240으로 낮추고 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`를 적용한 뒤 성공 50회를 생성했다. 환경 수를 크게 올리는 것은 속도 설정이지 데이터 의미를 높이는 조건이 아니다.
+
+2026-09-11 본 생성은 총 125회 시도 중 성공 50회, 실패 75회로 성공률 40%였다. `generation_keep_failed=True`이므로 실패 궤적은 `_failed.hdf5`에 분리됐다. 학습에는 성공 파일만 사용하고, 실패 파일은 실패 원인 분석에만 사용한다.
 
 ### 5. IK 동작을 관절 동작으로 복원
 
 ```bash
 "$LEISAAC_PYTHON" scripts/mimic/eef_action_process.py \
-  --input_file ./datasets/pick_cube_into_box_mimic_generated_50.hdf5 \
-  --output_file ./datasets/pick_cube_into_box_mimic_joint_50.hdf5 \
+  --input_file ./datasets/pick_cube_into_box_mimic_generated_wrist_50.hdf5 \
+  --output_file ./datasets/pick_cube_into_box_mimic_joint_wrist_50.hdf5 \
   --to_joint \
   --headless
 ```
@@ -177,18 +184,18 @@ RTX 5050 Laptop 8GB 환경에서는 `--num_envs 1`부터 검증한다. 환경 �
 |---|---|---|---|
 | G0 증강 검증 | 원본 10회로 MimicGen 성공 10회 생성 | HDF5 무결성, 서로 다른 초기 위치·궤적, 비교 영상 | 완료 |
 | G1 관측 일치 | 시뮬레이션 SO101에 손목 카메라 추가하고 기존 시연 재생 | HDF5 10/10에 `obs/wrist`, 총 5,640프레임, 영상 10개 | 완료 |
-| G2 본 데이터 생성 | 주석된 원본 10회에서 성공 합성 시연 50회 이상 생성 | 성공 에피소드 수, HDF5 무결성, 표본 영상 | 대기 |
-| G3 학습 데이터 분리 | 원본과 합성본을 합치고 출처 계보 기준으로 train/validation 분리 | 같은 원본에서 파생된 시연이 양쪽에 섞이지 않음 | 대기 |
+| G2 본 데이터 생성 | 주석된 원본 10회에서 성공 합성 시연 50회 생성 | 성공 50/50, 초기 위치·궤적 50개 고유, HDF5 무결성, 표본 영상 | 완료 |
+| G3 관절 복원·데이터 분리 | IK action을 6관절 action으로 복원하고 출처 계보 기준으로 train/validation 분리 | action 6차원, 같은 원본 파생 시연이 양쪽에 섞이지 않음 | 다음 작업 |
 | G4 모방학습 | 손목 영상과 관절 상태로 다음 6개 관절 목표를 예측하는 BC-RNN 학습 | 설정 파일, 체크포인트, 학습·검증 곡선 | 대기 |
 | G5 시뮬레이션 평가 | 학습에 쓰지 않은 큐브 위치에서 자율 롤아웃 | 시도 수·성공 수·실패 유형·영상 | 대기 |
 | G6 실물 평가 | 카메라 입력과 SO101 팔로워 출력을 잇는 추론 어댑터로 단계 평가 | 접근·집기·배치 단계별 실측 결과와 영상 | 대기 |
 
 ### 다음 작업의 구체적인 순서
 
-1. **완료:** SO101 손목 링크에 LeIsaac 기본 SO101 손목카메라를 복원했다. 현재 설정은 640×480 RGB, 30Hz 센서 갱신이며 환경 관측은 60Hz로 기록된다.
-2. **완료:** 기존 원본 10회를 새 손목 시점으로 재생·재주석했다. 성공 10/10, 총 5,640프레임이며 모든 에피소드에 `obs/front`와 `obs/wrist`가 함께 있다.
-3. **미시작:** 손목 영상이 포함된 `pick_cube_into_box_annotated_wrist_10_20260911.hdf5`로 MimicGen 성공 50회를 만든다. `50`은 최종 규칙이 아니라 첫 학습에 사용할 시작 규모다.
-4. 데이터는 무작위 에피소드 단위가 아니라 **원본 시연 계보 단위**로 학습·검증 세트를 나눈다. 같은 원본에서 파생된 합성 시연이 양쪽에 들어가면 검증 성능이 부풀려진다.
+1. **완료:** SO101 손목 링크에 LeIsaac 기본 SO101 손목카메라를 복원했다. 원본 재생 검증은 640×480 RGB로 수행했다. 8GB GPU에서 두 카메라를 포함한 MimicGen 생성 시 내보내기 OOM이 확인되어 본 생성과 학습용 관측은 전면·손목 모두 320×240으로 조정했다.
+2. **완료:** 기존 원본 10회를 새 손목 시점으로 재생·재주석했다. 성공 10/10, 총 5,640프레임이며 모든 에피소드에 `obs/front`와 `obs/wrist`가 함께 있다. 이 검증 HDF5는 640×480이고, 50회 생성 결과는 320×240으로 기록한다.
+3. **완료:** 손목 영상이 포함된 `pick_cube_into_box_annotated_wrist_10_20260911.hdf5`로 MimicGen 성공 50회를 만들었다. 성공 파일은 27,217프레임이며 50개의 초기 큐브 위치와 관절 궤적이 모두 서로 달랐다.
+4. **다음 작업:** 8차원 IK action을 SO101의 6차원 관절 action으로 복원한다. 이어서 데이터는 무작위 에피소드 단위가 아니라 **원본 시연 계보 단위**로 학습·검증 세트를 나눈다. 같은 원본에서 파생된 합성 시연이 양쪽에 들어가면 검증 성능이 부풀려진다.
 5. ACT 대신 작은 BC-RNN을 먼저 학습한다. 이 저장소에는 현재 이 HDF5를 바로 학습하는 완성된 BC 명령이 없으므로, 학습기와 데이터 로더를 추가한 뒤 실제 명령을 문서화한다.
 6. 시뮬레이션에서 보지 않은 큐브 위치로 자율 평가하고 성공률뿐 아니라 `접근 실패 / 파지 실패 / 운반 중 이탈 / 박스 밖 배치`를 나눠 기록한다.
 7. 실물에서는 팔로워를 곧바로 전체 속도로 실행하지 않는다. 출력 관절 순서와 캘리브레이션 범위를 확인한 뒤 무부하 저속 동작, 접근, 집기, 배치 순으로 범위를 넓힌다.

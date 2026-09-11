@@ -21,6 +21,8 @@ BOX_Y = -0.35
 TABLE_TOP_Z = 0.0415
 BOX_FLOOR_Z = TABLE_TOP_Z + 0.004
 BOX_WALL_Z = TABLE_TOP_Z + 0.04
+POLICY_CAMERA_WIDTH = 320
+POLICY_CAMERA_HEIGHT = 240
 
 
 def _wrist_camera_cfg() -> TiledCameraCfg:
@@ -40,8 +42,8 @@ def _wrist_camera_cfg() -> TiledCameraCfg:
             clipping_range=(0.01, 50.0),
             lock_camera=True,
         ),
-        width=640,
-        height=480,
+        width=POLICY_CAMERA_WIDTH,
+        height=POLICY_CAMERA_HEIGHT,
         update_period=1 / 30.0,
     )
 
@@ -85,6 +87,8 @@ class PickCubeIntoBoxSceneCfg(LiftCubeSceneCfg):
 
     def __post_init__(self):
         super().__post_init__()
+        self.front.width = POLICY_CAMERA_WIDTH
+        self.front.height = POLICY_CAMERA_HEIGHT
         self.wrist = _wrist_camera_cfg()
 
 
