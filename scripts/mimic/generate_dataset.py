@@ -11,6 +11,8 @@ Main data generation script.
 """Launch Isaac Sim Simulator first."""
 
 import argparse
+import json
+from pathlib import Path
 
 from isaaclab.app import AppLauncher
 
@@ -18,6 +20,12 @@ from isaaclab.app import AppLauncher
 parser = argparse.ArgumentParser(description="Generate demonstrations for Isaac Lab environments.")
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 parser.add_argument("--generation_num_trials", type=int, help="Number of demos to be generated.", default=None)
+parser.add_argument(
+    "--datagen-seed",
+    type=int,
+    default=None,
+    help="Override the MimicGen random seed so additional runs do not repeat an earlier dataset.",
+)
 parser.add_argument(
     "--num_envs", type=int, default=1, help="Number of environments to instantiate for generating datasets."
 )
@@ -70,6 +78,7 @@ import random
 
 import gymnasium as gym
 import isaaclab_mimic.envs  # noqa: F401
+import isaaclab_mimic.datagen.generation as generation_runtime
 import numpy as np
 import omni
 import torch
@@ -93,6 +102,15 @@ import leisaac  # noqa: F401
 def main():
     num_envs = args_cli.num_envs
 
+    output_path = Path(args_cli.output_file).expanduser().resolve()
+    failed_output_path = output_path.with_name(f"{output_path.stem}_failed{output_path.suffix}")
+    manifest_path = output_path.with_suffix(".generation.json")
+    existing_outputs = [
+        path for path in (output_path, failed_output_path, manifest_path) if path.exists()
+    ]
+    if existing_outputs:
+        raise FileExistsError(f"refusing to overwrite existing datasets: {existing_outputs}")
+
     # Setup output paths and get env name
     output_dir, output_file_name = setup_output_paths(args_cli.output_file)
     task_name = args_cli.task
@@ -109,6 +127,9 @@ def main():
         device=args_cli.device,
         generation_num_trials=args_cli.generation_num_trials,
     )
+    if args_cli.datagen_seed is not None:
+        env_cfg.datagen_config.seed = args_cli.datagen_seed
+        env_cfg.seed = args_cli.datagen_seed
     setattr(env_cfg, "task_type", get_task_type(task_name, args_cli.task_type))
 
     # create environment
@@ -141,8 +162,8 @@ def main():
         pause_subtask=args_cli.pause_subtask,
     )
 
+    target_count = env.cfg.datagen_config.generation_num_trials
     try:
-        asyncio.ensure_future(asyncio.gather(*async_components["tasks"]))
         env_loop(
             env,
             async_components["reset_queue"],
@@ -150,8 +171,38 @@ def main():
             async_components["info_pool"],
             async_components["event_loop"],
         )
-    except asyncio.CancelledError:
-        print("Tasks were cancelled.")
+    finally:
+        for task in async_components["tasks"]:
+            task.cancel()
+        async_components["event_loop"].run_until_complete(
+            asyncio.gather(*async_components["tasks"], return_exceptions=True)
+        )
+
+    completed = generation_runtime.num_success >= target_count
+    if completed:
+        manifest_path.write_text(
+            json.dumps(
+                {
+                    "completed": True,
+                    "task": env_name,
+                    "input_file": str(Path(args_cli.input_file).expanduser().resolve()),
+                    "output_file": str(output_path),
+                    "failed_output_file": str(failed_output_path),
+                    "generation_num_trials": args_cli.generation_num_trials,
+                    "datagen_seed": env.cfg.datagen_config.seed,
+                    "num_envs": args_cli.num_envs,
+                    "successful_demos": generation_runtime.num_success,
+                    "failed_demos": generation_runtime.num_failures,
+                    "attempts": generation_runtime.num_attempts,
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+    else:
+        raise RuntimeError(
+            f"generation stopped before target: {generation_runtime.num_success}/{target_count} successes"
+        )
 
 
 if __name__ == "__main__":

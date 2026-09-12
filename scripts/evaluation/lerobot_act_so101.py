@@ -24,6 +24,7 @@ parser.add_argument("--server-host", default="127.0.0.1")
 parser.add_argument("--server-port", type=int, default=5557)
 parser.add_argument("--server-timeout", type=float, default=60.0)
 parser.add_argument("--server-device", choices=("cpu", "cuda"), default="cpu")
+parser.add_argument("--server-seed", type=int, default=0)
 parser.add_argument("--n-action-steps", type=int, default=None)
 parser.add_argument("--render-width", type=int, default=320)
 parser.add_argument("--render-height", type=int, default=240)
@@ -35,6 +36,7 @@ args_cli.enable_cameras = True
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
+import hashlib
 import json
 import pickle
 import random
@@ -128,6 +130,8 @@ def main() -> None:
         str(args_cli.server_port),
         "--device",
         args_cli.server_device,
+        "--seed",
+        str(args_cli.server_seed),
     ]
     if args_cli.n_action_steps is not None:
         server_command.extend(("--n-action-steps", str(args_cli.n_action_steps)))
@@ -167,6 +171,7 @@ def main() -> None:
             first_action = None
             action_min = None
             action_max = None
+            initial_observation_sha256 = None
             video_path = output_dir / f"rollout_{trial + 1:03d}.mp4"
             video_writer = (
                 imageio.get_writer(video_path, fps=60, codec="libx264", quality=7)
@@ -180,6 +185,11 @@ def main() -> None:
                     policy_obs = observations["policy"]
                     front = resize_policy_image(policy_obs["front"][0])
                     wrist = resize_policy_image(policy_obs["wrist"][0])
+                    if initial_observation_sha256 is None:
+                        initial_observation_sha256 = {
+                            "front": hashlib.sha256(front.tobytes()).hexdigest(),
+                            "wrist": hashlib.sha256(wrist.tobytes()).hexdigest(),
+                        }
                     response = send_request(
                         connection,
                         {
@@ -227,6 +237,7 @@ def main() -> None:
                 "steps": step + 1,
                 "clipped_steps": clipped_steps,
                 "initial_joint_pos": initial_joint_pos,
+                "initial_observation_sha256": initial_observation_sha256,
                 "first_action": first_action,
                 "action_min": action_min.detach().cpu().tolist(),
                 "action_max": action_max.detach().cpu().tolist(),
@@ -243,6 +254,7 @@ def main() -> None:
             "success_rate": sum(result["success"] for result in results) / len(results),
             "seed_start": args_cli.seed,
             "horizon": args_cli.horizon,
+            "server_seed": args_cli.server_seed,
             "n_action_steps": args_cli.n_action_steps,
             "results": results,
         }

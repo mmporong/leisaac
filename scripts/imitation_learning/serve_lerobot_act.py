@@ -24,6 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=5557)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--n-action-steps", type=int, default=None)
     return parser.parse_args()
 
@@ -83,6 +84,13 @@ def main() -> None:
     args = parse_args()
     checkpoint = args.checkpoint.expanduser().resolve()
     device = torch.device(args.device)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if device.type == "cuda":
+        torch.cuda.manual_seed_all(args.seed)
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+    torch.use_deterministic_algorithms(True, warn_only=True)
     model = ACTPolicy.from_pretrained(checkpoint).to(device).eval()
     if args.n_action_steps is not None:
         if not 1 <= args.n_action_steps <= model.config.chunk_size:
