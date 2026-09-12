@@ -30,6 +30,12 @@ parser.add_argument("--render-width", type=int, default=320)
 parser.add_argument("--render-height", type=int, default=240)
 parser.add_argument("--policy-image-size", type=int, default=84)
 parser.add_argument(
+    "--lift-threshold-m",
+    type=float,
+    default=0.02,
+    help="Cube lift threshold in meters used only to classify rollout outcomes.",
+)
+parser.add_argument(
     "--failure-state-file",
     type=Path,
     default=None,
@@ -50,6 +56,7 @@ simulation_app = app_launcher.app
 
 import hashlib
 import json
+import math
 import pickle
 import random
 import socket
@@ -70,6 +77,26 @@ import leisaac  # noqa: F401
 
 HEADER = struct.Struct("!Q")
 MAX_MESSAGE_BYTES = 1_048_576
+
+
+def classify_rollout_outcome(
+    success: bool,
+    max_cube_lift_m: float,
+    final_cube_lift_m: float,
+    lift_threshold_m: float,
+) -> str:
+    """Classify observed lift behavior without changing the task success criterion.
+
+    ``low_after_lift`` only means the final observed lift is below the threshold
+    after reaching it earlier; it does not prove that the cube was dropped.
+    """
+    if success:
+        return "success"
+    if max_cube_lift_m < lift_threshold_m:
+        return "no_lift"
+    if final_cube_lift_m < lift_threshold_m:
+        return "low_after_lift"
+    return "lifted_not_completed"
 
 
 def receive_exact(connection: socket.socket, size: int) -> bytes:
@@ -131,6 +158,18 @@ def capture_state(env, seed: int, step: int) -> dict:
     }
 
 
+def scene_state_sha256(state: dict) -> str:
+    """Hash physical state, including orientations and velocities, in a stable order."""
+    digest = hashlib.sha256()
+    for group, entities in sorted(state.items()):
+        for entity, fields in sorted(entities.items()):
+            for field, value in sorted(fields.items()):
+                array = np.ascontiguousarray(value.detach().cpu().numpy(), dtype="<f4")
+                digest.update(f"{group}/{entity}/{field}:{array.shape}".encode())
+                digest.update(array.tobytes())
+    return digest.hexdigest()
+
+
 def main() -> None:
     if args_cli.num_rollouts <= 0 or args_cli.horizon <= 0:
         raise ValueError("num-rollouts and horizon must be positive")
@@ -144,6 +183,8 @@ def main() -> None:
         raise ValueError("n-action-steps must be positive")
     if args_cli.failure_state_interval <= 0:
         raise ValueError("failure-state-interval must be positive")
+    if not math.isfinite(args_cli.lift_threshold_m) or args_cli.lift_threshold_m <= 0:
+        raise ValueError("lift-threshold-m must be a finite positive number")
 
     output_dir = args_cli.output_dir.expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -194,8 +235,11 @@ def main() -> None:
             random.seed(trial_seed)
             env.seed(trial_seed)
             observations, _ = env.reset()
+            initial_scene_state_sha256 = scene_state_sha256(env.scene.get_state(is_relative=True))
             send_request(connection, {"command": "reset"})
-            cube_xy = env.scene["cube"].data.root_pos_w[0, :2].detach().cpu().tolist()
+            initial_cube_xyz = env.scene["cube"].data.root_pos_w[0, :3].detach().cpu().tolist()
+            cube_xy = initial_cube_xyz[:2]
+            max_cube_lift_m = 0.0
             initial_joint_pos = observations["policy"]["joint_pos"][0].detach().cpu().tolist()
             first_action = None
             action_min = None
@@ -244,6 +288,8 @@ def main() -> None:
                     clipped = action.clamp(lower, upper)
                     clipped_steps += int(not torch.equal(action, clipped))
                     observations, _, _, _, _ = env.step(clipped)
+                    cube_z = float(env.scene["cube"].data.root_pos_w[0, 2].item())
+                    max_cube_lift_m = max(max_cube_lift_m, cube_z - initial_cube_xyz[2])
                     completed_step = step + 1
                     if (
                         args_cli.failure_state_file is not None
@@ -265,6 +311,14 @@ def main() -> None:
                 video_path.rename(
                     output_dir / f"rollout_{trial + 1:03d}_{'success' if success else 'failure'}.mp4"
                 )
+            final_cube_xyz = env.scene["cube"].data.root_pos_w[0, :3].detach().cpu().tolist()
+            final_cube_lift_m = final_cube_xyz[2] - initial_cube_xyz[2]
+            outcome = classify_rollout_outcome(
+                success,
+                max_cube_lift_m,
+                final_cube_lift_m,
+                args_cli.lift_threshold_m,
+            )
             result = {
                 "trial": trial,
                 "seed": trial_seed,
@@ -274,10 +328,16 @@ def main() -> None:
                 "clipped_steps": clipped_steps,
                 "initial_joint_pos": initial_joint_pos,
                 "initial_observation_sha256": initial_observation_sha256,
+                "initial_scene_state_sha256": initial_scene_state_sha256,
                 "first_action": first_action,
                 "action_min": action_min.detach().cpu().tolist(),
                 "action_max": action_max.detach().cpu().tolist(),
-                "final_cube_xyz": env.scene["cube"].data.root_pos_w[0, :3].detach().cpu().tolist(),
+                "final_cube_xyz": final_cube_xyz,
+                "initial_cube_xyz": initial_cube_xyz,
+                "max_cube_lift_m": max_cube_lift_m,
+                "final_cube_lift_m": final_cube_lift_m,
+                "final_gripper_position_rad": float(observations["policy"]["joint_pos"][0, -1].item()),
+                "outcome": outcome,
             }
             results.append(result)
             if not success and args_cli.failure_state_file is not None:
@@ -287,6 +347,10 @@ def main() -> None:
                 failure_states.extend(trial_state_snapshots)
             print(json.dumps(result), flush=True)
 
+        outcome_counts = {
+            outcome: sum(result["outcome"] == outcome for result in results)
+            for outcome in ("success", "no_lift", "low_after_lift", "lifted_not_completed")
+        }
         summary = {
             "task": args_cli.task,
             "checkpoint": str(args_cli.checkpoint.expanduser().resolve()),
@@ -296,7 +360,13 @@ def main() -> None:
             "seed_start": args_cli.seed,
             "horizon": args_cli.horizon,
             "server_seed": args_cli.server_seed,
+            "server_device": args_cli.server_device,
             "n_action_steps": args_cli.n_action_steps,
+            "render_width": args_cli.render_width,
+            "render_height": args_cli.render_height,
+            "policy_image_size": args_cli.policy_image_size,
+            "lift_threshold_m": args_cli.lift_threshold_m,
+            "outcome_counts": outcome_counts,
             "results": results,
         }
         (output_dir / "evaluation.json").write_text(

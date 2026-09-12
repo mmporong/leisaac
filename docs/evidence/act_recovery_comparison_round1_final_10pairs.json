@@ -1,0 +1,271 @@
+{
+  "comparison": "paired exploratory comparison from one training seed",
+  "interpretation": "This report compares 10 paired rollout seeds from a single training seed; it does not establish statistical superiority.",
+  "seeds": [
+    4000,
+    4001,
+    4002,
+    4003,
+    4004,
+    4005,
+    4006,
+    4007,
+    4008,
+    4009
+  ],
+  "num_pairs": 10,
+  "conditions": {
+    "task": "LeIsaac-SO101-PickCubeIntoBox-v0",
+    "horizon": 1200,
+    "server_seed": 0,
+    "n_action_steps": 30,
+    "lift_threshold_m": 0.02,
+    "server_device": "cpu",
+    "render_width": 320,
+    "render_height": 240,
+    "policy_image_size": 84
+  },
+  "baseline": {
+    "directory": "/data/lim/leisaac/outputs/evaluation/act_recovery_comparison_round1/baseline80",
+    "checkpoint": "/data/lim/leisaac/outputs/lerobot/act_recovery_comparison_round1/baseline80/checkpoints/003000/pretrained_model",
+    "successes": 0,
+    "success_rate": 0.0,
+    "outcome_counts": {
+      "success": 0,
+      "no_lift": 8,
+      "low_after_lift": 1,
+      "lifted_not_completed": 1
+    }
+  },
+  "recovery": {
+    "directory": "/data/lim/leisaac/outputs/evaluation/act_recovery_comparison_round1/recovery84",
+    "checkpoint": "/data/lim/leisaac/outputs/lerobot/act_recovery_comparison_round1/recovery84/checkpoints/003000/pretrained_model",
+    "successes": 1,
+    "success_rate": 0.1,
+    "outcome_counts": {
+      "success": 1,
+      "no_lift": 9,
+      "low_after_lift": 0,
+      "lifted_not_completed": 0
+    }
+  },
+  "delta_percentage_points": 10.0,
+  "paired": {
+    "both_success": 0,
+    "both_failure": 9,
+    "baseline_only": 0,
+    "recovery_only": 1
+  },
+  "per_seed": [
+    {
+      "seed": 4000,
+      "baseline": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "recovery": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "initial_state_equal": {
+        "initial_scene_state_sha256": true,
+        "initial_cube_xyz": true,
+        "initial_joint_pos": true,
+        "tolerance": 1e-06
+      },
+      "initial_observation_sha256_equal": {
+        "front": false,
+        "wrist": false
+      }
+    },
+    {
+      "seed": 4001,
+      "baseline": {
+        "success": false,
+        "outcome": "low_after_lift"
+      },
+      "recovery": {
+        "success": true,
+        "outcome": "success"
+      },
+      "initial_state_equal": {
+        "initial_scene_state_sha256": true,
+        "initial_cube_xyz": true,
+        "initial_joint_pos": true,
+        "tolerance": 1e-06
+      },
+      "initial_observation_sha256_equal": {
+        "front": false,
+        "wrist": false
+      }
+    },
+    {
+      "seed": 4002,
+      "baseline": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "recovery": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "initial_state_equal": {
+        "initial_scene_state_sha256": true,
+        "initial_cube_xyz": true,
+        "initial_joint_pos": true,
+        "tolerance": 1e-06
+      },
+      "initial_observation_sha256_equal": {
+        "front": false,
+        "wrist": false
+      }
+    },
+    {
+      "seed": 4003,
+      "baseline": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "recovery": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "initial_state_equal": {
+        "initial_scene_state_sha256": true,
+        "initial_cube_xyz": true,
+        "initial_joint_pos": true,
+        "tolerance": 1e-06
+      },
+      "initial_observation_sha256_equal": {
+        "front": false,
+        "wrist": true
+      }
+    },
+    {
+      "seed": 4004,
+      "baseline": {
+        "success": false,
+        "outcome": "lifted_not_completed"
+      },
+      "recovery": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "initial_state_equal": {
+        "initial_scene_state_sha256": true,
+        "initial_cube_xyz": true,
+        "initial_joint_pos": true,
+        "tolerance": 1e-06
+      },
+      "initial_observation_sha256_equal": {
+        "front": false,
+        "wrist": false
+      }
+    },
+    {
+      "seed": 4005,
+      "baseline": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "recovery": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "initial_state_equal": {
+        "initial_scene_state_sha256": true,
+        "initial_cube_xyz": true,
+        "initial_joint_pos": true,
+        "tolerance": 1e-06
+      },
+      "initial_observation_sha256_equal": {
+        "front": false,
+        "wrist": false
+      }
+    },
+    {
+      "seed": 4006,
+      "baseline": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "recovery": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "initial_state_equal": {
+        "initial_scene_state_sha256": true,
+        "initial_cube_xyz": true,
+        "initial_joint_pos": true,
+        "tolerance": 1e-06
+      },
+      "initial_observation_sha256_equal": {
+        "front": false,
+        "wrist": false
+      }
+    },
+    {
+      "seed": 4007,
+      "baseline": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "recovery": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "initial_state_equal": {
+        "initial_scene_state_sha256": true,
+        "initial_cube_xyz": true,
+        "initial_joint_pos": true,
+        "tolerance": 1e-06
+      },
+      "initial_observation_sha256_equal": {
+        "front": false,
+        "wrist": false
+      }
+    },
+    {
+      "seed": 4008,
+      "baseline": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "recovery": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "initial_state_equal": {
+        "initial_scene_state_sha256": true,
+        "initial_cube_xyz": true,
+        "initial_joint_pos": true,
+        "tolerance": 1e-06
+      },
+      "initial_observation_sha256_equal": {
+        "front": false,
+        "wrist": false
+      }
+    },
+    {
+      "seed": 4009,
+      "baseline": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "recovery": {
+        "success": false,
+        "outcome": "no_lift"
+      },
+      "initial_state_equal": {
+        "initial_scene_state_sha256": true,
+        "initial_cube_xyz": true,
+        "initial_joint_pos": true,
+        "tolerance": 1e-06
+      },
+      "initial_observation_sha256_equal": {
+        "front": false,
+        "wrist": false
+      }
+    }
+  ]
+}

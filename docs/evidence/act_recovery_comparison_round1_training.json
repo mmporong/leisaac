@@ -1,0 +1,117 @@
+{
+  "plan": {
+    "experiment": "act_recovery_comparison_round1",
+    "created_on": "2026-09-12",
+    "purpose": "Compare equal-budget ACT fine-tuning on baseline train80 versus train80 plus four successful Mimic recovery episodes",
+    "source_checkpoint": "outputs/lerobot/so101_act_next_state_mimic100_seed43_chunk30_30000/checkpoints/030000/pretrained_model",
+    "arms": {
+      "baseline80": "datasets/lerobot/so101_mimic100_train_valid/train",
+      "recovery84": "datasets/lerobot/so101_mimic_train80_recovery4_next_state_84"
+    },
+    "normalization": "Preserve the identical source checkpoint processors; do not replace stats with either dataset's stats",
+    "training": {
+      "resume": false,
+      "steps_per_arm": 3000,
+      "batch_size": 8,
+      "num_workers": 2,
+      "seed": 43,
+      "optimizer_lr": 1e-05,
+      "optimizer_lr_backbone": 1e-06,
+      "save_freq": 3000,
+      "cudnn_deterministic": true,
+      "image_augmentation": false,
+      "sample_weighting": null
+    },
+    "evaluation": {
+      "seeds": [
+        4000,
+        4001,
+        4002,
+        4003,
+        4004,
+        4005,
+        4006,
+        4007,
+        4008,
+        4009
+      ],
+      "fresh_simulator_process_per_rollout": true,
+      "alternate_arm_order_by_seed": true,
+      "horizon": 1200,
+      "server_device": "cpu",
+      "server_seed": 0,
+      "n_action_steps": 30,
+      "lift_threshold_m": 0.02,
+      "render_width": 320,
+      "render_height": 240,
+      "policy_image_size": 84,
+      "video_count_per_process": 1,
+      "primary_metric": "Task success, with per-seed paired outcomes",
+      "secondary_metrics": [
+        "max_cube_lift_m",
+        "outcome",
+        "clipped_steps"
+      ],
+      "initial_state_check": "Compare full physical scene state SHA256 including orientations and velocities, plus cube XYZ and joint positions; retain image hashes to expose render nondeterminism",
+      "excluded_recovery_seeds": [
+        3100,
+        3101,
+        3102,
+        3103
+      ]
+    },
+    "constraints": {
+      "simulation_visual_cube_side_m": 0.03,
+      "physical_robot_execution": false,
+      "reinforcement_learning": false,
+      "interpretation": "Single-training-seed exploratory comparison; not a convergence or statistical-superiority claim"
+    }
+  },
+  "source_model_sha256": "ccd6388489d2d103f386300923334a9952882719292cbce962adb9424e991565",
+  "arms": {
+    "baseline80": {
+      "checkpoint": "outputs/lerobot/act_recovery_comparison_round1/baseline80/checkpoints/003000/pretrained_model",
+      "model_sha256": "9154344a81b4a4f19692aa3789ef75142fbaf02bac55a4221c7f1bffca3362f5",
+      "changed_model_tensors": 153,
+      "total_model_tensors": 234,
+      "normalizer_flat_values_equal_to_source": true,
+      "active_mean_std_shape_and_values_equal_to_source": true,
+      "training": {
+        "steps": 3000,
+        "batch_size": 8,
+        "num_workers": 2,
+        "seed": 43,
+        "resume": false,
+        "cudnn_deterministic": true
+      },
+      "dataset": {
+        "repo_id": "local/so101_baseline80",
+        "root": "/data/lim/leisaac/datasets/lerobot/so101_mimic100_train_valid/train"
+      },
+      "optimizer_lr": 1e-05,
+      "optimizer_lr_backbone": 1e-06
+    },
+    "recovery84": {
+      "checkpoint": "outputs/lerobot/act_recovery_comparison_round1/recovery84/checkpoints/003000/pretrained_model",
+      "model_sha256": "03cf30d21b276dcb2f356d245b0f47c57f6601be5a52e9e53080941e2479624d",
+      "changed_model_tensors": 153,
+      "total_model_tensors": 234,
+      "normalizer_flat_values_equal_to_source": true,
+      "active_mean_std_shape_and_values_equal_to_source": true,
+      "training": {
+        "steps": 3000,
+        "batch_size": 8,
+        "num_workers": 2,
+        "seed": 43,
+        "resume": false,
+        "cudnn_deterministic": true
+      },
+      "dataset": {
+        "repo_id": "local/so101_recovery84",
+        "root": "/data/lim/leisaac/datasets/lerobot/so101_mimic_train80_recovery4_next_state_84"
+      },
+      "optimizer_lr": 1e-05,
+      "optimizer_lr_backbone": 1e-06
+    }
+  }
+}

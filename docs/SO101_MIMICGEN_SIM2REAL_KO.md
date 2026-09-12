@@ -773,10 +773,110 @@ python scripts/imitation_learning/test_mimic_recovery_reset.py
 action 정규화 평균이 해당 subset의 float64 재계산과 1e-6 이내로 일치함을 검증했다.
 LeRobot에서는 split 안의 episode 번호가 다시 매겨지므로 원본 번호를 그대로 재사용하지 않는다.
 
-현재 완료 범위는 복구 데이터 생성·영상 저장·학습 데이터 연결이다. **ACT 재학습, 새 상태의
-정책 성공률 개선, 강화학습, 실물 실행은 아직 하지 않았다.** 다음 비교는 대조군 train 80회와
+이 단계까지의 완료 범위는 복구 데이터 생성·영상 저장·학습 데이터 연결이었다. 다음 비교는 대조군 train 80회와
 복구 추가 train 84회에 같은 추가 학습 예산을 주고, 데이터 생성에 사용하지 않은 rollout seed에서
 성공률을 비교하는 것이다. 3100~3103은 복구 학습용 데이터에 포함됐으므로 그 비교의 미학습 seed로 쓰지 않는다.
+
+### 복구 데이터 추가 효과의 ACT 대조 실험 — 2026-09-12
+
+**20/20회 평가 완료: 대조군 0/10, 복구 추가 모델 1/10**이다. 15회 시점에 잠시 중단했다가
+사용자 요청에 따라 남은 5회를 완료했다. 현재 결과·파일·후속 작업은
+[완료·다음 작업 기록](HANDOFF_ACT_RECOVERY_COMPARISON_20260912.md)에 있다.
+
+비교 대상은 **동일한 ACT 30,000스텝 체크포인트에서 각각 3,000스텝 추가 학습한 두 모델**이다.
+한쪽만 더 오래 학습하는 비교가 아니다. 원본 10회는 MimicGen의 source이고, 여기서 80회와
+84회는 증강·분리 이후 실제 학습 폴더의 에피소드 수다. 강화학습이나 실물 실행은 포함하지 않는다.
+
+| 항목 | 대조군 `baseline80` | 복구 추가 `recovery84` |
+|---|---|---|
+| 추가 학습 데이터 | 기존 train 80회 / 45,920프레임 | 같은 80회 + 공식 MimicGen 복구 4회 / 48,159프레임 |
+| 추가 학습량 | 3,000스텝, batch 8 | 동일 |
+| 시작 가중치 | `so101_act_next_state_mimic100_seed43_chunk30_30000`의 `030000` | 동일 |
+| 학습 seed / optimizer | 43 / 새 optimizer (`resume=false`) | 동일 |
+| 학습률 / backbone 학습률 | 1e-5 / 1e-6 | 동일 |
+| 정규화 | 시작 체크포인트의 통계를 유지 | 동일 |
+| 이미지 증강 / 복구 가중 샘플링 | 사용하지 않음 / 사용하지 않음 | 동일 |
+
+설치된 LeRobot trainer는 기본 warm-start에서 새 데이터셋의 통계로 정규화를 덮어쓴다.
+이 비교에서는 데이터 추가 이외의 차이를 줄이기 위해 저장소의
+`scripts/imitation_learning/finetune_act_fixed_normalizer.py`가 processor factory 호출에서
+통계 override만 제외한다. LeRobot 설치본은 수정하지 않으며, 기기·feature·이름 변환 설정은
+유지한다. 기존 체크포인트에 저장된 통계는 원래 100회에서 온 값이므로, 이번 학습 폴더만으로
+새로 계산한 정규화라고 표현하지 않는다. valid 20회의 오프라인 점수를 이 실험의 주 지표로 삼지 않는다.
+
+두 최종 체크포인트의 설정과 정규화를 검증했다. ACT가 쓰는 action·관절·카메라 mean/std는
+시작 체크포인트와 shape 및 값이 같고, 나머지 저장 통계도 펼친 값이 같다. 사용하지 않는 count/index
+등 일부 scalar 메타데이터는 저장 과정에서 `(1,)`에서 `()`로 shape만 바뀌었다.
+두 모델 각각 전체 234개 모델 텐서 중 153개가 바뀌어 실제 추가 학습도 확인했다.
+
+평가 조건은 실행 전에 `outputs/lerobot/act_recovery_comparison_round1/plan.json`에 고정했다.
+seed 4000~4009 각각을 두 모델에 적용하고 **매 rollout마다 Isaac Sim 프로세스를 새로 시작**한다.
+seed 순서에 따라 두 모델 실행 순서를 번갈아 바꾸며, horizon 1,200, CPU 추론 seed 0,
+`n_action_steps=30`, 전면·손목 320×240 렌더 / 84×84 정책 입력을 사용한다.
+씬은 기존 시각 3cm / 충돌 3.0154cm 큐브를 유지한다. 사용자 목표인 실물 4cm 큐브 검증과는 별개다.
+
+주 지표는 기존 태스크의 박스 안 완료 판정이다. 박스 기준 큐브 중심의 XY 각 절댓값이 0.045m 미만,
+상대 Z가 0.012~0.075m 사이이며 그리퍼 관절이 0.26rad보다 크면 해당 스텝에서 성공으로 종료한다.
+방출 후 일정 시간 유지나 정착 여부는 검사하지 않으므로, 안정적인 최종 배치 성공률과 구분한다.
+보조 분류는 큐브의 초기 높이 대비 2cm 상승을
+기준으로 `no_lift`(한 번도 기준 높이에 도달하지 않음), `low_after_lift`(상승했지만 마지막에는
+기준 아래), `lifted_not_completed`(마지막에도 높지만 미완료)를 기록한다. 이는 관찰 분류이며
+`low_after_lift`만으로 물체를 떨어뜨렸다고 단정하지 않는다.
+
+`scripts/evaluation/compare_act_rollouts.py`는 명령에 지정한 모든 seed의 결과가 있고, 실행 조건과
+초기 물리 상태 전체의 SHA-256(자세·속도 포함)이 두 모델에서 같은지 검증한 뒤 집계한다.
+초기 RGB 해시는 RTX 렌더의 비결정성을 드러내기 위해 일치 여부를 별도로 기록한다.
+각 모델의 성공 장면뿐 아니라 실패 영상도 모두 보존한다. 학습 seed 하나의 10쌍 탐색 실험이므로
+성공률 차이가 생겨도 통계적 우월성이나 안정적인 실물 전이로 해석하지 않는다.
+
+- 학습 로그·계획: `outputs/lerobot/act_recovery_comparison_round1/`
+- 추가 학습 체크포인트: 위 폴더의 `{baseline80,recovery84}/checkpoints/003000/pretrained_model`
+- rollout 결과·영상: `outputs/evaluation/act_recovery_comparison_round1/{baseline80,recovery84}/seed_400*/`
+- 평가 실행 로그: `outputs/evaluation/act_recovery_comparison_round1/logs/`
+
+학습 재현은 LeRobot 환경에서 아래와 같이 실행한다. 같은 출력 폴더를 재사용하지 않는다.
+`recovery84`도 같은 명령을 사용하되 dataset root·출력 폴더를 표의 해당 경로로 바꾸고
+`--dataset.repo_id=local/so101_recovery84`를 지정한다.
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+python scripts/imitation_learning/finetune_act_fixed_normalizer.py \
+  --policy.path=outputs/lerobot/so101_act_next_state_mimic100_seed43_chunk30_30000/checkpoints/030000/pretrained_model \
+  --policy.device=cuda --policy.push_to_hub=false \
+  --policy.optimizer_lr=0.00001 --policy.optimizer_lr_backbone=0.000001 \
+  --dataset.repo_id=local/so101_baseline80 \
+  --dataset.root=datasets/lerobot/so101_mimic100_train_valid/train \
+  --output_dir=outputs/lerobot/act_recovery_comparison_rebuild/baseline80 \
+  --resume=false --steps=3000 --save_freq=3000 --batch_size=8 --num_workers=2 \
+  --seed=43 --eval_steps=0 --log_freq=100 --wandb.enable=false --cudnn_deterministic=true
+```
+
+#### 10쌍 최종 결과
+
+| 관찰 결과 | 대조군 train 80 | 복구 추가 train 84 |
+|---|---|---|
+| 성공 | 0/10 | 1/10 |
+| 상승 기준 미달 | 8 | 9 |
+| 상승 후 마지막에는 낮음 | 1 | 0 |
+| 마지막에도 높지만 미완료 | 1 | 0 |
+
+복구 추가 모델만 seed 4001에서 753스텝에 성공했다. 양쪽 실패는 나머지 9쌍이며, 대조군만
+성공한 조건은 없다. 관측 성공률 차이는 +10%p지만 표본 수·학습 seed 수가 작고 반복 성공은
+확인하지 않았으므로 정책 개선이 입증됐다고 단정하지 않는다. 실패 19회 중 17회는 상승 기준 미달이다.
+
+10쌍의 초기 scene 물리 상태 해시는 모두 일치했다. 초기 이미지 해시는 전면 0/10,
+손목 1/10만 같아 픽셀까지 완전히 같은 입력은 아니었다. 모든 결과 JSON과 영상 20개의
+프레임 수 일치, 640×240 / 60fps를 검증했다. seed 4001 성공 영상은 박스 안 큐브·열린 그리퍼를,
+대조군 seed 4004 실패 영상은 박스 밖에 들고 있는 상태를 마지막 프레임에서도 확인했다.
+
+- [최종 10쌍 비교 JSON](evidence/act_recovery_comparison_round1_final_10pairs.json)
+- [학습 조건·모델 SHA-256 검증](evidence/act_recovery_comparison_round1_training.json)
+- [15회 시점의 7쌍 중간 기록](evidence/act_recovery_comparison_round1_partial_7pairs.json)은 이력용
+- 성공 ACT 영상: `outputs/evaluation/act_recovery_comparison_round1/recovery84/seed_4001/rollout_001_success.mp4`
+
+복구 데이터 생성·학습 연결·대조 평가까지는 끝났지만 안정적인 파지는 아직 해결하지 못했다.
+다음은 실패 원인 계측, 성공 반복 재현성, 방출 후 유지 판정 및 별도 4cm 씬 검증이다.
+이 결과만으로 500회 확대나 강화학습 전환이 효과적이라고 결론 내리지 않는다.
 
 ## 포트폴리오에서 보여줄 증거
 
@@ -788,3 +888,7 @@ LeRobot에서는 split 안의 episode 번호가 다시 매겨지므로 원본 �
 6. 이후 성공 정책이 확보됐을 때 동일 정책의 실물 팔로워 결과
 
 현재 포트폴리오 표현은 `리더 원본 10회 → 독립 seed MimicGen 성공 50회·100회 생성 → IK 관절 목표 불연속 발견·다음 상태 라벨 정제 → ACT 오프라인 RMSE 0.0415 rad → 미학습 시드 성공 장면 2/10, 성공 seed 반복 0/2`가 정확하다. “안정적 자율 파지”나 “실물 전이 완료”로 표현하면 안 된다.
+
+후속 증거로 `공식 MimicGen 실패 상태 복구 성공 4회 확보 → 동일 추가 학습 예산의 ACT 비교 →
+새 평가 10쌍에서 대조군 0/10, 복구 추가 1/10`을 별도로 덧붙일 수 있다. 이전 2/10과 이번
+0/10·1/10은 모델과 평가 seed가 달라 직접적인 성능 증감 비교로 쓰지 않는다.
