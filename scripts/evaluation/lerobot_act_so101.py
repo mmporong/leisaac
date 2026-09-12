@@ -29,6 +29,18 @@ parser.add_argument("--n-action-steps", type=int, default=None)
 parser.add_argument("--render-width", type=int, default=320)
 parser.add_argument("--render-height", type=int, default=240)
 parser.add_argument("--policy-image-size", type=int, default=84)
+parser.add_argument(
+    "--failure-state-file",
+    type=Path,
+    default=None,
+    help="Optional torch file receiving simulator states sampled from failed rollouts.",
+)
+parser.add_argument(
+    "--failure-state-interval",
+    type=int,
+    default=120,
+    help="Step interval for failure-state snapshots. Snapshots are kept only when the rollout fails.",
+)
 AppLauncher.add_app_launcher_args(parser)
 args_cli = parser.parse_args()
 args_cli.enable_cameras = True
@@ -105,6 +117,20 @@ def resize_policy_image(image: torch.Tensor) -> np.ndarray:
     )
 
 
+def tensors_to_cpu(value):
+    if isinstance(value, dict):
+        return {key: tensors_to_cpu(item) for key, item in value.items()}
+    return value.detach().cpu()
+
+
+def capture_state(env, seed: int, step: int) -> dict:
+    return {
+        "seed": seed,
+        "step": step,
+        "state": tensors_to_cpu(env.scene.get_state(is_relative=True)),
+    }
+
+
 def main() -> None:
     if args_cli.num_rollouts <= 0 or args_cli.horizon <= 0:
         raise ValueError("num-rollouts and horizon must be positive")
@@ -116,6 +142,8 @@ def main() -> None:
         raise ValueError("this ACT server expects policy-image-size=84")
     if args_cli.n_action_steps is not None and args_cli.n_action_steps <= 0:
         raise ValueError("n-action-steps must be positive")
+    if args_cli.failure_state_interval <= 0:
+        raise ValueError("failure-state-interval must be positive")
 
     output_dir = args_cli.output_dir.expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -158,6 +186,7 @@ def main() -> None:
         upper = robot.data.soft_joint_pos_limits[0, :, 1]
 
         results = []
+        failure_states = []
         for trial in range(args_cli.num_rollouts):
             trial_seed = args_cli.seed + trial
             torch.manual_seed(trial_seed)
@@ -180,6 +209,7 @@ def main() -> None:
             )
             clipped_steps = 0
             success = False
+            trial_state_snapshots = []
             try:
                 for step in range(args_cli.horizon):
                     policy_obs = observations["policy"]
@@ -214,6 +244,12 @@ def main() -> None:
                     clipped = action.clamp(lower, upper)
                     clipped_steps += int(not torch.equal(action, clipped))
                     observations, _, _, _, _ = env.step(clipped)
+                    completed_step = step + 1
+                    if (
+                        args_cli.failure_state_file is not None
+                        and completed_step % args_cli.failure_state_interval == 0
+                    ):
+                        trial_state_snapshots.append(capture_state(env, trial_seed, completed_step))
                     if video_writer is not None:
                         front = observations["policy"]["front"][0].detach().cpu().numpy()
                         wrist = observations["policy"]["wrist"][0].detach().cpu().numpy()
@@ -244,6 +280,11 @@ def main() -> None:
                 "final_cube_xyz": env.scene["cube"].data.root_pos_w[0, :3].detach().cpu().tolist(),
             }
             results.append(result)
+            if not success and args_cli.failure_state_file is not None:
+                final_step = step + 1
+                if not trial_state_snapshots or trial_state_snapshots[-1]["step"] != final_step:
+                    trial_state_snapshots.append(capture_state(env, trial_seed, final_step))
+                failure_states.extend(trial_state_snapshots)
             print(json.dumps(result), flush=True)
 
         summary = {
@@ -262,6 +303,18 @@ def main() -> None:
             json.dumps(summary, indent=2),
             encoding="utf-8",
         )
+        if args_cli.failure_state_file is not None:
+            failure_state_file = args_cli.failure_state_file.expanduser().resolve()
+            failure_state_file.parent.mkdir(parents=True, exist_ok=True)
+            torch.save(
+                {
+                    "format_version": 1,
+                    "task": args_cli.task,
+                    "checkpoint": str(args_cli.checkpoint.expanduser().resolve()),
+                    "states": failure_states,
+                },
+                failure_state_file,
+            )
         print(json.dumps(summary, indent=2))
     finally:
         if connection is not None:

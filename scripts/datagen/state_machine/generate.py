@@ -15,6 +15,7 @@ if multiprocessing.get_start_method() != "spawn":
     multiprocessing.set_start_method("spawn", force=True)
 
 import argparse
+import json
 import os
 import signal
 import time
@@ -25,6 +26,12 @@ parser = argparse.ArgumentParser(description="State machine data generation for 
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to simulate.")
 parser.add_argument("--task", type=str, required=True, help="Name of the task.")
 parser.add_argument("--seed", type=int, default=None, help="Seed for the environment.")
+parser.add_argument(
+    "--initial_state_file",
+    type=str,
+    default=None,
+    help="Optional torch file of policy failure states created by the ACT evaluator.",
+)
 parser.add_argument("--record", action="store_true", help="Whether to enable record function.")
 parser.add_argument("--step_hz", type=int, default=60, help="Environment stepping rate in Hz.")
 parser.add_argument(
@@ -34,7 +41,14 @@ parser.add_argument("--resume", action="store_true", help="Whether to resume rec
 parser.add_argument(
     "--num_demos", type=int, default=1, help="Number of demonstrations to record. Set to 0 for infinite."
 )
+parser.add_argument(
+    "--max_attempts",
+    type=int,
+    default=0,
+    help="Maximum completed episodes, including failures. 0 means unlimited.",
+)
 parser.add_argument("--quality", action="store_true", help="Whether to enable quality render mode.")
+parser.add_argument("--summary_file", type=str, default=None, help="Optional JSON report of every attempted episode.")
 parser.add_argument("--use_lerobot_recorder", action="store_true", help="Whether to use lerobot recorder.")
 parser.add_argument("--lerobot_dataset_repo_id", type=str, default=None, help="Lerobot Dataset repository ID.")
 parser.add_argument("--lerobot_dataset_fps", type=int, default=30, help="Lerobot Dataset frames per second.")
@@ -52,14 +66,57 @@ import torch
 from isaaclab.envs import DirectRLEnv, ManagerBasedRLEnv
 from isaaclab.managers import DatasetExportMode, TerminationTermCfg
 from isaaclab_tasks.utils import parse_env_cfg
-from leisaac.datagen.state_machine import PickOrangeStateMachine
+from leisaac.datagen.state_machine import PickCubeIntoBoxStateMachine, PickOrangeStateMachine
 from leisaac.enhance.managers import EnhanceDatasetExportMode, StreamingRecorderManager
 from leisaac.utils.env_utils import dynamic_reset_gripper_effort_limit_sim
 
 # Maps gym task id → (StateMachineClass, device_type)
 TASK_REGISTRY = {
     "LeIsaac-SO101-PickOrange-v0": (PickOrangeStateMachine, "so101_state_machine"),
+    "LeIsaac-SO101-PickCubeIntoBox-v0": (PickCubeIntoBoxStateMachine, "so101_cube_state_machine"),
 }
+
+
+def _move_tensors(value, device):
+    if isinstance(value, dict):
+        return {key: _move_tensors(item, device) for key, item in value.items()}
+    if isinstance(value, torch.Tensor):
+        return value.to(device)
+    return value
+
+
+def _load_initial_states(path: str | None, task_name: str):
+    if path is None:
+        return []
+    payload = torch.load(path, map_location="cpu", weights_only=True)
+    if payload.get("format_version") != 1:
+        raise ValueError(f"Unsupported failure-state format: {payload.get('format_version')}")
+    if payload.get("task") != task_name:
+        raise ValueError(f"Failure states belong to {payload.get('task')!r}, not {task_name!r}")
+    states = payload.get("states", [])
+    if not states:
+        raise ValueError(f"No failure states found in {path}")
+    return states
+
+
+def _restore_position_control_state(env, entry):
+    env.reset_to(
+        _move_tensors(entry["state"], env.device), None,
+        seed=int(entry["seed"]), is_relative=True,
+    )
+    # Update after reset_to exports the preceding episode with its own seed.
+    # StreamingRecorderManager uses cfg.seed for episode provenance.
+    env.cfg.seed = int(entry["seed"])
+    # Isaac Lab reset_to uses measured velocities as PD velocity targets.
+    # Keep physical velocities but clear the targets for position control.
+    for articulation in env.scene.articulations.values():
+        articulation.set_joint_velocity_target(torch.zeros_like(articulation.data.joint_vel))
+
+
+def _finalize_pending_episode(env, pending):
+    """Flush only when the last completed episode has no following reset."""
+    if pending:
+        env.recorder_manager.record_pre_reset(None)
 
 
 class RateLimiter:
@@ -88,6 +145,8 @@ class RateLimiter:
 
 def auto_terminate(env: ManagerBasedRLEnv | DirectRLEnv, success: bool):
     if hasattr(env, "termination_manager"):
+        if "success" not in env.termination_manager.active_terms:
+            return
         if success:
             env.termination_manager.set_term_cfg(
                 "success",
@@ -165,10 +224,11 @@ def _replace_recorder_manager(env, env_cfg, args_cli):
         env.recorder_manager.compression = "lzf"
 
 
-def _on_episode_done(env, sm, args_cli, resume_recorded_demo_count, current_recorded_demo_count, start_record_state):
+def _on_episode_done(env, sm, args_cli, resume_recorded_demo_count, current_recorded_demo_count, start_record_state, success=None):
     """Handle end-of-episode logic. Returns (current_recorded_demo_count, start_record_state, should_break)."""
     try:
-        success = sm.check_success(env)
+        if success is None:
+            success = sm.check_success(env)
     except Exception as e:
         print("Success check failed:", e)
         success = False
@@ -204,10 +264,6 @@ def _on_episode_done(env, sm, args_cli, resume_recorded_demo_count, current_reco
         print(f"All {args_cli.num_demos} demonstrations recorded. Exiting the app.")
         return current_recorded_demo_count, start_record_state, True
 
-    env.reset()
-    sm.reset()
-    auto_terminate(env, False)
-
     if args_cli.record and args_cli.num_demos > 0 and current_recorded_demo_count >= args_cli.num_demos:
         print(f"All {args_cli.num_demos} demonstrations recorded. Exiting the app.")
         return current_recorded_demo_count, start_record_state, True
@@ -217,6 +273,10 @@ def _on_episode_done(env, sm, args_cli, resume_recorded_demo_count, current_reco
 
 def main():
     """Run a state machine in a LeIsaac manipulation environment."""
+    if args_cli.max_attempts < 0 or args_cli.num_demos < 0 or args_cli.step_hz <= 0:
+        raise ValueError("attempt/demo limits must be nonnegative and step_hz must be positive")
+    if args_cli.initial_state_file and args_cli.num_envs != 1:
+        raise ValueError("policy failure snapshots require num_envs=1")
     task_name = args_cli.task
     if task_name not in TASK_REGISTRY:
         raise ValueError(
@@ -232,6 +292,8 @@ def main():
     env_cfg = parse_env_cfg(task_name, device=args_cli.device, num_envs=args_cli.num_envs)
     env_cfg.use_teleop_device(device)
     env_cfg.seed = args_cli.seed if args_cli.seed is not None else int(time.time())
+    initial_states = _load_initial_states(args_cli.initial_state_file, task_name)
+    initial_state_index = 0
 
     is_direct_env = "Direct" in task_name
     _configure_env_cfg(env_cfg, args_cli, is_direct_env, output_dir, output_file_name)
@@ -258,14 +320,37 @@ def main():
     # one-time state machine setup (e.g. FK calibration)
     sm = SMClass()
     sm.setup(env)
-    env.reset()
-    sm.reset()
+
+    def reset_episode() -> bool:
+        nonlocal initial_state_index
+        sm.reset()
+        if initial_states:
+            if initial_state_index >= len(initial_states):
+                return False
+            entry = initial_states[initial_state_index]
+            initial_state_index += 1
+            _restore_position_control_state(env, entry)
+            print(
+                f"Loaded policy failure state {initial_state_index}/{len(initial_states)} "
+                f"(seed={entry['seed']}, step={entry['step']})."
+            )
+        else:
+            env.reset()
+        if hasattr(sm, "begin_episode"):
+            sm.begin_episode(env)
+        auto_terminate(env, False)
+        return True
+
+    reset_episode()
 
     resume_recorded_demo_count = 0
     if args_cli.record and args_cli.resume:
         resume_recorded_demo_count = env.recorder_manager._dataset_file_handler.get_num_episodes()
         print(f"Resume recording from existing dataset file with {resume_recorded_demo_count} demonstrations.")
     current_recorded_demo_count = resume_recorded_demo_count
+    attempt_count = 0
+    episode_results = []
+    episode_needs_export = False
 
     start_record_state = False
     interrupted = False
@@ -285,11 +370,29 @@ def main():
                     dynamic_reset_gripper_effort_limit_sim(env, device)
 
                 if sm.is_episode_done:
+                    episode_needs_export = args_cli.record
+                    attempt_count += 1
+                    episode_results.append({
+                        "attempt": attempt_count,
+                        "source_seed": initial_states[initial_state_index - 1]["seed"] if initial_states else env_cfg.seed,
+                        "source_step": initial_states[initial_state_index - 1]["step"] if initial_states else None,
+                        "success": sm.check_success(env),
+                        "final_cube_xyz": env.scene["cube"].data.root_pos_w.detach().cpu().tolist()
+                        if "cube" in env.scene.rigid_objects else None,
+                    })
                     current_recorded_demo_count, start_record_state, should_break = _on_episode_done(
-                        env, sm, args_cli, resume_recorded_demo_count, current_recorded_demo_count, start_record_state
+                        env, sm, args_cli, resume_recorded_demo_count, current_recorded_demo_count, start_record_state,
+                        success=episode_results[-1]["success"],
                     )
                     if should_break:
                         break
+                    if args_cli.max_attempts > 0 and attempt_count >= args_cli.max_attempts:
+                        print(f"Reached max_attempts={args_cli.max_attempts}. Exiting the app.")
+                        break
+                    if not reset_episode():
+                        print(f"All {len(initial_states)} policy failure states were attempted.")
+                        break
+                    episode_needs_export = False
                 else:
                     if not start_record_state:
                         if args_cli.record:
@@ -312,7 +415,22 @@ def main():
         print(f"\n[ERROR] An error occurred: {e}\n")
         traceback.print_exc()
         print("[INFO] Cleaning up resources...")
+        raise
     finally:
+        _finalize_pending_episode(env, episode_needs_export)
+        if args_cli.summary_file:
+            from pathlib import Path
+
+            summary_path = Path(args_cli.summary_file).expanduser()
+            summary_path.parent.mkdir(parents=True, exist_ok=True)
+            summary_path.write_text(json.dumps({
+                "task": task_name,
+                "initial_state_file": args_cli.initial_state_file,
+                "attempts": len(episode_results),
+                "successes": sum(item["success"] for item in episode_results),
+                "interrupted": interrupted,
+                "results": episode_results,
+            }, indent=2), encoding="utf-8")
         signal.signal(signal.SIGINT, original_sigint_handler)
         if args_cli.record and hasattr(env.recorder_manager, "finalize"):
             env.recorder_manager.finalize()

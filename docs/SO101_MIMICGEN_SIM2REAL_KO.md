@@ -537,13 +537,100 @@ MimicGen HDF5를 팔로워에 그대로 재생하는 것은 실물 정책 배포
 
 ## Windows 전달
 
+Linux의 MimicGen·모방학습 실험과 Windows의 강화학습 실험은 병행할 수 있다.
+Windows 작업은 동일한 큐브·박스·SO101 자산, 관절 순서, 제어 주기와 성공 판정을 먼저 재현한 뒤
+보상과 PPO 학습 환경을 검증하는 별도 작업이다. 현재 이 문서의 IL 태스크만으로 PPO가 준비됐다는 뜻은 아니다.
+ACT 체크포인트를 PPO actor에 바로 로드할 수 있다고 가정하지 않는다. 모델 구조·관측·행동이 맞는
+BC actor를 따로 학습하거나 정책 증류 어댑터를 구현한 후에 BC 초기화 PPO와 순수 PPO를 비교한다.
+Windows의 실제 설치·학습 실행은 해당 PC에서 별도로 검증해야 한다.
+
 Windows에는 Git 저장소와 대용량 산출물을 분리해서 전달한다.
 
 - Git 저장소: 태스크 코드, MimicGen 호환 패치, 이 문서
 - 별도 복사: `datasets/*.hdf5`, `outputs/portfolio/pick_cube_into_box/**/*.mp4`, 선택한 `outputs/robomimic/**/*.pth`, `outputs/evaluation/**/*.json`, `outputs/evaluation/**/*.mp4`
 - 캘리브레이션 JSON: 보드별 파일이므로 저장소에 포함하지 않고 해당 Linux 장비에 보관
 
-HDF5와 MP4는 Git에 넣지 않는다. 복사 후 양쪽에서 SHA-256을 비교해 파일 손상을 확인한다. Windows는 우선 결과 열람·보관·포트폴리오 편집 대상으로 사용하고, 리더를 이용한 원본 녹화는 현재 검증된 Linux 환경에서 수행한다.
+HDF5와 MP4는 Git에 넣지 않는다. 복사 후 양쪽에서 SHA-256을 비교해 파일 손상을 확인한다.
+Windows는 결과 열람·보관 외에 별도 강화학습 작업을 맡을 수 있다. 리더를 이용한 원본 녹화는
+현재 검증된 Linux 환경에서 수행한다. 복구 상태 `outputs/evaluation/*.pt`와 ACT의
+`pretrained_model` 디렉터리도 필요한 경우 별도 복사한다.
+
+## 실패 상태에서 이어지는 복구 데이터 실험 — 2026-09-12
+
+공식 [MimicGen 결과](https://mimicgen.github.io/)는 소수 인간 시연에서 새 물체 배치의
+시연을 생성하고 BC로 학습하는 흐름을 보여준다. 이 프로젝트의 10회 원본 증강은 그 흐름을 따른다.
+[ROBOTIS cyclo_lab](https://github.com/ROBOTIS-GIT/cyclo_lab)은 참고 구현이며 SO101 지원을 그대로 보장하지 않는다.
+
+이번에 추가한 상태 머신은 **MimicGen 원본 알고리즘이 아니라 별도의 privileged-state 복구 오라클**이다.
+시뮬레이터의 큐브·박스 위치를 읽어 ACT가 방문한 실패 상태에서 새 성공 궤적을 만드는 실험이다.
+DAgger의 상태 분포 보완 아이디어를 참고하지만, 데이터 병합·재학습·반복 평가까지 수행한 DAgger 결과는 아직 아니다.
+학습된 ACT의 성공률과 오라클 복구 성공률은 구분한다.
+
+### 확인된 상태 복원 오류
+
+Isaac Lab `InteractiveScene.reset_to()`는 저장된 `joint_velocity`를 실제 관절 속도뿐 아니라
+PD 제어기의 목표 속도로도 복원한다. 위치 제어로 이어갈 때 목표 속도가 남아 관절이 계속 밀렸다.
+`generate.py`는 복원 직후 목표 속도만 0으로 바꾼다. 물리적인 관절 속도·위치·물체 상태는 보존한다.
+회귀 테스트는 이 구분과 마지막 녹화 에피소드의 저장을 검증한다.
+
+### 실행 순서
+
+저장소 루트에서 해당 PC의 Isaac Lab Python 환경을 활성화한 뒤 실행한다.
+아래 checkpoint·snapshot·HDF5 경로는 저장소 루트 기준이며 대용량 파일은 Git에 포함되지 않는다.
+
+```bash
+python scripts/evaluation/lerobot_act_so101.py \
+  --checkpoint outputs/lerobot/so101_act_next_state_mimic100_seed43_chunk30_30000/checkpoints/030000/pretrained_model \
+  --num-rollouts 1 --horizon 1200 --seed 3000 --n-action-steps 30 \
+  --video-count 0 --output-dir outputs/evaluation/act_failure_capture \
+  --failure-state-file outputs/evaluation/act_failure_capture.pt \
+  --failure-state-interval 120 --device cuda:0 --headless
+
+python scripts/datagen/state_machine/generate.py \
+  --task LeIsaac-SO101-PickCubeIntoBox-v0 --num_envs 1 \
+  --initial_state_file outputs/evaluation/act_failure_capture.pt \
+  --num_demos 0 --max_attempts 10 --step_hz 240 \
+  --summary_file outputs/evaluation/recovery_audit.json \
+  --device cuda:0 --enable_cameras --headless
+
+python scripts/imitation_learning/test_recovery_state.py
+```
+
+`--record --dataset_file datasets/recovery.hdf5`를 추가하면 시도 전체를 기록한다.
+HDF5는 실패도 포함할 수 있으므로 각 `data/demo_*` 그룹의 `success` 속성을 확인하고 성공만 학습에 사용한다.
+`step_hz`는 실행 속도 상한이며 물리 제어 주기(현재 60Hz)를 바꾸지 않는다.
+`LEISAAC_SM_DIAGNOSTICS=1`은 단계별 턱–큐브 거리와 관절 목표를 출력한다.
+
+이 실험의 snapshot은 한 ACT rollout의 120~1200스텝 10개다. 독립 초기조건 10회가 아니다.
+오라클은 시뮬레이션 상태를 사용하고 로봇 중력을 비활성화하므로 복구 데이터의 정책 전이 성능은
+별도로 검증해야 한다. 복구 성공만으로 ACT 개선이나 실물 성공을 주장하지 않는다.
+
+### 실측 결과 및 산출물
+
+| 검증 | 결과 | 해석 |
+|---|---|---|
+| 수정 전 한 실패 rollout의 중간 상태 10개 연속 복구 | 0/10 | 복원된 목표 속도 잔류 상태 |
+| 목표 속도 수정 후 같은 10개 상태 연속 복구 | 9/10 | step 120 실패, step 240~1200 성공 |
+| step 240 새 프로세스 단독 녹화 | 0/1 | 연속 실행 성공이 단독 성공을 보장하지 않음 |
+| step 1200 새 프로세스 단독 녹화 | 1/1 | 성공 속성 및 810프레임 저장 확인 |
+| step 1200 또 다른 새 프로세스 단독 재실행 | 1/1 | 동일 상태 반복 성공, 독립 초기조건 평가는 아님 |
+
+- 연속 평가: `outputs/evaluation/oracle_recovery_seed3000_zero_velocity_target.json`
+- 단독 녹화 결과: `outputs/evaluation/oracle_recovery_seed3000_step1200_recorded.json`
+- 단독 반복: `outputs/evaluation/oracle_recovery_seed3000_step1200_repeat.json`
+- 성공 복구 데이터: `datasets/pick_cube_into_box_recovery_seed3000_step1200.hdf5`
+- 비교용 실패 데이터: `datasets/pick_cube_into_box_recovery_seed3000_step240.hdf5` (`success=false`, 학습 제외)
+- 복구 영상: `outputs/portfolio/pick_cube_into_box/recovery_seed3000_step1200.mp4`
+
+성공 HDF5의 전면·손목 RGB는 각각 810×240×320×3, 관절 상태는 810×6,
+action은 810×8(IK 자세 7 + 이진 그리퍼 1)이다. action 전체가 유한값이고 마지막 영상에서
+빨간 큐브가 파란 박스 안에 있는 것을 확인했다. 영상은 60fps 기준 13.5초다.
+이 영상은 **학습된 ACT가 성공한 영상이 아니라 ACT 실패 상태를 오라클이 복구한 영상**으로 설명한다.
+
+다음 학습 전 조건은 다른 rollout seed에서도 단독 복구가 재현되는 성공 데이터 확보,
+6관절 행동 규격 변환, 원본·MimicGen·복구의 출처 구분 및 rollout 단위 분리다.
+같은 실패 rollout의 snapshot을 train과 validation 양쪽에 나누면 안 된다.
+현재는 성공 복구 1회 확보까지 검증했으며, 데이터 병합·ACT 재학습·성능 개선은 아직 수행하지 않았다.
 
 ## 포트폴리오에서 보여줄 증거
 
