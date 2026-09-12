@@ -77,6 +77,7 @@ import leisaac  # noqa: F401
 
 HEADER = struct.Struct("!Q")
 MAX_MESSAGE_BYTES = 1_048_576
+MAX_POLICY_IMAGE_SIZE = 256
 
 
 def classify_rollout_outcome(
@@ -135,11 +136,17 @@ def connect_to_server(process: subprocess.Popen) -> socket.socket:
     raise TimeoutError("timed out waiting for ACT server")
 
 
-def resize_policy_image(image: torch.Tensor) -> np.ndarray:
+def validate_policy_image_size(image_size: int) -> int:
+    if not 1 <= image_size <= MAX_POLICY_IMAGE_SIZE:
+        raise ValueError(f"policy-image-size must be between 1 and {MAX_POLICY_IMAGE_SIZE}")
+    return image_size
+
+
+def resize_policy_image(image: torch.Tensor, image_size: int) -> np.ndarray:
     image_array = image.detach().cpu().numpy()
     return cv2.resize(
         image_array,
-        (args_cli.policy_image_size, args_cli.policy_image_size),
+        (image_size, image_size),
         interpolation=cv2.INTER_AREA,
     )
 
@@ -177,8 +184,7 @@ def main() -> None:
         raise ValueError("video-count cannot be negative")
     if args_cli.render_width <= 0 or args_cli.render_height <= 0:
         raise ValueError("render dimensions must be positive")
-    if args_cli.policy_image_size != 84:
-        raise ValueError("this ACT server expects policy-image-size=84")
+    validate_policy_image_size(args_cli.policy_image_size)
     if args_cli.n_action_steps is not None and args_cli.n_action_steps <= 0:
         raise ValueError("n-action-steps must be positive")
     if args_cli.failure_state_interval <= 0:
@@ -201,6 +207,8 @@ def main() -> None:
         args_cli.server_device,
         "--seed",
         str(args_cli.server_seed),
+        "--image-size",
+        str(args_cli.policy_image_size),
     ]
     if args_cli.n_action_steps is not None:
         server_command.extend(("--n-action-steps", str(args_cli.n_action_steps)))
@@ -257,8 +265,8 @@ def main() -> None:
             try:
                 for step in range(args_cli.horizon):
                     policy_obs = observations["policy"]
-                    front = resize_policy_image(policy_obs["front"][0])
-                    wrist = resize_policy_image(policy_obs["wrist"][0])
+                    front = resize_policy_image(policy_obs["front"][0], args_cli.policy_image_size)
+                    wrist = resize_policy_image(policy_obs["wrist"][0], args_cli.policy_image_size)
                     if initial_observation_sha256 is None:
                         initial_observation_sha256 = {
                             "front": hashlib.sha256(front.tobytes()).hexdigest(),

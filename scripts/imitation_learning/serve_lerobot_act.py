@@ -15,7 +15,8 @@ from lerobot.policies.act import ACTPolicy
 HEADER = struct.Struct("!Q")
 MAX_MESSAGE_BYTES = 1_048_576
 EXPECTED_STATE_SHAPE = (6,)
-EXPECTED_IMAGE_SHAPE = (84, 84, 3)
+DEFAULT_IMAGE_SIZE = 84
+MAX_IMAGE_SIZE = 256
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,6 +27,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--n-action-steps", type=int, default=None)
+    parser.add_argument("--image-size", type=int, default=DEFAULT_IMAGE_SIZE)
     return parser.parse_args()
 
 
@@ -51,7 +53,41 @@ def send_message(connection: socket.socket, value) -> None:
     connection.sendall(HEADER.pack(len(payload)) + payload)
 
 
-def build_observation(request: dict, device: torch.device) -> dict[str, torch.Tensor]:
+def validate_image_size(image_size: int) -> int:
+    if not 1 <= image_size <= MAX_IMAGE_SIZE:
+        raise ValueError(f"image-size must be between 1 and {MAX_IMAGE_SIZE}")
+    return image_size
+
+
+def validate_checkpoint_image_size(config, image_size: int) -> None:
+    expected_shape = (3, image_size, image_size)
+    input_features = getattr(config, "input_features", None)
+    if input_features is None:
+        raise ValueError("checkpoint config has no input_features")
+    for camera in ("front", "wrist"):
+        key = f"observation.images.{camera}"
+        if key not in input_features:
+            raise ValueError(f"checkpoint config is missing {key}")
+        feature = input_features[key]
+        shape = (
+            feature.get("shape")
+            if isinstance(feature, dict)
+            else getattr(feature, "shape", None)
+        )
+        if shape is None or tuple(shape) != expected_shape:
+            raise ValueError(
+                f"checkpoint {key} shape {shape} does not match --image-size {image_size} "
+                f"(expected {expected_shape})"
+            )
+
+
+def build_observation(
+    request: dict,
+    device: torch.device,
+    image_size: int = DEFAULT_IMAGE_SIZE,
+) -> dict[str, torch.Tensor]:
+    validate_image_size(image_size)
+    expected_image_shape = (image_size, image_size, 3)
     state = np.asarray(request["state"], dtype=np.float32)
     if state.shape != EXPECTED_STATE_SHAPE or not np.isfinite(state).all():
         raise ValueError(f"invalid state: shape={state.shape}, finite={np.isfinite(state).all()}")
@@ -61,15 +97,19 @@ def build_observation(request: dict, device: torch.device) -> dict[str, torch.Te
     for camera in ("front", "wrist"):
         image_value = request[camera]
         if isinstance(image_value, bytes):
-            expected_bytes = int(np.prod(EXPECTED_IMAGE_SHAPE))
+            expected_bytes = int(np.prod(expected_image_shape))
             if len(image_value) != expected_bytes:
                 raise ValueError(
                     f"invalid {camera} byte count: {len(image_value)}, expected {expected_bytes}"
                 )
-            image_array = np.frombuffer(image_value, dtype=np.uint8).reshape(EXPECTED_IMAGE_SHAPE).copy()
+            image_array = (
+                np.frombuffer(image_value, dtype=np.uint8)
+                .reshape(expected_image_shape)
+                .copy()
+            )
         else:
             image_array = np.asarray(image_value)
-        if image_array.shape != EXPECTED_IMAGE_SHAPE or image_array.dtype != np.uint8:
+        if image_array.shape != expected_image_shape or image_array.dtype != np.uint8:
             raise ValueError(
                 f"invalid {camera} image: shape={image_array.shape}, dtype={image_array.dtype}"
             )
@@ -83,6 +123,7 @@ def build_observation(request: dict, device: torch.device) -> dict[str, torch.Te
 def main() -> None:
     args = parse_args()
     checkpoint = args.checkpoint.expanduser().resolve()
+    validate_image_size(args.image_size)
     device = torch.device(args.device)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -92,6 +133,7 @@ def main() -> None:
         torch.backends.cudnn.deterministic = True
     torch.use_deterministic_algorithms(True, warn_only=True)
     model = ACTPolicy.from_pretrained(checkpoint).to(device).eval()
+    validate_checkpoint_image_size(model.config, args.image_size)
     if args.n_action_steps is not None:
         if not 1 <= args.n_action_steps <= model.config.chunk_size:
             raise ValueError(
@@ -108,7 +150,8 @@ def main() -> None:
 
     with socket.create_server((args.host, args.port), reuse_port=False) as server:
         print(
-            f"ACT_SERVER_READY {args.host}:{args.port} n_action_steps={model.config.n_action_steps}",
+            f"ACT_SERVER_READY {args.host}:{args.port} n_action_steps={model.config.n_action_steps} "
+            f"image_size={args.image_size}",
             flush=True,
         )
         connection, _ = server.accept()
@@ -126,11 +169,13 @@ def main() -> None:
                 if command != "predict":
                     raise ValueError(f"unsupported command: {command}")
 
-                observation = build_observation(request, device)
+                observation = build_observation(request, device, args.image_size)
                 with torch.inference_mode():
                     action = postprocessor(model.select_action(preprocessor(observation)))
                 action_array = action.squeeze(0).detach().cpu().numpy()
-                if action_array.shape != EXPECTED_STATE_SHAPE or not np.isfinite(action_array).all():
+                if action_array.shape != EXPECTED_STATE_SHAPE or not np.isfinite(
+                    action_array
+                ).all():
                     raise RuntimeError(f"policy returned invalid action: {action_array}")
                 # A plain list keeps the protocol compatible across the Isaac
                 # (NumPy 1.x) and LeRobot (NumPy 2.x) Python environments.

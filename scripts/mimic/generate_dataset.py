@@ -69,6 +69,37 @@ parser.add_argument(
     default=False,
     help="Enable Pinocchio.",
 )
+parser.add_argument("--render-width", type=int, default=None, help="Opt-in front/wrist camera render width.")
+parser.add_argument("--render-height", type=int, default=None, help="Opt-in front/wrist camera render height.")
+parser.add_argument(
+    "--observation-image-size",
+    type=int,
+    default=None,
+    help="Opt-in square HDF5 policy image size (84 through 256).",
+)
+parser.add_argument(
+    "--successful-only",
+    action="store_true",
+    help="Export successful demonstrations only.",
+)
+parser.add_argument(
+    "--max-attempts",
+    type=int,
+    default=None,
+    help="Finish the current episode and stop after this many total attempts.",
+)
+parser.add_argument(
+    "--min-free-gib",
+    type=float,
+    default=0.0,
+    help="Stop with the partial HDF5 intact when output storage falls below this threshold.",
+)
+parser.add_argument(
+    "--progress-file",
+    type=Path,
+    default=None,
+    help="Optional atomic JSON progress file for bounded generation.",
+)
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
 # parse the arguments
@@ -96,6 +127,7 @@ import numpy as np
 import omni
 import torch
 from isaaclab.envs import ManagerBasedRLMimicEnv
+from isaaclab.managers import DatasetExportMode
 
 if args_cli.enable_pinocchio:
     import isaaclab_mimic.envs.pinocchio_envs  # noqa: F401
@@ -114,12 +146,31 @@ from recovery_reset import (
     temporary_recovery_reset,
     validate_recovery_options,
 )
+from runtime_options import (
+    atomic_write_json,
+    bounded_normal_env_loop,
+    configure_successful_only,
+    configure_visual_options,
+    require_safe_task,
+    validate_runtime_options,
+)
 
 import leisaac  # noqa: F401
 
 
 def main():
     num_envs = args_cli.num_envs
+    guarded_runtime = validate_runtime_options(
+        render_width=args_cli.render_width,
+        render_height=args_cli.render_height,
+        observation_image_size=args_cli.observation_image_size,
+        max_attempts=args_cli.max_attempts,
+        min_free_gib=args_cli.min_free_gib,
+        progress_file=args_cli.progress_file,
+        initial_state_file=args_cli.initial_state_file,
+    )
+    if guarded_runtime:
+        num_envs = 1
     validate_recovery_options(
         args_cli.initial_state_file,
         args_cli.generation_mode,
@@ -142,6 +193,14 @@ def main():
     if task_name:
         task_name = args_cli.task.split(":")[-1]
     env_name = task_name or get_env_name_from_dataset(args_cli.input_file)
+    runtime_options_requested = (
+        guarded_runtime
+        or args_cli.render_width is not None
+        or args_cli.observation_image_size is not None
+        or args_cli.successful_only
+    )
+    if runtime_options_requested:
+        require_safe_task(env_name)
 
     recovery_snapshot = None
     if args_cli.initial_state_file is not None:
@@ -163,6 +222,18 @@ def main():
         env_cfg.seed = args_cli.datagen_seed
     datagen_seed = int(env_cfg.datagen_config.seed)
     setattr(env_cfg, "task_type", get_task_type(task_name, args_cli.task_type))
+    configure_visual_options(
+        env_cfg,
+        env_name,
+        render_width=args_cli.render_width,
+        render_height=args_cli.render_height,
+        observation_image_size=args_cli.observation_image_size,
+    )
+    configure_successful_only(
+        env_cfg,
+        args_cli.successful_only,
+        DatasetExportMode.EXPORT_SUCCEEDED_ONLY,
+    )
 
     # create environment
     env = gym.make(env_name, cfg=env_cfg).unwrapped
@@ -188,7 +259,7 @@ def main():
     # Setup and run async data generation
     async_components = setup_async_generation(
         env=env,
-        num_envs=args_cli.num_envs,
+        num_envs=num_envs,
         input_file=args_cli.input_file,
         success_term=success_term,
         pause_subtask=args_cli.pause_subtask,
@@ -200,6 +271,8 @@ def main():
         if recovery_snapshot is not None
         else nullcontext({"reset_calls": 0})
     )
+    stop_reason = None
+    loop_error = None
     with reset_context as reset_stats:
         try:
             if recovery_snapshot is not None:
@@ -212,6 +285,20 @@ def main():
                     generation_runtime,
                     max_attempts=target_count,
                 )
+            elif guarded_runtime:
+                stop_reason = bounded_normal_env_loop(
+                    env,
+                    async_components["reset_queue"],
+                    async_components["action_queue"],
+                    async_components["event_loop"],
+                    async_components["tasks"],
+                    generation_runtime,
+                    target_successes=target_count,
+                    max_attempts=args_cli.max_attempts,
+                    min_free_gib=args_cli.min_free_gib,
+                    output_path=output_path,
+                    progress_file=args_cli.progress_file,
+                )
             else:
                 env_loop(
                     env,
@@ -220,6 +307,10 @@ def main():
                     async_components["info_pool"],
                     async_components["event_loop"],
                 )
+        except BaseException as error:
+            if not guarded_runtime:
+                raise
+            loop_error = error
         finally:
             for task in async_components["tasks"]:
                 task.cancel()
@@ -232,37 +323,51 @@ def main():
         if args_cli.generation_mode == "successes"
         else generation_runtime.num_attempts
     )
-    completed = completed_count >= target_count
-    if completed:
-        manifest_path.write_text(
-            json.dumps(
-                {
-                    "completed": True,
-                    "task": env_name,
-                    "input_file": str(Path(args_cli.input_file).expanduser().resolve()),
-                    "output_file": str(output_path),
-                    "failed_output_file": str(failed_output_path),
-                    "generation_mode": args_cli.generation_mode,
-                    "generation_num_trials": target_count,
-                    "datagen_seed": datagen_seed,
-                    "num_envs": args_cli.num_envs,
-                    "successful_demos": generation_runtime.num_success,
-                    "failed_demos": generation_runtime.num_failures,
-                    "attempts": generation_runtime.num_attempts,
-                    "source_snapshot": recovery_snapshot.manifest_metadata(
-                        reset_stats["reset_calls"]
-                    )
-                    if recovery_snapshot is not None
-                    else None,
-                },
-                indent=2,
-            ),
-            encoding="utf-8",
+    completed = completed_count >= target_count and loop_error is None
+    if stop_reason == "max_attempts_reached" and not completed:
+        completed = False
+    manifest = {
+        "completed": completed,
+        "task": env_name,
+        "input_file": str(Path(args_cli.input_file).expanduser().resolve()),
+        "output_file": str(output_path),
+        "failed_output_file": str(failed_output_path),
+        "generation_mode": args_cli.generation_mode,
+        "generation_num_trials": target_count,
+        "datagen_seed": datagen_seed,
+        "num_envs": num_envs,
+        "successful_demos": generation_runtime.num_success,
+        "failed_demos": generation_runtime.num_failures,
+        "attempts": generation_runtime.num_attempts,
+        "source_snapshot": recovery_snapshot.manifest_metadata(reset_stats["reset_calls"])
+        if recovery_snapshot is not None
+        else None,
+    }
+    if guarded_runtime:
+        manifest["stop_reason"] = stop_reason or (
+            type(loop_error).__name__
+            if loop_error is not None
+            else "target_reached"
+            if completed
+            else "target_not_reached"
         )
-    else:
+        manifest["render_dimensions"] = {
+            camera: [getattr(env_cfg.scene, camera).width, getattr(env_cfg.scene, camera).height]
+            for camera in ("front", "wrist")
+        }
+        manifest["observation_image_size"] = args_cli.observation_image_size
+        manifest["successful_only"] = args_cli.successful_only
+        manifest["max_attempts"] = args_cli.max_attempts
+        manifest["min_free_gib"] = args_cli.min_free_gib
+        atomic_write_json(manifest_path, manifest)
+    elif completed:
+        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    if loop_error is not None:
+        raise loop_error
+    if not completed:
         raise RuntimeError(
             f"generation stopped before target: {completed_count}/{target_count} "
-            f"{args_cli.generation_mode}"
+            f"{args_cli.generation_mode}; stop_reason={manifest.get('stop_reason', 'target_not_reached')}"
         )
 
 

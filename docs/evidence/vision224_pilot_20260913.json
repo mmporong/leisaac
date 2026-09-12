@@ -1,0 +1,229 @@
+{
+  "pilot_root": "outputs/mimic_vision224_pilot_20260913",
+  "pilot_generation": {
+    "completed": true,
+    "task": "LeIsaac-SO101-PickCubeIntoBox-Mimic-v0",
+    "input_file": "/data/lim/leisaac/datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5",
+    "output_file": "/data/lim/leisaac/outputs/mimic_vision224_pilot_20260913/raw/shard_000.hdf5",
+    "failed_output_file": "/data/lim/leisaac/outputs/mimic_vision224_pilot_20260913/raw/shard_000_failed.hdf5",
+    "generation_mode": "successes",
+    "generation_num_trials": 3,
+    "datagen_seed": 6000,
+    "num_envs": 1,
+    "successful_demos": 3,
+    "failed_demos": 8,
+    "attempts": 11,
+    "source_snapshot": null,
+    "stop_reason": "target_successes_reached"
+  },
+  "pilot_progress": {
+    "status": "complete",
+    "target": 3,
+    "completed_episodes": 3,
+    "completed_shards": [
+      {
+        "index": 0,
+        "seed": 6000,
+        "episodes": 3,
+        "frames": 1803,
+        "root": "/data/lim/leisaac/outputs/mimic_vision224_pilot_20260913/lerobot_shards/shard_000",
+        "repo_id": "local/so101_vision224_shard_000"
+      }
+    ],
+    "updated_at": "2026-09-12T16:08:41.330150+00:00",
+    "current_shard": {
+      "index": 0,
+      "seed": 6000,
+      "episodes": 3
+    },
+    "dataset_root": "/data/lim/leisaac/outputs/mimic_vision224_pilot_20260913/lerobot_all",
+    "total_frames": 1803
+  },
+  "pilot_launch_plan": {
+    "source": "/data/lim/leisaac/datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5",
+    "source_sha256": "cde3559651d00d7512ecd8828e24729acaa7357dddacc3abc44d3d6b4f12be14",
+    "shards": [
+      {
+        "index": 0,
+        "seed": 6000,
+        "episodes": 3
+      }
+    ],
+    "image_size": 224,
+    "render_width": 640,
+    "render_height": 480,
+    "min_free_gib": 8.0,
+    "action_source": "next_observed",
+    "successful_only": true,
+    "max_attempts_per_success": 5,
+    "isaac_python": "/data/lim/conda-envs/leisaac/bin/python3.11",
+    "lerobot_python": "/home/lim/miniforge3/envs/lerobot/bin/python",
+    "code_sha256": {
+      "scripts/mimic/generate_dataset.py": "202ada5e26fb0536a7bbd36a0795641f6015fb501b33456a80c947580701c311",
+      "scripts/mimic/runtime_options.py": "7eec6a53b7af779138eb8371b215c3087e9d551afb295c310be64812b28901fa",
+      "scripts/imitation_learning/convert_hdf5_to_lerobot.py": "8f94b16feea9537fee8a44f923d26eb0e083117619f100e228f0487a9f5a263f",
+      "scripts/imitation_learning/run_mimic_image_batch.py": "b505bf1ecaac5a524d24875534b7b0324b5a484096c8b25e9231b609d12fc21a",
+      "source/leisaac/leisaac/tasks/pick_cube_into_box/pick_cube_into_box_env_cfg.py": "9646be2b7c623b8a379bc14b316d4276be92c351d95cbc240e451e2fbb9ba404",
+      "source/leisaac/leisaac/tasks/lift_cube/lift_cube_env_cfg.py": "2691a97ccde96496f02f8cfaa3bef40c12075c3165b6b1c839f9c6ce4a7161cd"
+    }
+  },
+  "pilot_launch_caveat": "Pilot started during review; runtime successfully exercised the image pipeline. Final source additionally hardens input validation, progress preservation and manifest fields; launch-plan hashes identify the original pilot revision, not every later child import.",
+  "validation": {
+    "cpu_tests": 55,
+    "source_py_compile": true,
+    "git_diff_check": true,
+    "decoded_samples": 9,
+    "decoded_camera_shape": [
+      3,
+      224,
+      224
+    ],
+    "next_observed_sample_labels_exact": true,
+    "native_render_dimensions": [
+      640,
+      480
+    ],
+    "hdf5_camera_shape": [
+      224,
+      224,
+      3
+    ],
+    "policy_quality_improvement_verified": false
+  },
+  "server_smoke": {
+    "passed": true,
+    "checkpoint": "/data/lim/leisaac/outputs/lerobot/so101_act_vision224_smoke_20260913/checkpoints/000002/pretrained_model",
+    "image_size": 224,
+    "action_shape": [
+      6
+    ],
+    "action_finite": true,
+    "action": [
+      -0.028159815818071365,
+      0.5483465790748596,
+      -0.9131006598472595,
+      1.1699472665786743,
+      -1.4840617179870605,
+      0.8336961269378662
+    ],
+    "training_steps": 2,
+    "quality_claim": false
+  },
+  "storage": {
+    "raw_bytes": 69323565,
+    "shard_lerobot_bytes": 4456025,
+    "aggregate_lerobot_bytes": 4496175,
+    "extrapolated_500_bytes": 13045960833.333334,
+    "estimate_basis": "3 successful episodes; does not include future checkpoints, length variation or peak temporary files",
+    "free_bytes_now": 29649342464,
+    "minimum_free_gib": 8
+  },
+  "raw_sha256": "0a0a33e902b698059f625d08d00668420ce60eb511c9386b7e51da3ca9078a79",
+  "checkpoint_sha256": "76685fc64328f54d9de08bc6b7938f485ef6ccc331d79900dd43851906926ff8",
+  "video": {
+    "path": "outputs/portfolio/pick_cube_into_box/mimic_vision224_pilot_seed6000_demo0.mp4",
+    "width": 448,
+    "height": 224,
+    "fps": 60,
+    "frames": 783
+  },
+  "current_source_sha256": {
+    "scripts/mimic/generate_dataset.py": "c33d1bba71c56a0013ec9b405fb802a6038193889e0034dfe9f7da82c9740754",
+    "scripts/mimic/runtime_options.py": "7eec6a53b7af779138eb8371b215c3087e9d551afb295c310be64812b28901fa",
+    "scripts/imitation_learning/run_mimic_image_batch.py": "cb67ce774bb171a2c12d6683058ad3d0904dee83a315205220c3f7cbba31d586",
+    "scripts/imitation_learning/convert_hdf5_to_lerobot.py": "421329bd908866d35fafa778f777b02e089f1580573a2fa71e8ff3a333ae9b2a"
+  },
+  "task_config_unchanged": true,
+  "final_source_smoke": {
+    "progress": {
+      "status": "complete",
+      "target": 1,
+      "completed_episodes": 1,
+      "completed_shards": [
+        {
+          "index": 0,
+          "seed": 6001,
+          "episodes": 1,
+          "frames": 254,
+          "root": "/data/lim/leisaac/outputs/mimic_vision224_final_smoke_20260913/lerobot_shards/shard_000",
+          "repo_id": "local/so101_vision224_shard_000"
+        }
+      ],
+      "updated_at": "2026-09-12T16:16:23.811300+00:00",
+      "current_shard": {
+        "index": 0,
+        "seed": 6001,
+        "episodes": 1
+      },
+      "dataset_root": "/data/lim/leisaac/outputs/mimic_vision224_final_smoke_20260913/lerobot_all",
+      "total_frames": 254
+    },
+    "manifest": {
+      "completed": true,
+      "task": "LeIsaac-SO101-PickCubeIntoBox-Mimic-v0",
+      "input_file": "/data/lim/leisaac/datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5",
+      "output_file": "/data/lim/leisaac/outputs/mimic_vision224_final_smoke_20260913/raw/shard_000.hdf5",
+      "failed_output_file": "/data/lim/leisaac/outputs/mimic_vision224_final_smoke_20260913/raw/shard_000_failed.hdf5",
+      "generation_mode": "successes",
+      "generation_num_trials": 1,
+      "datagen_seed": 6001,
+      "num_envs": 1,
+      "successful_demos": 1,
+      "failed_demos": 1,
+      "attempts": 2,
+      "source_snapshot": null,
+      "stop_reason": "target_successes_reached",
+      "render_dimensions": {
+        "front": [
+          640,
+          480
+        ],
+        "wrist": [
+          640,
+          480
+        ]
+      },
+      "observation_image_size": 224,
+      "successful_only": true,
+      "max_attempts": 10,
+      "min_free_gib": 8.0
+    },
+    "plan": {
+      "source": "/data/lim/leisaac/datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5",
+      "source_sha256": "cde3559651d00d7512ecd8828e24729acaa7357dddacc3abc44d3d6b4f12be14",
+      "shards": [
+        {
+          "index": 0,
+          "seed": 6001,
+          "episodes": 1
+        }
+      ],
+      "image_size": 224,
+      "render_width": 640,
+      "render_height": 480,
+      "min_free_gib": 8.0,
+      "action_source": "next_observed",
+      "successful_only": true,
+      "max_attempts_per_success": 10,
+      "isaac_python": "/data/lim/conda-envs/leisaac/bin/python3.11",
+      "lerobot_python": "/home/lim/miniforge3/envs/lerobot/bin/python",
+      "code_sha256": {
+        "scripts/mimic/generate_dataset.py": "c33d1bba71c56a0013ec9b405fb802a6038193889e0034dfe9f7da82c9740754",
+        "scripts/mimic/runtime_options.py": "7eec6a53b7af779138eb8371b215c3087e9d551afb295c310be64812b28901fa",
+        "scripts/imitation_learning/convert_hdf5_to_lerobot.py": "421329bd908866d35fafa778f777b02e089f1580573a2fa71e8ff3a333ae9b2a",
+        "scripts/imitation_learning/run_mimic_image_batch.py": "cb67ce774bb171a2c12d6683058ad3d0904dee83a315205220c3f7cbba31d586",
+        "source/leisaac/leisaac/tasks/pick_cube_into_box/pick_cube_into_box_env_cfg.py": "9646be2b7c623b8a379bc14b316d4276be92c351d95cbc240e451e2fbb9ba404",
+        "source/leisaac/leisaac/tasks/pick_cube_into_box/pick_cube_into_box_mimic_env_cfg.py": "bbbd54c486b3d08356943850112296e8884efaca9cdab790dfe7c03f824dca5c",
+        "source/leisaac/leisaac/tasks/lift_cube/lift_cube_env_cfg.py": "2691a97ccde96496f02f8cfaa3bef40c12075c3165b6b1c839f9c6ce4a7161cd"
+      }
+    },
+    "same_completed_command_rerun": "PASS: exit 0, existing complete result returned without simulator relaunch"
+  },
+  "independent_review": {
+    "critical_high_blockers": 0,
+    "raw_action_finite_check": "fixed with regression",
+    "manifest_reuse_validation": "fixed with regression",
+    "cpu_tests_passed": 55,
+    "full_typecheck": "not clean: missing Isaac extraPaths and h5py union typing"
+  }
+}
