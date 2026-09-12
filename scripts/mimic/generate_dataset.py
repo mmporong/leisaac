@@ -11,6 +11,7 @@ Main data generation script.
 """Launch Isaac Sim Simulator first."""
 
 import argparse
+from contextlib import nullcontext
 import json
 from pathlib import Path
 
@@ -25,6 +26,18 @@ parser.add_argument(
     type=int,
     default=None,
     help="Override the MimicGen random seed so additional runs do not repeat an earlier dataset.",
+)
+parser.add_argument(
+    "--generation-mode",
+    choices=("successes", "attempts"),
+    default="successes",
+    help="Stop after the requested number of successes (default) or bounded attempts.",
+)
+parser.add_argument(
+    "--initial-state-file",
+    type=Path,
+    default=None,
+    help="A format-version 1 ACT failure snapshot containing exactly one cube-task state.",
 )
 parser.add_argument(
     "--num_envs", type=int, default=1, help="Number of environments to instantiate for generating datasets."
@@ -95,12 +108,24 @@ from isaaclab_mimic.datagen.generation import (
 )
 from isaaclab_mimic.datagen.utils import get_env_name_from_dataset, setup_output_paths
 from leisaac.utils.env_utils import get_task_type
+from recovery_reset import (
+    bounded_recovery_env_loop,
+    load_recovery_snapshot,
+    temporary_recovery_reset,
+    validate_recovery_options,
+)
 
 import leisaac  # noqa: F401
 
 
 def main():
     num_envs = args_cli.num_envs
+    validate_recovery_options(
+        args_cli.initial_state_file,
+        args_cli.generation_mode,
+        args_cli.generation_num_trials,
+        num_envs,
+    )
 
     output_path = Path(args_cli.output_file).expanduser().resolve()
     failed_output_path = output_path.with_name(f"{output_path.stem}_failed{output_path.suffix}")
@@ -118,18 +143,25 @@ def main():
         task_name = args_cli.task.split(":")[-1]
     env_name = task_name or get_env_name_from_dataset(args_cli.input_file)
 
+    recovery_snapshot = None
+    if args_cli.initial_state_file is not None:
+        recovery_snapshot = load_recovery_snapshot(args_cli.initial_state_file, env_name)
+
     # Configure environment
+    generation_num_trials = 1 if recovery_snapshot is not None else args_cli.generation_num_trials
     env_cfg, success_term = setup_env_config(
         env_name=env_name,
         output_dir=output_dir,
         output_file_name=output_file_name,
         num_envs=num_envs,
         device=args_cli.device,
-        generation_num_trials=args_cli.generation_num_trials,
+        generation_num_trials=generation_num_trials,
     )
+    env_cfg.datagen_config.generation_guarantee = args_cli.generation_mode == "successes"
     if args_cli.datagen_seed is not None:
         env_cfg.datagen_config.seed = args_cli.datagen_seed
         env_cfg.seed = args_cli.datagen_seed
+    datagen_seed = int(env_cfg.datagen_config.seed)
     setattr(env_cfg, "task_type", get_task_type(task_name, args_cli.task_type))
 
     # create environment
@@ -163,22 +195,44 @@ def main():
     )
 
     target_count = env.cfg.datagen_config.generation_num_trials
-    try:
-        env_loop(
-            env,
-            async_components["reset_queue"],
-            async_components["action_queue"],
-            async_components["info_pool"],
-            async_components["event_loop"],
-        )
-    finally:
-        for task in async_components["tasks"]:
-            task.cancel()
-        async_components["event_loop"].run_until_complete(
-            asyncio.gather(*async_components["tasks"], return_exceptions=True)
-        )
+    reset_context = (
+        temporary_recovery_reset(env, recovery_snapshot)
+        if recovery_snapshot is not None
+        else nullcontext({"reset_calls": 0})
+    )
+    with reset_context as reset_stats:
+        try:
+            if recovery_snapshot is not None:
+                bounded_recovery_env_loop(
+                    env,
+                    async_components["reset_queue"],
+                    async_components["action_queue"],
+                    async_components["event_loop"],
+                    async_components["tasks"],
+                    generation_runtime,
+                    max_attempts=target_count,
+                )
+            else:
+                env_loop(
+                    env,
+                    async_components["reset_queue"],
+                    async_components["action_queue"],
+                    async_components["info_pool"],
+                    async_components["event_loop"],
+                )
+        finally:
+            for task in async_components["tasks"]:
+                task.cancel()
+            async_components["event_loop"].run_until_complete(
+                asyncio.gather(*async_components["tasks"], return_exceptions=True)
+            )
 
-    completed = generation_runtime.num_success >= target_count
+    completed_count = (
+        generation_runtime.num_success
+        if args_cli.generation_mode == "successes"
+        else generation_runtime.num_attempts
+    )
+    completed = completed_count >= target_count
     if completed:
         manifest_path.write_text(
             json.dumps(
@@ -188,12 +242,18 @@ def main():
                     "input_file": str(Path(args_cli.input_file).expanduser().resolve()),
                     "output_file": str(output_path),
                     "failed_output_file": str(failed_output_path),
-                    "generation_num_trials": args_cli.generation_num_trials,
-                    "datagen_seed": env.cfg.datagen_config.seed,
+                    "generation_mode": args_cli.generation_mode,
+                    "generation_num_trials": target_count,
+                    "datagen_seed": datagen_seed,
                     "num_envs": args_cli.num_envs,
                     "successful_demos": generation_runtime.num_success,
                     "failed_demos": generation_runtime.num_failures,
                     "attempts": generation_runtime.num_attempts,
+                    "source_snapshot": recovery_snapshot.manifest_metadata(
+                        reset_stats["reset_calls"]
+                    )
+                    if recovery_snapshot is not None
+                    else None,
                 },
                 indent=2,
             ),
@@ -201,7 +261,8 @@ def main():
         )
     else:
         raise RuntimeError(
-            f"generation stopped before target: {generation_runtime.num_success}/{target_count} successes"
+            f"generation stopped before target: {completed_count}/{target_count} "
+            f"{args_cli.generation_mode}"
         )
 
 

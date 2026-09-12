@@ -39,7 +39,12 @@ SO101 팔로워 1대 실물 평가
 
 ## 현재 태스크 정의
 
-- 물체: 한 변 4 cm인 빨간 큐브
+- 실물 목표 물체: 한 변 4 cm인 큐브. **현재 시뮬레이션 자산은 시각 mesh 3.000 cm,
+  충돌 mesh 약 3.0154 cm**다. 2026-09-12 USD의 월드 변환을 적용한 vertex 범위로 확인했다.
+  이전 4 cm 표기는 실물 목표와 시뮬레이터 자산을 혼동한 오류다. 기존 시연·증강·ACT 평가는
+  현재 자산 기준이며, 실물 4 cm 전이를 검증한 결과가 아니다. 자산 크기를 바꾸면 기존
+  파지 궤적·주석·성공 판정도 재검증해야 하므로 이번 복구 실험 중에는 크기를 변경하지 않았다.
+  자산 SHA-256·측정 방법: [크기 측정 기록](provenance/so101_cube_geometry_20260912.json).
 - 목표: 파란 박스 내부
 - 완료 동작: 큐브를 박스 안에 놓고 그리퍼를 연다.
 - 원위치 복귀: 필요 없다.
@@ -160,7 +165,7 @@ MimicGen은 물체 기준의 말단 자세 궤적을 변형하므로 이 변환�
 
 ### 4. MimicGen 생성
 
-작은 시험은 성공 10회, 본 생성은 성공 50회 이상으로 나눈다. `generation_guarantee=True`에서는 성공 수가 목표에 도달할 때까지 재시도한다. 추가 데이터는 앞선 실행과 다른 `--datagen-seed`를 지정한다. 생성기는 기존 성공·실패 HDF5와 완료 manifest를 덮어쓰지 않으며, 목표 성공 수에 도달한 경우에만 `.generation.json`을 남긴다. 비정상 종료나 디스크·GPU 오류가 있을 수 있으므로 manifest와 결과 HDF5의 성공 에피소드 수를 함께 확인한다.
+작은 시험은 성공 10회, 본 생성은 성공 50회 이상으로 나눈다. 기본 `--generation-mode successes`와 `generation_guarantee=True`에서는 성공 수가 목표에 도달할 때까지 재시도한다. 추가 데이터는 앞선 실행과 다른 `--datagen-seed`를 지정한다. 생성기는 기존 성공·실패 HDF5와 완료 manifest를 덮어쓰지 않으며, 기본 모드에서는 목표 성공 수에 도달한 경우에만 `.generation.json`을 남긴다. 별도 snapshot 복구 실험의 `attempts` 모드는 실패 1회로 끝나도 완료 manifest를 남기므로 `completed`만 보지 말고 `generation_mode`, `successful_demos`, `failed_demos`를 함께 확인한다. 비정상 종료나 디스크·GPU 오류가 있을 수 있으므로 manifest와 결과 HDF5의 성공 에피소드 수를 함께 확인한다.
 
 ```bash
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
@@ -547,7 +552,7 @@ Windows의 실제 설치·학습 실행은 해당 PC에서 별도로 검증해�
 Windows에는 Git 저장소와 대용량 산출물을 분리해서 전달한다.
 
 - Git 저장소: 태스크 코드, MimicGen 호환 패치, 이 문서
-- 별도 복사: `datasets/*.hdf5`, `outputs/portfolio/pick_cube_into_box/**/*.mp4`, 선택한 `outputs/robomimic/**/*.pth`, `outputs/evaluation/**/*.json`, `outputs/evaluation/**/*.mp4`
+- 별도 복사: `datasets/*.hdf5`, 해당 `.manifest.json`·`.generation.json`, `outputs/portfolio/pick_cube_into_box/**/*.mp4`, 선택한 `outputs/robomimic/**/*.pth`, `outputs/evaluation/**/*.json`, `outputs/evaluation/**/*.mp4`
 - 캘리브레이션 JSON: 보드별 파일이므로 저장소에 포함하지 않고 해당 Linux 장비에 보관
 
 HDF5와 MP4는 Git에 넣지 않는다. 복사 후 양쪽에서 SHA-256을 비교해 파일 손상을 확인한다.
@@ -695,6 +700,83 @@ python scripts/imitation_learning/convert_hdf5_to_lerobot.py \
 LeRobot episode index로 명시하고 정규화 통계도 학습 subset 기준인지 확인해야 한다.
 현재 101회 파일은 데이터 연결 검증용이며 새로운 ACT 학습이나 정책 선택에 사용하지 않았다.
 복구 1회를 추가한 것만으로 성능이 개선됐다고 주장하지 않는다.
+
+### 공식 MimicGen 궤적을 사용하는 snapshot 복구
+
+고정 파지 offset 조정이 실패한 뒤, 공식 Isaac Lab Mimic 데이터 생성기에 ACT 실패 상태를
+초기 상태로 전달하는 경로를 추가했다. 이는 [공식 시연 생성 흐름](https://isaac-sim.github.io/IsaacLab/main/source/overview/imitation-learning/teleop_imitation.html)을
+사용하되 **실패 snapshot reset 연결은 이 저장소에서 추가한 실험 코드**다. 새로운 모델을
+학습하는 과정이 아니라, 원본 10회 시연의 서브태스크 궤적을 새 물체 상태에 맞춰 변환·연결하는 과정이다.
+현재 설정은 서브태스크별 source 선택이므로 한 원본 시연을 통째로 재생하는 것과도 다르다.
+
+`--initial-state-file`은 cube 태스크의 상태 1개만 담은 PT를 받는다. `num_envs=1`,
+`--generation-mode attempts`, 1회 시도만 허용한다. 관절·큐브·박스 상태를 복원하고
+물리 속도는 유지하되 위치 제어기의 목표 속도는 0으로 지운다. MimicGen의 선택 난수는
+`--datagen-seed`로 유지하고, ACT snapshot seed는 HDF5 에피소드와 `.generation.json`에 따로 기록한다.
+
+복구 전용 실행 루프는 완료 횟수를 다음 reset/action **전에** 확인한다. 기본 성공 횟수 기반
+MimicGen 생성은 기존 상류 루프를 사용한다. CPU 회귀 테스트는 잘못된 task·shape·모드 거부,
+예외 시 reset 메서드 복원, 목표 속도 초기화, HDF5 에피소드 seed 설정, 추가 reset 차단,
+비동기 생성 오류 전파를 검증한다.
+
+```bash
+# 저장소 루트, Isaac Lab Python 환경에서 실행한다. 출력 파일이 있으면 다른 이름을 쓴다.
+python scripts/mimic/generate_dataset.py \
+  --task LeIsaac-SO101-PickCubeIntoBox-Mimic-v0 --num_envs 1 \
+  --generation-mode attempts --generation_num_trials 1 --datagen-seed 44 \
+  --initial-state-file outputs/evaluation/recovery_round1/snapshots/seed3101_step1200.pt \
+  --input_file datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5 \
+  --output_file datasets/mimic_recovery_rebuild.hdf5 \
+  --device cuda:0 --headless --enable_cameras
+python scripts/imitation_learning/test_mimic_recovery_reset.py
+```
+
+첫 연결 실험은 seed 3101 step 1200에서 1/1 성공, 1,088프레임이었다. HDF5 초기 상태의
+관절·물체 배열 전체가 입력 snapshot과 허용 오차 1e-5 이내로 일치했으며, 마지막 전면·손목
+영상에서 큐브가 박스 안에 있는 것을 확인했다. 영상은
+`outputs/portfolio/pick_cube_into_box/mimic_recovery_seed3101_step1200_seed44.mp4` (18.13초)다.
+이 최초 실행에서 발견한 HDF5 seed 누락과 완료 뒤 추가 reset은 위 코드에서 수정했다.
+최초 파일은 출처 비교용으로 보존하며, 그대로 학습 데이터에 병합하지 않는다.
+
+수정된 코드에서 snapshot마다 새 프로세스로 확인한 결과는 다음과 같다.
+모든 초기 큐브는 박스 밖 탁자 위에 있었으며, 성공 파일은 마지막 상태의 박스 내부 판정과
+그리퍼 열림도 확인했다. 각 파일의 초기 상태는 해당 ACT snapshot과 일치한다.
+
+| ACT snapshot (모두 step 1200) | 생성 seed | 성공 / 시도 | 프레임 |
+|---|---|---|---|
+| 3100 | 44 | 1/1 | 676 |
+| 3101 | 44 | 1/1 | 1,088 |
+| 3102 | 44 | 0/1 | 221 |
+| 3103 | 44 | 1/1 | 221 |
+| 3102 재시도 | 45 | 1/1 | 254 |
+
+**첫 시도 3/4, 실패 상태의 난수 변경 재시도 1/1**이다. 수정 후 전체 시도는 5회이며
+성공 데이터는 서로 다른 ACT rollout 4개에서 각 1회씩 확보했다. 최초 연결/동일 상태
+반복 성공은 이 표에 중복 포함하지 않았다. 이 결과를 미학습 상태 전체의 100% 복구나
+학습된 ACT의 성공률로 표현하면 안 된다.
+
+- 원시 결과: `datasets/pick_cube_into_box_mimic_recovery_seed*_step1200_seed*_bounded.hdf5`
+- 실패 결과: 같은 이름의 `_failed.hdf5`; 출처·성공/시도·reset 횟수는 `.generation.json`
+- 성공 영상: `outputs/portfolio/pick_cube_into_box/mimic_recovery_seed*_step1200_seed*_bounded.mp4`
+- 병합 HDF5: `datasets/pick_cube_into_box_mimic100_mimic_recovery4_next_state_84.hdf5`
+- 병합 출처: 같은 이름의 `.manifest.json` (성공 4회 수용, 실패 1회 제외)
+- 복구만 LeRobot: `datasets/lerobot/so101_mimic_recovery4_next_state_84` (4회, 2,239프레임)
+- **학습 전용 LeRobot:** `datasets/lerobot/so101_mimic_train80_recovery4_next_state_84`
+  (기존 train 80 + 복구 4 = 84회, 48,159프레임)
+- 검증 전용 LeRobot: `datasets/lerobot/so101_mimic100_train_valid/valid` (20회, 12,154프레임)
+- 대조군 학습용: `datasets/lerobot/so101_mimic100_train_valid/train` (80회, 45,920프레임)
+
+전체 병합은 **104회·60,313프레임, HDF5 train 84 / valid 20**이다. 앞선 손작성 오라클의
+성공 1회는 이번 공식 MimicGen 복구 4회 묶음에 섞지 않았다. LeRobot 학습·검증 폴더는
+설치된 SDK의 `split_dataset`에 HDF5 mask 목록을 전달해 분리한 후, 학습 폴더에만 복구를
+`aggregate_datasets`로 추가했다. 각 split의 전체 action이 HDF5 해당 목록과 일치하고,
+action 정규화 평균이 해당 subset의 float64 재계산과 1e-6 이내로 일치함을 검증했다.
+LeRobot에서는 split 안의 episode 번호가 다시 매겨지므로 원본 번호를 그대로 재사용하지 않는다.
+
+현재 완료 범위는 복구 데이터 생성·영상 저장·학습 데이터 연결이다. **ACT 재학습, 새 상태의
+정책 성공률 개선, 강화학습, 실물 실행은 아직 하지 않았다.** 다음 비교는 대조군 train 80회와
+복구 추가 train 84회에 같은 추가 학습 예산을 주고, 데이터 생성에 사용하지 않은 rollout seed에서
+성공률을 비교하는 것이다. 3100~3103은 복구 학습용 데이터에 포함됐으므로 그 비교의 미학습 seed로 쓰지 않는다.
 
 ## 포트폴리오에서 보여줄 증거
 

@@ -1,0 +1,24 @@
+{
+  "measured_on": "2026-09-12",
+  "method": "Open composed scene with USD; transform every mesh vertex to world coordinates; subtract axis-wise minimum from maximum",
+  "stage_meters_per_unit": 1.0,
+  "sources": {
+    "assets/scenes/table_with_cube/scene.usd": "654443f27a55bdf8ce07bd8fb1c60dec14bd7de230304056c185b4f90fb05cbc",
+    "assets/scenes/table_with_cube/cube/cube.usd": "720f577f81d6b5e8ebe6510a7cf492b117dfd265b402ac62e9892a2cbfb2e628"
+  },
+  "measurements": [
+    {
+      "prim": "/world/cube/cube/Visuals/cube",
+      "vertices": 296,
+      "world_extent_m": [0.03, 0.03, 0.03]
+    },
+    {
+      "prim": "/world/cube/cube/Collisions/cube",
+      "vertices": 8,
+      "world_extent_m": [0.030154, 0.030154, 0.030154]
+    }
+  ],
+  "physical_target_cube_side_m": 0.04,
+  "physical_target_source": "User-stated intended physical cube; not measured here",
+  "scope": "Read-only asset inspection; geometry and existing datasets were not rescaled"
+}
