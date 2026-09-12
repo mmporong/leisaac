@@ -27,6 +27,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fps", type=int, default=60)
     parser.add_argument("--task", default="Pick up the red cube and place it inside the blue box")
     parser.add_argument("--max-episodes", type=int, default=None)
+    parser.add_argument("--start-episode", type=int, default=0, help="Skip this many numerically sorted episodes.")
     parser.add_argument("--image-writer-threads", type=int, default=4)
     parser.add_argument("--max-action-step-norm", type=float, default=1.0)
     return parser.parse_args()
@@ -72,6 +73,8 @@ def main() -> None:
     output_root = args.output_root.expanduser().resolve()
     if args.fps <= 0:
         raise ValueError("fps must be positive")
+    if args.start_episode < 0:
+        raise ValueError("start-episode must be nonnegative")
     if args.max_episodes is not None and args.max_episodes <= 0:
         raise ValueError("max-episodes must be positive")
     if args.max_action_step_norm <= 0:
@@ -80,7 +83,7 @@ def main() -> None:
         raise FileExistsError(f"output already exists: {output_root}")
 
     with h5py.File(input_path, "r") as hdf:
-        demo_names = sorted_demo_names(hdf)
+        demo_names = sorted_demo_names(hdf)[args.start_episode:]
         if args.max_episodes is not None:
             demo_names = demo_names[: args.max_episodes]
         if not demo_names:

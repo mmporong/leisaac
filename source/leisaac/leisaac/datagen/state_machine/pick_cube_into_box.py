@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import os
 
 import torch
@@ -36,13 +37,28 @@ class PickCubeIntoBoxStateMachine(StateMachineBase):
         ("retreat", 80),
     )
 
-    def __init__(self) -> None:
+    def __init__(self, grasp_alignment: str = "live_jaw", grasp_offset=None, grasp_rpy=None) -> None:
+        if grasp_alignment not in {"live_jaw", "fixed_wrist"}:
+            raise ValueError(f"Unknown grasp alignment: {grasp_alignment}")
+        self.grasp_alignment = grasp_alignment
+        self.grasp_offset = _GRASP_OFFSET if grasp_offset is None else tuple(grasp_offset)
+        self.grasp_rpy = (0.0, 0.0, 0.0) if grasp_rpy is None else tuple(grasp_rpy)
+        if any(
+            len(values) != 3 or not all(math.isfinite(v) for v in values)
+            for values in (self.grasp_offset, self.grasp_rpy)
+        ):
+            raise ValueError("grasp offset and RPY must each contain three finite values")
+        if grasp_offset is not None and grasp_alignment != "fixed_wrist":
+            raise ValueError("a custom grasp offset requires fixed_wrist alignment")
+        self._phases = self._PHASES
+        if grasp_alignment == "fixed_wrist":
+            self._phases = self._PHASES[:2] + (("align_hold", 120),) + self._PHASES[2:]
         self._step_count = 0
         self._episode_done = False
-        self._phase_names = [name for name, _ in self._PHASES]
+        self._phase_names = [name for name, _ in self._phases]
         self._phase_ends = []
         total = 0
-        for _, duration in self._PHASES:
+        for _, duration in self._phases:
             total += duration
             self._phase_ends.append(total)
         self._max_steps = total
@@ -58,9 +74,7 @@ class PickCubeIntoBoxStateMachine(StateMachineBase):
         box_pos = env.scene["box_target"].data.root_pos_w.clone()
         current_pos = env.scene["ee_frame"].data.target_pos_w[:, 0, :].clone()
         canonical_quat_w = quat_from_euler_xyz(
-            torch.tensor(0.0, device=env.device),
-            torch.tensor(0.0, device=env.device),
-            torch.tensor(0.0, device=env.device),
+            *(torch.tensor(value, device=env.device) for value in self.grasp_rpy),
         ).repeat(env.num_envs, 1)
         self._target_quat_w = canonical_quat_w
 
@@ -69,9 +83,7 @@ class PickCubeIntoBoxStateMachine(StateMachineBase):
         above_cube[:, 1] += _GRASP_OFFSET[1]
         above_cube[:, 2] += 0.22
         at_cube = cube_pos.clone()
-        at_cube[:, 0] += _GRASP_OFFSET[0]
-        at_cube[:, 1] += _GRASP_OFFSET[1]
-        at_cube[:, 2] += _GRASP_OFFSET[2]
+        at_cube += torch.tensor(self.grasp_offset, device=env.device)
         lift = cube_pos.clone()
         lift[:, 0] += _GRASP_OFFSET[0]
         lift[:, 1] += _GRASP_OFFSET[1]
@@ -89,6 +101,7 @@ class PickCubeIntoBoxStateMachine(StateMachineBase):
             "start": current_pos,
             "above_cube": above_cube,
             "at_cube": at_cube,
+            "align_hold": at_cube,
             "grasp": at_cube,
             "lift": lift,
             "above_box": above_box,
@@ -165,11 +178,11 @@ class PickCubeIntoBoxStateMachine(StateMachineBase):
 
     def _phase(self) -> tuple[int, str, int, int]:
         start = 0
-        for index, ((name, _), end) in enumerate(zip(self._PHASES, self._phase_ends, strict=True)):
+        for index, ((name, _), end) in enumerate(zip(self._phases, self._phase_ends, strict=True)):
             if self._step_count < end:
                 return index, name, start, end
             start = end
-        return len(self._PHASES) - 1, self._PHASES[-1][0], self._phase_ends[-2], self._phase_ends[-1]
+        return len(self._phases) - 1, self._phases[-1][0], self._phase_ends[-2], self._phase_ends[-1]
 
     def get_action(self, env) -> torch.Tensor:
         if not self._waypoints or self._target_quat_w is None:
@@ -188,9 +201,9 @@ class PickCubeIntoBoxStateMachine(StateMachineBase):
         # The second frame is the jaw centre used by the task's own
         # ``object_grasped`` predicate.  Align that frame with the cube during
         # approach/closure instead of relying only on a hand-tuned wrist
-        # offset.  This keeps the privileged oracle valid for policy states
-        # whose wrist pose differs from the original demonstrations.
-        if name in {"at_cube", "grasp"}:
+        # offset. This is experimental: alignment alone does not guarantee
+        # contact or recovery from arbitrary policy states.
+        if self.grasp_alignment == "live_jaw" and name in {"at_cube", "grasp"}:
             gripper_pos_w = env.scene["ee_frame"].data.target_pos_w[:, 0, :]
             jaw_pos_w = env.scene["ee_frame"].data.target_pos_w[:, 1, :]
             cube_pos_w = env.scene["cube"].data.root_pos_w

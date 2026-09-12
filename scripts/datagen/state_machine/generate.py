@@ -49,6 +49,12 @@ parser.add_argument(
 )
 parser.add_argument("--quality", action="store_true", help="Whether to enable quality render mode.")
 parser.add_argument("--summary_file", type=str, default=None, help="Optional JSON report of every attempted episode.")
+parser.add_argument(
+    "--cube_grasp_alignment", choices=("live_jaw", "fixed_wrist"), default="live_jaw",
+    help="Experimental oracle alignment; fixed_wrist has not demonstrated recovery generalization.",
+)
+parser.add_argument("--cube_grasp_offset", type=float, nargs=3, default=None, metavar=("X_M", "Y_M", "Z_M"))
+parser.add_argument("--cube_grasp_rpy", type=float, nargs=3, default=None, metavar=("ROLL_RAD", "PITCH_RAD", "YAW_RAD"))
 parser.add_argument("--use_lerobot_recorder", action="store_true", help="Whether to use lerobot recorder.")
 parser.add_argument("--lerobot_dataset_repo_id", type=str, default=None, help="Lerobot Dataset repository ID.")
 parser.add_argument("--lerobot_dataset_fps", type=int, default=30, help="Lerobot Dataset frames per second.")
@@ -318,7 +324,14 @@ def main():
         env.initialize()
 
     # one-time state machine setup (e.g. FK calibration)
-    sm = SMClass()
+    sm = (
+        SMClass(
+            grasp_alignment=args_cli.cube_grasp_alignment,
+            grasp_offset=args_cli.cube_grasp_offset,
+            grasp_rpy=args_cli.cube_grasp_rpy,
+        )
+        if SMClass is PickCubeIntoBoxStateMachine else SMClass()
+    )
     sm.setup(env)
 
     def reset_episode() -> bool:
@@ -426,6 +439,9 @@ def main():
             summary_path.write_text(json.dumps({
                 "task": task_name,
                 "initial_state_file": args_cli.initial_state_file,
+                "cube_grasp_alignment": args_cli.cube_grasp_alignment,
+                "cube_grasp_offset_m": args_cli.cube_grasp_offset,
+                "cube_grasp_rpy_rad": args_cli.cube_grasp_rpy,
                 "attempts": len(episode_results),
                 "successes": sum(item["success"] for item in episode_results),
                 "interrupted": interrupted,

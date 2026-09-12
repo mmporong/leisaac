@@ -630,7 +630,71 @@ action은 810×8(IK 자세 7 + 이진 그리퍼 1)이다. action 전체가 유�
 다음 학습 전 조건은 다른 rollout seed에서도 단독 복구가 재현되는 성공 데이터 확보,
 6관절 행동 규격 변환, 원본·MimicGen·복구의 출처 구분 및 rollout 단위 분리다.
 같은 실패 rollout의 snapshot을 train과 validation 양쪽에 나누면 안 된다.
-현재는 성공 복구 1회 확보까지 검증했으며, 데이터 병합·ACT 재학습·성능 개선은 아직 수행하지 않았다.
+성공 복구 1회를 병합한 결과는 아래에 기록한다. ACT 재학습·성능 개선은 아직 검증하지 않았다.
+
+### 다른 초기조건 검증과 성공 데이터 병합 — 2026-09-12 후속
+
+ACT seed 3100~3103을 각각 1200스텝 실행한 결과는 0/4였다. 각 rollout의
+600·1200스텝 상태를 추출하고, **snapshot마다 새 Isaac Sim 프로세스**에서 오라클을
+실행했다. 결과는 **0/8**이다. 같은 rollout 안의 두 snapshot은 서로 독립 표본이 아니므로
+독립 rollout 4개에서 나온 복구 시도 8개로 표기한다. 이전 seed 3000 연속 실행의 9/10을
+일반적인 복구 성공률로 해석하면 안 된다.
+
+| seed 3101, step 1200 파지 비교 | 결과 | 변경 조건 |
+|---|---|---|
+| 손목 목표 고정, 후보 offset | 0/1 | (-0.020, 0, 0.095) m |
+| 손목 목표 고정, 기존 offset | 0/1 | (-0.012, 0.020, 0.090) m |
+| 기존 offset + 열린 그리퍼로 120스텝 대기 | 0/1 | 접근 지연 확인 후 대기 추가 |
+| 같은 대기 + 낮은 offset | 0/1 | (-0.012, 0.020, 0.075) m |
+| 원본 demo 7의 파지 자세 + 같은 대기 | 0/1 | offset (-0.004, 0.019, 0.090) m, RPY (-0.197, 0.110, 0.334) rad |
+
+마지막 조건은 원본 `pick_cube_into_box_annotated_wrist_10_20260911.hdf5`의
+demo 7, frame 199에서 관찰한 자세를 반올림해 쓴 실험값이다. 하드웨어 캘리브레이션 값이 아니다.
+`--cube_grasp_alignment fixed_wrist`, `--cube_grasp_offset`, `--cube_grasp_rpy`는
+실패 비교를 재현하기 위한 실험 옵션이다. 기본 `live_jaw` 동작과 810스텝 길이는 유지한다.
+fixed_wrist는 열린 상태로 대기하는 120스텝이 추가되어 930스텝이다.
+위 비교는 모두 같은 상태이므로 일반화 평가로 세지 않는다.
+
+새 성공 데이터는 확보하지 못했다. 기존 seed 3000 step 1200 성공 1회만 병합 도구 검증에 사용하고,
+새 실패 8회는 제외했다. 동일 성공 상태의 반복 녹화는 추가 시연으로 세지 않았다.
+
+- HDF5: `datasets/pick_cube_into_box_mimic100_recovery1_next_state_84.hdf5`
+- 출처·SHA-256·제외 사유·분리 목록: 같은 이름의 `.manifest.json`
+- LeRobot: `datasets/lerobot/so101_mimic100_recovery1_next_state_84`
+- 복구 상태 및 시도별 결과: `outputs/evaluation/recovery_round1/`
+- ACT 실패 상태 원본: `outputs/evaluation/recovery_round1_states_3100_3103.pt`
+- 새 조건 실패 영상: `outputs/portfolio/pick_cube_into_box/recovery_round1_failed_seed3101_step1200.mp4`
+
+병합 결과는 **101회, 58,884프레임, HDF5 train 81회 / valid 20회**다.
+복구 action은 IK의 8차원 값이 아니라 `joint_pos[t+1]` 6차원이며 마지막 프레임은 반복한다.
+전면·손목 영상은 84×84 RGB로 변환했다. 복구 에피소드의 처음·중간·마지막 프레임에서
+LeRobot 로더의 관절·action 값이 HDF5와 일치하고 영상이 정상 디코딩되는 것을 확인했다.
+
+병합 도구는 성공 bool 속성, 유한값, 관절·영상 shape를 검사하고 같은 관절/action 궤적의
+중복을 제외한다. 복구는 train에만 추가하며 기존 valid 목록은 변경하지 않는다.
+이 중복 검사는 동일 궤적 탐지일 뿐 같은 rollout의 다른 snapshot을 독립 데이터로 만들어 주지 않는다.
+
+```bash
+# 저장소 안의 터미널에서 루트로 이동한다. Isaac Lab 환경에서 실행한다.
+cd "$(git rev-parse --show-toplevel)"
+python scripts/imitation_learning/merge_recovery_dataset.py \
+  --baseline datasets/pick_cube_into_box_mimic_joint_next_state_front_wrist_100_seed43_84x84_20260912.hdf5 \
+  --recovery datasets/pick_cube_into_box_recovery_seed3000_step1200.hdf5 \
+  --output datasets/mimic100_recovery1_rebuild.hdf5
+python scripts/imitation_learning/test_merge_recovery_dataset.py
+python scripts/imitation_learning/test_recovery_state.py
+
+# LeRobot 환경에서는 추가된 demo_100만 변환하여 기존 100회 영상의 재인코딩을 피할 수 있다.
+python scripts/imitation_learning/convert_hdf5_to_lerobot.py \
+  --input datasets/mimic100_recovery1_rebuild.hdf5 --start-episode 100 \
+  --output-root datasets/lerobot/recovery1_rebuild --repo-id local/recovery1_rebuild
+```
+
+**주의: LeRobot 변환·aggregate는 HDF5의 train/valid mask를 자동 보존하지 않는다.**
+전체 101회 root를 그대로 학습하면 valid 20회도 포함된다. 학습 전에 manifest의 train 목록을
+LeRobot episode index로 명시하고 정규화 통계도 학습 subset 기준인지 확인해야 한다.
+현재 101회 파일은 데이터 연결 검증용이며 새로운 ACT 학습이나 정책 선택에 사용하지 않았다.
+복구 1회를 추가한 것만으로 성능이 개선됐다고 주장하지 않는다.
 
 ## 포트폴리오에서 보여줄 증거
 

@@ -1,6 +1,7 @@
 """CPU regression checks for recovery snapshots without starting Isaac Sim."""
 
 import ast
+import math
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
@@ -21,6 +22,25 @@ def load_helpers():
 
 
 class RecoveryStateTest(unittest.TestCase):
+    def test_fixed_wrist_holds_open_before_grasp_without_changing_legacy_timing(self):
+        source = Path(__file__).resolve().parents[2] / "source/leisaac/leisaac/datagen/state_machine/pick_cube_into_box.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        cls = next(node for node in tree.body if isinstance(node, ast.ClassDef))
+        namespace = {"torch": torch, "math": math, "StateMachineBase": object, "_GRASP_OFFSET": (-0.012, 0.020, 0.090)}
+        exec(compile(ast.Module(body=[cls], type_ignores=[]), str(source), "exec"), namespace)
+        machine_class = namespace[cls.name]
+        legacy = machine_class()
+        fixed = machine_class(grasp_alignment="fixed_wrist")
+        self.assertEqual(legacy._max_steps, 810)
+        self.assertEqual(fixed._max_steps, 930)
+        for step in (210, 329):
+            fixed._step_count = step
+            self.assertEqual(fixed._phase()[1], "align_hold")
+        fixed._step_count = 330
+        self.assertEqual(fixed._phase()[1], "grasp")
+        with self.assertRaises(ValueError):
+            machine_class(grasp_alignment="fixed_wrist", grasp_offset=(0, 0, float("nan")))
+
     def test_episode_export_is_owned_by_reset_or_final_flush_never_both(self):
         events = []
         recorder = SimpleNamespace(exported_successful_episode_count=0, exported_failed_episode_count=0, success=False)
