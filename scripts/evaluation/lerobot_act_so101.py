@@ -30,6 +30,13 @@ parser.add_argument("--render-width", type=int, default=320)
 parser.add_argument("--render-height", type=int, default=240)
 parser.add_argument("--policy-image-size", type=int, default=84)
 parser.add_argument(
+    "--reset-render-frames", type=int, default=4,
+    help="Render without advancing physics before the first action; 0 reproduces legacy observations.",
+)
+parser.add_argument("--trace-steps", type=int, default=60, help="Record the first N control steps per episode.")
+parser.add_argument("--gripper-effort-mode", choices=("task", "fixed"), default="task",
+                    help="Match Mimic task effort updates; fixed reproduces the legacy evaluator.")
+parser.add_argument(
     "--lift-threshold-m",
     type=float,
     default=0.02,
@@ -71,6 +78,7 @@ import imageio.v2 as imageio
 import numpy as np
 import torch
 from isaaclab_tasks.utils import parse_env_cfg
+from leisaac.utils.env_utils import dynamic_reset_gripper_effort_limit_sim
 
 import leisaac  # noqa: F401
 
@@ -177,11 +185,43 @@ def scene_state_sha256(state: dict) -> str:
     return digest.hexdigest()
 
 
+def refresh_reset_images(env, observations: dict, render_frames: int) -> dict:
+    """Refresh RTX output and camera caches without advancing the physical state."""
+    if render_frames < 0:
+        raise ValueError("reset-render-frames cannot be negative")
+    if render_frames == 0:
+        return observations
+    before = scene_state_sha256(env.scene.get_state(is_relative=True))
+    for _ in range(render_frames):
+        env.sim.render()
+    policy = dict(observations["policy"])
+    for name in ("front", "wrist"):
+        camera = env.scene[name]
+        camera.reset()
+        camera.update(0.0, force_recompute=True)
+        policy[name] = camera.data.output["rgb"][..., :3].clone()
+    after = scene_state_sha256(env.scene.get_state(is_relative=True))
+    if before != after:
+        raise RuntimeError("physical state changed during render-only reset refresh")
+    return {**observations, "policy": policy}
+
+
+def joint_clip_diagnostics(action: torch.Tensor, lower: torch.Tensor, upper: torch.Tensor):
+    """Return bounded commands, per-joint clipping flags and correction magnitudes."""
+    if not torch.isfinite(action).all():
+        raise ValueError("non-finite joint action")
+    clipped = action.clamp(lower, upper)
+    correction = (action - clipped).abs()
+    return clipped, correction > 0, correction
+
+
 def main() -> None:
     if args_cli.num_rollouts <= 0 or args_cli.horizon <= 0:
         raise ValueError("num-rollouts and horizon must be positive")
     if args_cli.video_count < 0:
         raise ValueError("video-count cannot be negative")
+    if args_cli.reset_render_frames < 0 or args_cli.trace_steps < 0:
+        raise ValueError("reset-render-frames and trace-steps cannot be negative")
     if args_cli.render_width <= 0 or args_cli.render_height <= 0:
         raise ValueError("render dimensions must be positive")
     validate_policy_image_size(args_cli.policy_image_size)
@@ -193,6 +233,8 @@ def main() -> None:
         raise ValueError("lift-threshold-m must be a finite positive number")
 
     output_dir = args_cli.output_dir.expanduser().resolve()
+    if output_dir.exists() and any(output_dir.iterdir()):
+        raise FileExistsError(f"output directory is not empty: {output_dir}")
     output_dir.mkdir(parents=True, exist_ok=True)
     server_command = [
         str(args_cli.server_python.expanduser().resolve()),
@@ -227,6 +269,7 @@ def main() -> None:
         env_cfg.recorders = None
         env_cfg.terminations.time_out = None
         env_cfg.seed = args_cli.seed
+        env_cfg.rerender_on_reset = args_cli.reset_render_frames > 0
         success_term = env_cfg.terminations.success
         env_cfg.terminations.success = None
         env = gym.make(args_cli.task, cfg=env_cfg).unwrapped
@@ -244,6 +287,7 @@ def main() -> None:
             env.seed(trial_seed)
             observations, _ = env.reset()
             initial_scene_state_sha256 = scene_state_sha256(env.scene.get_state(is_relative=True))
+            observations = refresh_reset_images(env, observations, args_cli.reset_render_frames)
             send_request(connection, {"command": "reset"})
             initial_cube_xyz = env.scene["cube"].data.root_pos_w[0, :3].detach().cpu().tolist()
             cube_xy = initial_cube_xyz[:2]
@@ -260,6 +304,12 @@ def main() -> None:
                 else None
             )
             clipped_steps = 0
+            clipped_joint_steps = torch.zeros(6, dtype=torch.int64, device=env.device)
+            max_clip_correction = torch.zeros(6, device=env.device)
+            tracking_error_sum = torch.zeros(6, device=env.device)
+            gripper_effort_min = float("inf")
+            gripper_effort_max = 0.0
+            trace = []
             success = False
             trial_state_snapshots = []
             try:
@@ -272,6 +322,8 @@ def main() -> None:
                             "front": hashlib.sha256(front.tobytes()).hexdigest(),
                             "wrist": hashlib.sha256(wrist.tobytes()).hexdigest(),
                         }
+                        for name, pixels in (("front", front), ("wrist", wrist)):
+                            imageio.imwrite(output_dir / f"initial_{trial + 1:03d}_{name}.png", pixels)
                     response = send_request(
                         connection,
                         {
@@ -293,12 +345,31 @@ def main() -> None:
                     else:
                         action_min = torch.minimum(action_min, action[0])
                         action_max = torch.maximum(action_max, action[0])
-                    clipped = action.clamp(lower, upper)
-                    clipped_steps += int(not torch.equal(action, clipped))
+                    clipped, clip_mask, clip_correction = joint_clip_diagnostics(action, lower, upper)
+                    clipped_steps += int(clip_mask.any())
+                    clipped_joint_steps += clip_mask[0].to(torch.int64)
+                    max_clip_correction = torch.maximum(max_clip_correction, clip_correction[0])
+                    state_before = policy_obs["joint_pos"][0].detach().clone()
+                    if args_cli.gripper_effort_mode == "task" and env.cfg.dynamic_reset_gripper_effort_limit:
+                        dynamic_reset_gripper_effort_limit_sim(env, "so101leader")
+                    gripper_effort = float(robot.data.joint_effort_limits[0, -1])
+                    gripper_effort_min = min(gripper_effort_min, gripper_effort)
+                    gripper_effort_max = max(gripper_effort_max, gripper_effort)
                     observations, _, _, _, _ = env.step(clipped)
+                    tracking_error = (clipped[0] - observations["policy"]["joint_pos"][0]).abs()
+                    tracking_error_sum += tracking_error
                     cube_z = float(env.scene["cube"].data.root_pos_w[0, 2].item())
                     max_cube_lift_m = max(max_cube_lift_m, cube_z - initial_cube_xyz[2])
                     completed_step = step + 1
+                    if step < args_cli.trace_steps:
+                        trace.append({
+                            "step": completed_step,
+                            "state_before": state_before.cpu().tolist(),
+                            "requested_action": action[0].detach().cpu().tolist(),
+                            "applied_action": clipped[0].detach().cpu().tolist(),
+                            "state_after": observations["policy"]["joint_pos"][0].detach().cpu().tolist(),
+                            "cube_xyz": env.scene["cube"].data.root_pos_w[0, :3].detach().cpu().tolist(),
+                        })
                     if (
                         args_cli.failure_state_file is not None
                         and completed_step % args_cli.failure_state_interval == 0
@@ -334,6 +405,10 @@ def main() -> None:
                 "success": success,
                 "steps": step + 1,
                 "clipped_steps": clipped_steps,
+                "clipped_steps_by_joint": dict(zip(robot.joint_names, clipped_joint_steps.cpu().tolist())),
+                "max_clip_correction_rad": dict(zip(robot.joint_names, max_clip_correction.cpu().tolist())),
+                "mean_tracking_error_rad": dict(zip(robot.joint_names, (tracking_error_sum / (step + 1)).cpu().tolist())),
+                "gripper_effort_limit_range": [gripper_effort_min, gripper_effort_max],
                 "initial_joint_pos": initial_joint_pos,
                 "initial_observation_sha256": initial_observation_sha256,
                 "initial_scene_state_sha256": initial_scene_state_sha256,
@@ -348,6 +423,7 @@ def main() -> None:
                 "outcome": outcome,
             }
             results.append(result)
+            (output_dir / f"trace_{trial + 1:03d}.json").write_text(json.dumps(trace, indent=2), encoding="utf-8")
             if not success and args_cli.failure_state_file is not None:
                 final_step = step + 1
                 if not trial_state_snapshots or trial_state_snapshots[-1]["step"] != final_step:
@@ -370,6 +446,12 @@ def main() -> None:
             "server_seed": args_cli.server_seed,
             "server_device": args_cli.server_device,
             "n_action_steps": args_cli.n_action_steps,
+            "reset_render_frames": args_cli.reset_render_frames,
+            "trace_steps": args_cli.trace_steps,
+            "gripper_effort_mode": args_cli.gripper_effort_mode,
+            "joint_names": robot.joint_names,
+            "joint_lower_limits_rad": lower.cpu().tolist(),
+            "joint_upper_limits_rad": upper.cpu().tolist(),
             "render_width": args_cli.render_width,
             "render_height": args_cli.render_height,
             "policy_image_size": args_cli.policy_image_size,

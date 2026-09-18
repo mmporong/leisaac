@@ -160,6 +160,7 @@ def main() -> None:
             "batch_size": args.batch_size, "min_free_gib": args.min_free_gib,
             "checkpoint_selection": "predeclared final step; no selection on rollout results",
             "render_dimensions": [640, 480], "policy_image_size": 224, "horizon": 1200,
+            "reset_render_frames": 4, "gripper_effort_mode": "task", "trace_steps": 60,
             "code_sha256": {name: sha256(REPO / name) for name in (
                 "scripts/imitation_learning/run_act_vision_experiment.py",
                 "scripts/imitation_learning/prepare_mimic_act_split.py",
@@ -221,6 +222,7 @@ def main() -> None:
                       "--seed", str(seed), "--n-action-steps", "30", "--server-device", "cpu",
                       "--server-seed", "0", "--server-python", sys.executable, "--video-count", "1",
                       "--render-width", "640", "--render-height", "480", "--policy-image-size", "224",
+                      "--reset-render-frames", "4", "--gripper-effort-mode", "task", "--trace-steps", "60",
                       "--output-dir", str(output), "--headless", "--device", "cuda:0"])
             checked = _load_rollout(root / "rollouts", seed, "vision224")
             if checked["checkpoint"] != str(checkpoint) or checked["conditions"]["policy_image_size"] != 224:

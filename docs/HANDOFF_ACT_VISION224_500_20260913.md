@@ -117,3 +117,118 @@ LLM 호출 없이 순서대로 수행한다. 학습과 Isaac은 동시에 실행
 근거: [분리·학습 실행 전 검증 JSON](evidence/act_vision224_500_launch_validation_20260913.json).
 본 30,000-step 학습과 최종 10회 평가는 별도 `act_vision224_500_20260913` 실행이며,
 이 문서의 smoke 완료를 본 실험 완료로 해석하지 않는다.
+
+## 2026-09-18: 추가 학습 전에 생성·평가 제어 계약 수정
+
+500회로 학습한 기존 ACT의 역사적 평가 결과는 **1/10 성공**이었다.
+현재 데이터 수를 더 늘리거나 조명 증강부터 적용하지 않는다. 성공 시연을 같은
+초기 상태에서 재생하는 검사에서 생성기와 평가기의 차이가 발견됐다.
+
+1. **초기 카메라 관측:** Isaac Lab의 `rerender_on_reset=False` 기본값에서는 이전
+   RTX 출력이 초기 관측에 남을 수 있다. 평가기에 물리 스텝 없이 4회 렌더한 뒤
+   front/wrist 센서 캐시를 갱신하는 처리를 추가했다. 물리 상태 해시가 달라지면
+   중단한다. `--reset-render-frames 0`은 이전 관측 방식 재현용이다.
+2. **그리퍼 힘 제한:** Mimic 환경은 매 스텝
+   `dynamic_reset_gripper_effort_limit_sim`을 호출하지만 기존 ACT 평가기는
+   일반 환경을 사용하면서 이 호출이 빠져 있었다. `--gripper-effort-mode task`로
+   같은 처리를 적용한다. `fixed`는 기존 고정 제한 방식 재현용이다.
+3. **행동 라벨:** 기존 `next_observed`는 `q[t+1]`이라는 물리 결과를 학습한다.
+   평가기는 이를 모터 목표각으로 해석한다. 원본 recorder의 목표각은
+   `obs/joint_pos_target[t+1]`이다. 숫자의 단위가 같아도 제어 의미는 다르다.
+
+첫 두 수정은 평가 기본값에 반영했다. 기존 500회 데이터·모델은 덮어쓰지 않는다.
+카메라 수정만 적용한 seed 4001/4007은 둘 다 `no_lift`였다. 따라서 초기 영상
+갱신만으로 정책 성능이 해결됐다고 주장하지 않는다.
+
+### 학습 없이 제어 계약을 검사하는 방법
+
+`scripts/evaluation/replay_joint_contract.py`는 같은 HDF5 초기 상태를 복원하여
+다음 명령들을 비교한다. 실물이나 리더 연결은 사용하지 않는다.
+
+- `mimic_action`: 원본 IK 행동 전체 T개. 원본 성공 재현 대조군.
+- `recorded_target`: 저장된 목표각 `target[1:T]`를 관절 제한 안으로 잘라 적용.
+  마지막 목표각이 기록되지 않아 T−1개만 실행한다.
+- `next_observed`: 현재 학습 계약과 같은 `q[1:T] + q[-1]`, 총 T개.
+
+성공 비교에는 공통 T−1 구간의 `success_by_common_horizon`을 사용한다.
+T와 T−1 전체 RMSE를 섞지 않고 `common_horizon_joint_rmse_rad`를 비교한다.
+마지막 동작을 빠뜨려 원본 성공을 실패로 오판하지 않도록 원본 IK 대조군은
+T개 전부 실행한다. 초기 상태 해시와 관절 오차, 실제 그리퍼 힘 제한도 기록한다.
+
+```bash
+cd "/data/$USER/leisaac"
+"/data/$USER/conda-envs/leisaac/bin/python" scripts/evaluation/replay_joint_contract.py \
+  --dataset outputs/mimic_vision224_500_20260913/raw/shard_000.hdf5 \
+  --episodes 0 1 2 --mode recorded_target --gripper-effort-mode task \
+  --output-dir outputs/evaluation/replay_target_new --headless --device cuda:0
+```
+
+실험 영상·로그·JSON은 `outputs/evaluation/act_diagnostics_20260918/`에 보존한다.
+현재 이 경로가 이미 있으므로 재실행 시 새 출력 디렉터리를 사용한다.
+생성 시연의 재생 성공은 학습된 ACT의 자율 성공률과 다른 지표다.
+
+수치·출력 JSON 해시·97개 검수 대상 목록은
+[제어 계약 진단 근거](evidence/act_action_contract_20260918.json)에 보존했다.
+
+### 대조 실험 결과와 새 라벨 변환
+
+첫 shard의 `demo_0/1/2`를 사전 선택했다. 각 시연의 초기 물리 상태 해시는
+조건 간 동일했고, 원본 첫 관절 관측과 복원 상태의 오차는 0이었다.
+
+| 명령 | 그리퍼 힘 설정 | 공통 T−1 구간 성공 |
+| --- | --- | --- |
+| 원본 IK 행동 | Mimic과 같은 task 방식 | 3/3 |
+| 원본 목표각 + 관절 제한 | 기존 고정 방식 | 0/3 |
+| 원본 목표각 + 관절 제한 | Mimic과 같은 task 방식 | 3/3 |
+| 기존 next_observed 학습 라벨 | Mimic과 같은 task 방식 | 0/3 |
+
+목표각+task 방식의 첫 성공 스텝은 211/185/605로 마지막 전이 이전이었다.
+공통 구간 관절 RMSE는 목표각 방식에서 약 0.003107/0/0 rad,
+기존 라벨 방식에서 약 0.046943/0.047568/0.030391 rad였다.
+목표각 재생에서는 그리퍼 제한이 0.066667로 유지됐다. 이는 이 시뮬레이션의
+물체 질량 기반 설정이며 실물 그리퍼의 캘리브레이션 값으로 복사하지 않는다.
+
+이번 표는 **제어 계약의 재생 진단**이다. 새 ACT 학습 성공률, 500회 전체의
+재생 성공률, 미관측 위치 일반화나 실물 성공률을 뜻하지 않는다.
+기존 30,000-step ACT를 카메라·그리퍼 수정 후 seed 4001에서 평가했을 때도
+`no_lift`였다. 평가 설정을 고쳤다는 사실과 기존 정책이 개선됐다는 주장을 구분한다.
+
+변환기에 `--action-source recorded_target`을 추가했다.
+상태·RGB의 원본 인덱스 0..T−2와, 제한을 적용한 목표각 인덱스 1..T−1을
+쌍으로 저장한다. 마지막 목표각은 기록에 없으므로 마지막 프레임을 제외한다.
+관절 순서·상하한·유한성, pre/post-step 정렬을 검사하고, limits 파일 해시와
+실제 제한 적용량을 provenance에 남긴다. `stored`/`next_observed`는 기존 동작을 유지한다.
+
+```bash
+cd "/data/$USER/leisaac"
+"$HOME/miniforge3/envs/lerobot/bin/python" scripts/imitation_learning/convert_hdf5_to_lerobot.py \
+  --input outputs/mimic_vision224_500_20260913/raw/shard_000.hdf5 \
+  --output-root outputs/evaluation/recorded_target_pilot_new \
+  --repo-id local/so101_recorded_target_pilot \
+  --image-size 224 --max-episodes 3 --action-source recorded_target \
+  --joint-limits-file outputs/evaluation/act_diagnostics_20260918/render4_seed4001/evaluation.json
+```
+
+파일럿은 **3회·1,148프레임**이다. 모든 상태·행동을 원본과 대조했고,
+LeRobot SDK에서 첫/마지막 front·wrist 224×224 영상을 디코딩했다.
+기존 500회 데이터·기존 모델과 별도 출력이다. 전체 500회 재변환이나
+새 라벨 ACT 학습이 완료된 상태는 아니다.
+최종 파일럿 경로는 `outputs/evaluation/act_diagnostics_20260918/target_label_pilot_v2/`다.
+제한 적용은 30프레임·31개 값, 최대 보정량은 약 0.330775 rad였다.
+CPU 회귀 테스트 79개, Python 컴파일, diff 검사를 통과했고 별도 리뷰에서
+차단 수정 사항은 남지 않았다. LSP·정적 타입 검사 도구는 없어 실행하지 않았다.
+
+### 확대 전 남은 품질 조건
+
+500회 원본 목표각을 전수 검사하면 마지막 프레임 제외 후 276,947프레임이다.
+관절 제한을 적용한 뒤에도 **97회**는 기존 연속성 검사
+`||action[t+1]−action[t]||₂ ≤ 1 rad`를 초과하며, 최대는 약 4.1642 rad였다.
+나머지 403회는 이 검사 항목의 통과 후보일 뿐, 재생·학습 품질 전체가 검증된 것은 아니다.
+이 기준은 기존 변환기의 품질 기준이지 실물 관절 속도의 안전 한계를 뜻하지 않는다.
+
+다음 순서는 **명령 급변 시연 검수 → 보존된 raw에서 새 라벨로 별도 배치 변환
+→ 원 시연 식별자를 유지한 train/valid 분리 → ACT 재학습 → 새 평가 조건에서
+폐루프 검증**이다. 97회를 몰래 버리거나 허용치를 올려 통과시키지 않는다.
+기존 `run_mimic_image_batch.py`는 여전히 `next_observed` 경로이므로 새 라벨
+배치 변환 기능 없이 그대로 재실행하지 않는다. 조명·배경 증강과 강화학습은
+제어 계약이 맞는 정책의 기준 성능을 확보한 뒤 별도 비교한다.

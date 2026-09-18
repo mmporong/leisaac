@@ -1,0 +1,820 @@
+{
+  "date": "2026-09-18",
+  "scope": "simulation contract diagnosis and corrected-label pilot; not trained-policy improvement",
+  "comparison_horizon": "first T-1 transitions for all three command types; mimic/next-observed also execute final Tth transition",
+  "replay": {
+    "replay_recorded_target": {
+      "path": "outputs/evaluation/act_diagnostics_20260918/replay_recorded_target/evaluation.json",
+      "sha256": "6a5a8a2d9b933b8d978449c074e61a4cd21906d2125eae9e9952ac7868eecf46",
+      "results": [
+        {
+          "episode": "demo_0",
+          "steps": 253,
+          "success": false,
+          "first_success_step": null,
+          "initial_physical_sha256": "2c66964be0b5df0cd5cefedd8f7d0a74d2bfb573ab209c905e5564f50545ba7f",
+          "initial_joint_max_error_rad": 0,
+          "joint_rmse_rad": 0.08427750528584071,
+          "clipped_steps": 30
+        },
+        {
+          "episode": "demo_1",
+          "steps": 220,
+          "success": false,
+          "first_success_step": null,
+          "initial_physical_sha256": "d932ed6cc008dc651930b8b7ebfb7c818250f9df7c004b732161a40fbb328011",
+          "initial_joint_max_error_rad": 0,
+          "joint_rmse_rad": 0.07122337510343069,
+          "clipped_steps": 0
+        },
+        {
+          "episode": "demo_2",
+          "steps": 675,
+          "success": false,
+          "first_success_step": null,
+          "initial_physical_sha256": "972659a01a6482292d21a3a7b1ff8db46c6619a6abab3324ba06cd2e5d92511f",
+          "initial_joint_max_error_rad": 0,
+          "joint_rmse_rad": 0.02275226914809222,
+          "clipped_steps": 0
+        }
+      ]
+    },
+    "replay_recorded_target_task_effort": {
+      "path": "outputs/evaluation/act_diagnostics_20260918/replay_recorded_target_task_effort/evaluation.json",
+      "sha256": "c2e688f7ad56ceeac92b243ce3228970f951624df2cca934eaf7ce9bc274c997",
+      "results": [
+        {
+          "episode": "demo_0",
+          "steps": 253,
+          "success": true,
+          "first_success_step": 211,
+          "initial_physical_sha256": "2c66964be0b5df0cd5cefedd8f7d0a74d2bfb573ab209c905e5564f50545ba7f",
+          "initial_joint_max_error_rad": 0,
+          "joint_rmse_rad": 0.003107378823302281,
+          "clipped_steps": 30,
+          "gripper_effort_limit_range": [
+            0.06666666269302368,
+            0.06666666269302368
+          ]
+        },
+        {
+          "episode": "demo_1",
+          "steps": 220,
+          "success": true,
+          "first_success_step": 185,
+          "initial_physical_sha256": "d932ed6cc008dc651930b8b7ebfb7c818250f9df7c004b732161a40fbb328011",
+          "initial_joint_max_error_rad": 0,
+          "joint_rmse_rad": 0,
+          "clipped_steps": 0,
+          "gripper_effort_limit_range": [
+            0.06666666269302368,
+            0.06666666269302368
+          ]
+        },
+        {
+          "episode": "demo_2",
+          "steps": 675,
+          "success": true,
+          "first_success_step": 605,
+          "initial_physical_sha256": "972659a01a6482292d21a3a7b1ff8db46c6619a6abab3324ba06cd2e5d92511f",
+          "initial_joint_max_error_rad": 0,
+          "joint_rmse_rad": 0,
+          "clipped_steps": 0,
+          "gripper_effort_limit_range": [
+            0.06666666269302368,
+            0.06666666269302368
+          ]
+        }
+      ]
+    },
+    "replay_next_observed_task_effort": {
+      "path": "outputs/evaluation/act_diagnostics_20260918/replay_next_observed_task_effort/evaluation.json",
+      "sha256": "5d82dab5dbec8426286c7e1b929439a2f1ab244e622cb826b10799f7ce7a7d5a",
+      "results": [
+        {
+          "episode": "demo_0",
+          "steps": 254,
+          "common_horizon": 253,
+          "success_by_common_horizon": false,
+          "success": false,
+          "first_success_step": null,
+          "initial_physical_sha256": "2c66964be0b5df0cd5cefedd8f7d0a74d2bfb573ab209c905e5564f50545ba7f",
+          "initial_joint_max_error_rad": 0,
+          "joint_rmse_rad": 0.04687600660836912,
+          "common_horizon_joint_rmse_rad": 0.04694275219921536,
+          "clipped_steps": 24,
+          "gripper_effort_limit_range": [
+            0.06666666269302368,
+            0.768000066280365
+          ]
+        },
+        {
+          "episode": "demo_1",
+          "steps": 221,
+          "common_horizon": 220,
+          "success_by_common_horizon": false,
+          "success": false,
+          "first_success_step": null,
+          "initial_physical_sha256": "d932ed6cc008dc651930b8b7ebfb7c818250f9df7c004b732161a40fbb328011",
+          "initial_joint_max_error_rad": 0,
+          "joint_rmse_rad": 0.04748794896938707,
+          "common_horizon_joint_rmse_rad": 0.047568308583354646,
+          "clipped_steps": 0,
+          "gripper_effort_limit_range": [
+            0.06666666269302368,
+            0.768000066280365
+          ]
+        },
+        {
+          "episode": "demo_2",
+          "steps": 676,
+          "common_horizon": 675,
+          "success_by_common_horizon": false,
+          "success": false,
+          "first_success_step": null,
+          "initial_physical_sha256": "972659a01a6482292d21a3a7b1ff8db46c6619a6abab3324ba06cd2e5d92511f",
+          "initial_joint_max_error_rad": 0,
+          "joint_rmse_rad": 0.030371090720974516,
+          "common_horizon_joint_rmse_rad": 0.03039086848391009,
+          "clipped_steps": 0,
+          "gripper_effort_limit_range": [
+            0.06666666269302368,
+            0.768000066280365
+          ]
+        }
+      ]
+    },
+    "replay_mimic_action_task_effort": {
+      "path": "outputs/evaluation/act_diagnostics_20260918/replay_mimic_action_task_effort/evaluation.json",
+      "sha256": "4dcf9cb7aa52fda5dfcd78ff917536f1023f28701a507ff35c1421888253073a",
+      "results": [
+        {
+          "episode": "demo_0",
+          "steps": 254,
+          "common_horizon": 253,
+          "success_by_common_horizon": true,
+          "success": true,
+          "first_success_step": 211,
+          "initial_physical_sha256": "2c66964be0b5df0cd5cefedd8f7d0a74d2bfb573ab209c905e5564f50545ba7f",
+          "initial_joint_max_error_rad": 0,
+          "joint_rmse_rad": 0,
+          "common_horizon_joint_rmse_rad": 0,
+          "clipped_steps": 0,
+          "gripper_effort_limit_range": [
+            0.06666666269302368,
+            0.06666666269302368
+          ]
+        },
+        {
+          "episode": "demo_1",
+          "steps": 221,
+          "common_horizon": 220,
+          "success_by_common_horizon": true,
+          "success": true,
+          "first_success_step": 185,
+          "initial_physical_sha256": "d932ed6cc008dc651930b8b7ebfb7c818250f9df7c004b732161a40fbb328011",
+          "initial_joint_max_error_rad": 0,
+          "joint_rmse_rad": 0,
+          "common_horizon_joint_rmse_rad": 0,
+          "clipped_steps": 0,
+          "gripper_effort_limit_range": [
+            0.06666666269302368,
+            0.06666666269302368
+          ]
+        },
+        {
+          "episode": "demo_2",
+          "steps": 676,
+          "common_horizon": 675,
+          "success_by_common_horizon": true,
+          "success": true,
+          "first_success_step": 605,
+          "initial_physical_sha256": "972659a01a6482292d21a3a7b1ff8db46c6619a6abab3324ba06cd2e5d92511f",
+          "initial_joint_max_error_rad": 0,
+          "joint_rmse_rad": 0.0024997422203402652,
+          "common_horizon_joint_rmse_rad": 0.0025015931956530037,
+          "clipped_steps": 0,
+          "gripper_effort_limit_range": [
+            0.06666666269302368,
+            0.06666666269302368
+          ]
+        }
+      ]
+    }
+  },
+  "legacy_metadata_note": "replay_recorded_target is fixed-effort T-1; replay_recorded_target_task_effort is task-effort T-1. These ran before common_horizon fields were added; all target first successes precede T-1.",
+  "policy_checks": {
+    "render4_seed4001": {
+      "path": "outputs/evaluation/act_diagnostics_20260918/render4_seed4001/evaluation.json",
+      "sha256": "966394ecab6df16d98d1cd4aad593e75bed145e49b4b0d29ab1eee3027eab095",
+      "results": [
+        {
+          "seed": 4001,
+          "success": false,
+          "steps": 1200,
+          "clipped_steps": 425,
+          "initial_observation_sha256": {
+            "front": "e635326b53ec33f44a896177184d0ff9ce6e34ace0e355482ec9fabd3eec6a74",
+            "wrist": "94d48cb548b0dd1e803ba73e7fca0f64001ce2c73e4d05666bb3f6a643737cbd"
+          },
+          "initial_scene_state_sha256": "45fee70957ad47a121959fc22c9746cc7eda073ca603e1c2147b2a0f004cd77c",
+          "outcome": "no_lift"
+        }
+      ]
+    },
+    "render4_seed4007": {
+      "path": "outputs/evaluation/act_diagnostics_20260918/render4_seed4007/evaluation.json",
+      "sha256": "535ec1688acd225985cea59c2c7dd025abf9cbc3cda07618f2aac28b1ac97157",
+      "results": [
+        {
+          "seed": 4007,
+          "success": false,
+          "steps": 1200,
+          "clipped_steps": 5,
+          "initial_observation_sha256": {
+            "front": "3521e056f4df33fafaaca5fd00f431ead4d0d7f975284283ea5fd95b587c9e11",
+            "wrist": "50d5eec726b4f2d3b70befeb67f6a2d99294245303f7313171c542f2577df01d"
+          },
+          "initial_scene_state_sha256": "c0523f02154b2ddcf793550323926c098343cfc01debd9a098914e4ced68eaf3",
+          "outcome": "no_lift"
+        }
+      ]
+    },
+    "render4_task_effort_seed4001": {
+      "path": "outputs/evaluation/act_diagnostics_20260918/render4_task_effort_seed4001/evaluation.json",
+      "sha256": "fec1d7cd4de525bb8ab620fa5b4faa99ecfefb58ed3dc327ddc5db1f32d5f0f2",
+      "results": [
+        {
+          "seed": 4001,
+          "success": false,
+          "steps": 1200,
+          "clipped_steps": 995,
+          "gripper_effort_limit_range": [
+            0.06666666269302368,
+            0.768000066280365
+          ],
+          "initial_observation_sha256": {
+            "front": "4cf835bd5efe616147224a1ea3f7ac9310fdba15be453b634b90ba11940ccfc5",
+            "wrist": "dfcfe4c7d2a2032a2d8d2438208f45d44d0eac9ed606e484b82f6aaea3d2e361"
+          },
+          "initial_scene_state_sha256": "45fee70957ad47a121959fc22c9746cc7eda073ca603e1c2147b2a0f004cd77c",
+          "outcome": "no_lift"
+        }
+      ]
+    }
+  },
+  "policy_note": "render4_seed4001/4007 used legacy fixed effort. Corrected camera+task-effort old ACT seed4001 still no_lift. No new-label training performed.",
+  "full_target_audit": {
+    "episodes": 500,
+    "frames": 276947,
+    "clipped_frames": 35418,
+    "recorder_alignment_errors": 0,
+    "existing_action_step_norm_limit_rad": 1,
+    "max_action_step_norm_rad": 4.16419641590966,
+    "flagged_episode_count": 97,
+    "passing_candidates": 403,
+    "flagged_episodes": [
+      {
+        "shard": "shard_000.hdf5",
+        "episode": "demo_12",
+        "max_action_step_norm_rad": 1.5264795268266582
+      },
+      {
+        "shard": "shard_000.hdf5",
+        "episode": "demo_19",
+        "max_action_step_norm_rad": 1.7307250060986032
+      },
+      {
+        "shard": "shard_000.hdf5",
+        "episode": "demo_21",
+        "max_action_step_norm_rad": 2.9311258590825804
+      },
+      {
+        "shard": "shard_001.hdf5",
+        "episode": "demo_0",
+        "max_action_step_norm_rad": 1.159412591678215
+      },
+      {
+        "shard": "shard_001.hdf5",
+        "episode": "demo_10",
+        "max_action_step_norm_rad": 1.380271165781638
+      },
+      {
+        "shard": "shard_001.hdf5",
+        "episode": "demo_15",
+        "max_action_step_norm_rad": 1.4903978294164602
+      },
+      {
+        "shard": "shard_001.hdf5",
+        "episode": "demo_18",
+        "max_action_step_norm_rad": 1.6818265092273683
+      },
+      {
+        "shard": "shard_001.hdf5",
+        "episode": "demo_21",
+        "max_action_step_norm_rad": 2.313076580570186
+      },
+      {
+        "shard": "shard_001.hdf5",
+        "episode": "demo_3",
+        "max_action_step_norm_rad": 2.7077017354578596
+      },
+      {
+        "shard": "shard_001.hdf5",
+        "episode": "demo_6",
+        "max_action_step_norm_rad": 1.2875965045670086
+      },
+      {
+        "shard": "shard_001.hdf5",
+        "episode": "demo_7",
+        "max_action_step_norm_rad": 1.7156270077973654
+      },
+      {
+        "shard": "shard_002.hdf5",
+        "episode": "demo_10",
+        "max_action_step_norm_rad": 2.147744257233227
+      },
+      {
+        "shard": "shard_002.hdf5",
+        "episode": "demo_18",
+        "max_action_step_norm_rad": 1.3395285831754584
+      },
+      {
+        "shard": "shard_002.hdf5",
+        "episode": "demo_20",
+        "max_action_step_norm_rad": 1.671037584433126
+      },
+      {
+        "shard": "shard_002.hdf5",
+        "episode": "demo_22",
+        "max_action_step_norm_rad": 2.753503033929395
+      },
+      {
+        "shard": "shard_002.hdf5",
+        "episode": "demo_9",
+        "max_action_step_norm_rad": 3.421434577652717
+      },
+      {
+        "shard": "shard_003.hdf5",
+        "episode": "demo_1",
+        "max_action_step_norm_rad": 4.16419641590966
+      },
+      {
+        "shard": "shard_003.hdf5",
+        "episode": "demo_18",
+        "max_action_step_norm_rad": 1.510937495770857
+      },
+      {
+        "shard": "shard_004.hdf5",
+        "episode": "demo_0",
+        "max_action_step_norm_rad": 3.2186814236595027
+      },
+      {
+        "shard": "shard_004.hdf5",
+        "episode": "demo_14",
+        "max_action_step_norm_rad": 2.3278594685767673
+      },
+      {
+        "shard": "shard_004.hdf5",
+        "episode": "demo_22",
+        "max_action_step_norm_rad": 1.119300789548477
+      },
+      {
+        "shard": "shard_005.hdf5",
+        "episode": "demo_11",
+        "max_action_step_norm_rad": 1.845777673571261
+      },
+      {
+        "shard": "shard_005.hdf5",
+        "episode": "demo_12",
+        "max_action_step_norm_rad": 3.163459259701138
+      },
+      {
+        "shard": "shard_005.hdf5",
+        "episode": "demo_17",
+        "max_action_step_norm_rad": 1.362802944754558
+      },
+      {
+        "shard": "shard_005.hdf5",
+        "episode": "demo_6",
+        "max_action_step_norm_rad": 1.5531127702921979
+      },
+      {
+        "shard": "shard_006.hdf5",
+        "episode": "demo_1",
+        "max_action_step_norm_rad": 2.4450029884780413
+      },
+      {
+        "shard": "shard_006.hdf5",
+        "episode": "demo_17",
+        "max_action_step_norm_rad": 1.27381344997076
+      },
+      {
+        "shard": "shard_006.hdf5",
+        "episode": "demo_21",
+        "max_action_step_norm_rad": 1.3071597591913067
+      },
+      {
+        "shard": "shard_006.hdf5",
+        "episode": "demo_24",
+        "max_action_step_norm_rad": 1.8904297925926206
+      },
+      {
+        "shard": "shard_007.hdf5",
+        "episode": "demo_1",
+        "max_action_step_norm_rad": 1.884180036854864
+      },
+      {
+        "shard": "shard_007.hdf5",
+        "episode": "demo_15",
+        "max_action_step_norm_rad": 2.443293892376067
+      },
+      {
+        "shard": "shard_007.hdf5",
+        "episode": "demo_18",
+        "max_action_step_norm_rad": 3.945162223194269
+      },
+      {
+        "shard": "shard_007.hdf5",
+        "episode": "demo_21",
+        "max_action_step_norm_rad": 1.127977351961323
+      },
+      {
+        "shard": "shard_007.hdf5",
+        "episode": "demo_4",
+        "max_action_step_norm_rad": 1.2972941795596922
+      },
+      {
+        "shard": "shard_007.hdf5",
+        "episode": "demo_9",
+        "max_action_step_norm_rad": 1.4327369300040789
+      },
+      {
+        "shard": "shard_008.hdf5",
+        "episode": "demo_1",
+        "max_action_step_norm_rad": 2.649317744482347
+      },
+      {
+        "shard": "shard_008.hdf5",
+        "episode": "demo_10",
+        "max_action_step_norm_rad": 3.372765461275425
+      },
+      {
+        "shard": "shard_008.hdf5",
+        "episode": "demo_15",
+        "max_action_step_norm_rad": 1.833313263343936
+      },
+      {
+        "shard": "shard_008.hdf5",
+        "episode": "demo_2",
+        "max_action_step_norm_rad": 2.0806941447459324
+      },
+      {
+        "shard": "shard_008.hdf5",
+        "episode": "demo_21",
+        "max_action_step_norm_rad": 1.5513647520322038
+      },
+      {
+        "shard": "shard_008.hdf5",
+        "episode": "demo_22",
+        "max_action_step_norm_rad": 3.2686895417139743
+      },
+      {
+        "shard": "shard_008.hdf5",
+        "episode": "demo_23",
+        "max_action_step_norm_rad": 2.4451407672444243
+      },
+      {
+        "shard": "shard_008.hdf5",
+        "episode": "demo_3",
+        "max_action_step_norm_rad": 3.020216084068638
+      },
+      {
+        "shard": "shard_008.hdf5",
+        "episode": "demo_4",
+        "max_action_step_norm_rad": 1.0950491768854524
+      },
+      {
+        "shard": "shard_008.hdf5",
+        "episode": "demo_6",
+        "max_action_step_norm_rad": 4.01791496922464
+      },
+      {
+        "shard": "shard_009.hdf5",
+        "episode": "demo_10",
+        "max_action_step_norm_rad": 2.3833441105230984
+      },
+      {
+        "shard": "shard_009.hdf5",
+        "episode": "demo_15",
+        "max_action_step_norm_rad": 2.362956422256647
+      },
+      {
+        "shard": "shard_009.hdf5",
+        "episode": "demo_20",
+        "max_action_step_norm_rad": 2.219573491287495
+      },
+      {
+        "shard": "shard_009.hdf5",
+        "episode": "demo_24",
+        "max_action_step_norm_rad": 2.194912625475508
+      },
+      {
+        "shard": "shard_010.hdf5",
+        "episode": "demo_1",
+        "max_action_step_norm_rad": 2.72020941306817
+      },
+      {
+        "shard": "shard_010.hdf5",
+        "episode": "demo_23",
+        "max_action_step_norm_rad": 2.279009410478213
+      },
+      {
+        "shard": "shard_010.hdf5",
+        "episode": "demo_7",
+        "max_action_step_norm_rad": 1.9916000366841082
+      },
+      {
+        "shard": "shard_011.hdf5",
+        "episode": "demo_19",
+        "max_action_step_norm_rad": 1.8163464124251811
+      },
+      {
+        "shard": "shard_011.hdf5",
+        "episode": "demo_2",
+        "max_action_step_norm_rad": 1.6735034073331416
+      },
+      {
+        "shard": "shard_012.hdf5",
+        "episode": "demo_10",
+        "max_action_step_norm_rad": 1.851190532408957
+      },
+      {
+        "shard": "shard_012.hdf5",
+        "episode": "demo_11",
+        "max_action_step_norm_rad": 3.206285557225826
+      },
+      {
+        "shard": "shard_012.hdf5",
+        "episode": "demo_12",
+        "max_action_step_norm_rad": 1.3577784341936217
+      },
+      {
+        "shard": "shard_012.hdf5",
+        "episode": "demo_14",
+        "max_action_step_norm_rad": 3.617440133101886
+      },
+      {
+        "shard": "shard_012.hdf5",
+        "episode": "demo_15",
+        "max_action_step_norm_rad": 1.3472822524089743
+      },
+      {
+        "shard": "shard_012.hdf5",
+        "episode": "demo_17",
+        "max_action_step_norm_rad": 2.8517427122886363
+      },
+      {
+        "shard": "shard_012.hdf5",
+        "episode": "demo_2",
+        "max_action_step_norm_rad": 2.7052440507591635
+      },
+      {
+        "shard": "shard_012.hdf5",
+        "episode": "demo_23",
+        "max_action_step_norm_rad": 1.204049975184755
+      },
+      {
+        "shard": "shard_012.hdf5",
+        "episode": "demo_8",
+        "max_action_step_norm_rad": 2.829959391436816
+      },
+      {
+        "shard": "shard_013.hdf5",
+        "episode": "demo_14",
+        "max_action_step_norm_rad": 1.9302697406113876
+      },
+      {
+        "shard": "shard_013.hdf5",
+        "episode": "demo_16",
+        "max_action_step_norm_rad": 1.454746163540637
+      },
+      {
+        "shard": "shard_013.hdf5",
+        "episode": "demo_21",
+        "max_action_step_norm_rad": 1.4658757075812314
+      },
+      {
+        "shard": "shard_013.hdf5",
+        "episode": "demo_5",
+        "max_action_step_norm_rad": 3.403100746465243
+      },
+      {
+        "shard": "shard_014.hdf5",
+        "episode": "demo_0",
+        "max_action_step_norm_rad": 1.2249646884724903
+      },
+      {
+        "shard": "shard_014.hdf5",
+        "episode": "demo_12",
+        "max_action_step_norm_rad": 1.0751058959585216
+      },
+      {
+        "shard": "shard_014.hdf5",
+        "episode": "demo_13",
+        "max_action_step_norm_rad": 1.0104045230059995
+      },
+      {
+        "shard": "shard_014.hdf5",
+        "episode": "demo_2",
+        "max_action_step_norm_rad": 1.2867528251556812
+      },
+      {
+        "shard": "shard_014.hdf5",
+        "episode": "demo_20",
+        "max_action_step_norm_rad": 2.3570981314072204
+      },
+      {
+        "shard": "shard_015.hdf5",
+        "episode": "demo_16",
+        "max_action_step_norm_rad": 1.9642056507462242
+      },
+      {
+        "shard": "shard_015.hdf5",
+        "episode": "demo_17",
+        "max_action_step_norm_rad": 3.620629090211929
+      },
+      {
+        "shard": "shard_015.hdf5",
+        "episode": "demo_24",
+        "max_action_step_norm_rad": 1.6810466152817611
+      },
+      {
+        "shard": "shard_016.hdf5",
+        "episode": "demo_12",
+        "max_action_step_norm_rad": 3.1474109278696276
+      },
+      {
+        "shard": "shard_016.hdf5",
+        "episode": "demo_14",
+        "max_action_step_norm_rad": 1.5091781750208668
+      },
+      {
+        "shard": "shard_016.hdf5",
+        "episode": "demo_20",
+        "max_action_step_norm_rad": 3.798901332019045
+      },
+      {
+        "shard": "shard_016.hdf5",
+        "episode": "demo_22",
+        "max_action_step_norm_rad": 1.4238247624385958
+      },
+      {
+        "shard": "shard_016.hdf5",
+        "episode": "demo_4",
+        "max_action_step_norm_rad": 2.668247437203162
+      },
+      {
+        "shard": "shard_016.hdf5",
+        "episode": "demo_5",
+        "max_action_step_norm_rad": 1.615821345177092
+      },
+      {
+        "shard": "shard_017.hdf5",
+        "episode": "demo_0",
+        "max_action_step_norm_rad": 2.003144685194599
+      },
+      {
+        "shard": "shard_017.hdf5",
+        "episode": "demo_14",
+        "max_action_step_norm_rad": 2.2243694308514756
+      },
+      {
+        "shard": "shard_017.hdf5",
+        "episode": "demo_18",
+        "max_action_step_norm_rad": 1.5789785220424928
+      },
+      {
+        "shard": "shard_017.hdf5",
+        "episode": "demo_22",
+        "max_action_step_norm_rad": 1.25416827077412
+      },
+      {
+        "shard": "shard_017.hdf5",
+        "episode": "demo_23",
+        "max_action_step_norm_rad": 4.14144351875005
+      },
+      {
+        "shard": "shard_018.hdf5",
+        "episode": "demo_11",
+        "max_action_step_norm_rad": 1.50631957127288
+      },
+      {
+        "shard": "shard_018.hdf5",
+        "episode": "demo_12",
+        "max_action_step_norm_rad": 3.62432013175608
+      },
+      {
+        "shard": "shard_018.hdf5",
+        "episode": "demo_24",
+        "max_action_step_norm_rad": 3.491695999949174
+      },
+      {
+        "shard": "shard_018.hdf5",
+        "episode": "demo_3",
+        "max_action_step_norm_rad": 1.6730689178500642
+      },
+      {
+        "shard": "shard_019.hdf5",
+        "episode": "demo_11",
+        "max_action_step_norm_rad": 1.607560250565448
+      },
+      {
+        "shard": "shard_019.hdf5",
+        "episode": "demo_12",
+        "max_action_step_norm_rad": 1.377545325773806
+      },
+      {
+        "shard": "shard_019.hdf5",
+        "episode": "demo_17",
+        "max_action_step_norm_rad": 2.32935520947447
+      },
+      {
+        "shard": "shard_019.hdf5",
+        "episode": "demo_2",
+        "max_action_step_norm_rad": 1.7953224902801557
+      },
+      {
+        "shard": "shard_019.hdf5",
+        "episode": "demo_24",
+        "max_action_step_norm_rad": 1.7414287768750152
+      },
+      {
+        "shard": "shard_019.hdf5",
+        "episode": "demo_5",
+        "max_action_step_norm_rad": 1.1395309119261954
+      },
+      {
+        "shard": "shard_019.hdf5",
+        "episode": "demo_8",
+        "max_action_step_norm_rad": 2.8312724658439374
+      }
+    ],
+    "limits_path": "outputs/evaluation/act_diagnostics_20260918/render4_seed4001/evaluation.json",
+    "limits_sha256": "966394ecab6df16d98d1cd4aad593e75bed145e49b4b0d29ab1eee3027eab095"
+  },
+  "pilot": {
+    "root": "outputs/evaluation/act_diagnostics_20260918/target_label_pilot_v2",
+    "provenance_sha256": "574ea0dce3fe781b307ad9d1d77cc1fa1c17a2fba57a683b181ea97c515d1f80",
+    "episodes": 3,
+    "frames": 1148,
+    "input_sha256": "82359e3e1f6a798a631cacc2c0522385d02c64bbeae4b663a62f815b25f58943",
+    "action_clamping": {
+      "method": "elementwise clip to inclusive joint lower and upper limits",
+      "aggregate": {
+        "clipped_frames": 30,
+        "clipped_values": 31,
+        "max_abs_correction_rad": 0.3307753801345825,
+        "by_joint": {
+          "shoulder_pan.pos": {
+            "clipped_values": 0,
+            "max_abs_correction_rad": 0
+          },
+          "shoulder_lift.pos": {
+            "clipped_values": 0,
+            "max_abs_correction_rad": 0
+          },
+          "elbow_flex.pos": {
+            "clipped_values": 2,
+            "max_abs_correction_rad": 0.0624542236328125
+          },
+          "wrist_flex.pos": {
+            "clipped_values": 29,
+            "max_abs_correction_rad": 0.3307753801345825
+          },
+          "wrist_roll.pos": {
+            "clipped_values": 0,
+            "max_abs_correction_rad": 0
+          },
+          "gripper.pos": {
+            "clipped_values": 0,
+            "max_abs_correction_rad": 0
+          }
+        }
+      }
+    },
+    "verification": "all 1148 state/action frames bit-exact to aligned clipped raw; first/last front+wrist RGB decoded by LeRobot SDK at 224x224"
+  },
+  "validation": {
+    "cpu_tests_passed": 79,
+    "py_compile": "passed",
+    "git_diff_check": "passed",
+    "independent_review": "no MUST-FIX remaining; LSP unavailable; not formal LSP approval"
+  },
+  "limitations": [
+    "first three episodes only replayed; not 500 replay validation",
+    "97 target trajectories require discontinuity inspection before expansion",
+    "old batch runner still next_observed; no full corrected-label batch or training completed",
+    "no real robot operation; simulator gripper force is not hardware calibration"
+  ]
+}

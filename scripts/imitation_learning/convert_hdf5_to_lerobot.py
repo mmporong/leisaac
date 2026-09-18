@@ -42,9 +42,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--image-size", type=int, default=DEFAULT_IMAGE_SIZE)
     parser.add_argument(
         "--action-source",
-        choices=("stored", "next_observed"),
+        choices=("stored", "next_observed", "recorded_target"),
         default="stored",
-        help="Use stored 6D actions or derive actions from the next observed joint position.",
+        help=(
+            "Use stored 6D actions, the next observed joint position, or the recorded "
+            "actuator target aligned to the following transition."
+        ),
+    )
+    parser.add_argument(
+        "--joint-limits-file",
+        type=Path,
+        default=None,
+        help="Evaluation JSON containing joint limits; required for recorded_target only.",
     )
     return parser.parse_args()
 
@@ -59,7 +68,37 @@ def validate_image_size(image_size: int) -> int:
     return image_size
 
 
-def get_demo_actions(demo: h5py.Group, action_source: str) -> np.ndarray:
+def load_joint_limits(path: Path) -> tuple[np.ndarray, np.ndarray, dict]:
+    resolved = path.expanduser().resolve()
+    payload = json.loads(resolved.read_text(encoding="utf-8"))
+    expected_names = [name.removesuffix(".pos") for name in JOINT_NAMES]
+    if payload.get("joint_names") != expected_names:
+        raise ValueError(
+            f"joint_names in {resolved} must exactly match {expected_names}"
+        )
+    lower = np.asarray(payload.get("joint_lower_limits_rad"), dtype=np.float64)
+    upper = np.asarray(payload.get("joint_upper_limits_rad"), dtype=np.float64)
+    if lower.shape != (6,) or upper.shape != (6,):
+        raise ValueError(f"joint limits in {resolved} must each contain exactly 6 values")
+    if not np.isfinite(lower).all() or not np.isfinite(upper).all():
+        raise ValueError(f"joint limits in {resolved} must be finite")
+    if not np.all(lower < upper):
+        raise ValueError(f"every lower joint limit must be below its upper limit in {resolved}")
+    provenance = {
+        "path": str(resolved),
+        "sha256": sha256_file(resolved),
+        "joint_names": expected_names,
+        "joint_lower_limits_rad": lower.tolist(),
+        "joint_upper_limits_rad": upper.tolist(),
+    }
+    return lower, upper, provenance
+
+
+def get_demo_actions(
+    demo: h5py.Group,
+    action_source: str,
+    joint_limits: tuple[np.ndarray, np.ndarray] | None = None,
+) -> np.ndarray:
     joint_pos = np.asarray(demo["obs/joint_pos"][...])
     frame_count = len(joint_pos)
     raw_actions = np.asarray(demo["actions"][...])
@@ -74,9 +113,69 @@ def get_demo_actions(demo: h5py.Group, action_source: str) -> np.ndarray:
             actions = joint_pos.copy()
         else:
             actions = np.concatenate((joint_pos[1:], joint_pos[-1:]), axis=0)
+    elif action_source == "recorded_target":
+        if joint_limits is None:
+            raise ValueError("recorded_target requires validated joint limits")
+        joint_targets = np.asarray(demo["obs/joint_pos_target"][...])
+        if joint_targets.shape != (frame_count, 6):
+            raise ValueError(
+                f"unexpected obs/joint_pos_target shape in {demo.name}: "
+                f"{joint_targets.shape}, expected {(frame_count, 6)}"
+            )
+        if not np.isfinite(joint_targets).all():
+            raise ValueError(f"non-finite values in {demo.name}/obs/joint_pos_target")
+        lower, upper = joint_limits
+        actions = np.clip(joint_targets[1:], lower, upper)
     else:
         raise ValueError(f"unsupported action source: {action_source}")
     return actions
+
+
+def recorded_target_clipping_stats(
+    demo: h5py.Group,
+    joint_limits: tuple[np.ndarray, np.ndarray],
+) -> dict:
+    targets = np.asarray(demo["obs/joint_pos_target"][1:], dtype=np.float64)
+    lower, upper = joint_limits
+    corrections = np.abs(targets - np.clip(targets, lower, upper))
+    clipped = corrections > 0
+    return {
+        "clipped_frames": int(np.any(clipped, axis=1).sum()),
+        "clipped_values": int(clipped.sum()),
+        "max_abs_correction_rad": float(corrections.max(initial=0.0)),
+        "by_joint": {
+            name: {
+                "clipped_values": int(clipped[:, index].sum()),
+                "max_abs_correction_rad": float(corrections[:, index].max(initial=0.0)),
+            }
+            for index, name in enumerate(JOINT_NAMES)
+        },
+    }
+
+
+def aggregate_clipping_stats(stats: list[dict]) -> dict:
+    return {
+        "clipped_frames": sum(item["clipped_frames"] for item in stats),
+        "clipped_values": sum(item["clipped_values"] for item in stats),
+        "max_abs_correction_rad": max(
+            (item["max_abs_correction_rad"] for item in stats), default=0.0
+        ),
+        "by_joint": {
+            name: {
+                "clipped_values": sum(
+                    item["by_joint"][name]["clipped_values"] for item in stats
+                ),
+                "max_abs_correction_rad": max(
+                    (
+                        item["by_joint"][name]["max_abs_correction_rad"]
+                        for item in stats
+                    ),
+                    default=0.0,
+                ),
+            }
+            for name in JOINT_NAMES
+        },
+    }
 
 
 def build_features(image_size: int) -> dict:
@@ -109,8 +208,10 @@ def build_provenance(
     image_size: int,
     demo_names: list[str],
     frame_counts: list[int],
+    joint_limits_provenance: dict | None = None,
+    clipping_stats: list[dict] | None = None,
 ) -> dict:
-    return {
+    provenance = {
         "input_path": str(input_path),
         "input_sha256": input_sha256,
         "action_source": action_source,
@@ -124,6 +225,29 @@ def build_provenance(
         "episode_count": len(demo_names),
         "frame_count": sum(frame_counts),
     }
+    if action_source == "recorded_target":
+        if joint_limits_provenance is None:
+            raise ValueError("recorded_target provenance requires joint limits")
+        if clipping_stats is None or len(clipping_stats) != len(demo_names):
+            raise ValueError("recorded_target provenance requires clipping stats per episode")
+        for episode, stats in zip(provenance["episodes"], clipping_stats, strict=True):
+            episode["clipping"] = stats
+        provenance.update(
+            {
+                "joint_limits": joint_limits_provenance,
+                "target_alignment": "action[t] = obs/joint_pos_target[t+1]",
+                "last_source_frame_removed": True,
+                "last_source_frame_removal_reason": (
+                    "no recorded target exists for a transition after the final observation"
+                ),
+                "frame_alignment": "state and RGB use source slice [0:T-1], frames 0 through T-2",
+                "action_clamping": {
+                    "method": "elementwise clip to inclusive joint lower and upper limits",
+                    "aggregate": aggregate_clipping_stats(clipping_stats),
+                },
+            }
+        )
+    return provenance
 
 
 def validate_demo(
@@ -131,6 +255,7 @@ def validate_demo(
     max_action_step_norm: float,
     image_size: int = DEFAULT_IMAGE_SIZE,
     action_source: str = "stored",
+    joint_limits: tuple[np.ndarray, np.ndarray] | None = None,
 ) -> int:
     if not np.isfinite(max_action_step_norm) or max_action_step_norm <= 0:
         raise ValueError("max-action-step-norm must be finite and positive")
@@ -140,7 +265,7 @@ def validate_demo(
     frame_count = len(demo["obs/joint_pos"])
     if frame_count < 2:
         raise ValueError(f"episode needs at least two frames: {demo.name}")
-    actions = get_demo_actions(demo, action_source)
+    actions = get_demo_actions(demo, action_source, joint_limits)
     expected_shapes = {
         "obs/joint_pos": (frame_count, 6),
     }
@@ -151,9 +276,11 @@ def validate_demo(
             )
         if not np.isfinite(demo[key][...]).all():
             raise ValueError(f"non-finite values in {demo.name}/{key}")
-    if actions.shape != (frame_count, 6):
+    output_frame_count = frame_count - 1 if action_source == "recorded_target" else frame_count
+    if actions.shape != (output_frame_count, 6):
         raise ValueError(
-            f"unexpected actions shape in {demo.name}: {actions.shape}, expected {(frame_count, 6)}"
+            f"unexpected actions shape in {demo.name}: {actions.shape}, "
+            f"expected {(output_frame_count, 6)}"
         )
     if not np.isfinite(actions).all():
         raise ValueError(f"non-finite values in {demo.name}/actions")
@@ -164,13 +291,31 @@ def validate_demo(
             raise ValueError(
                 f"unexpected {camera} images in {demo.name}: shape={images.shape}, dtype={images.dtype}"
             )
+    if action_source == "recorded_target":
+        post_step_key = "states/articulation/robot/joint_position"
+        if post_step_key not in demo:
+            raise ValueError(f"missing required post-step joint positions in {demo.name}")
+        post_step_joint_pos = np.asarray(
+            demo[post_step_key][...]
+        )
+        if post_step_joint_pos.shape != (frame_count, 6):
+            raise ValueError(
+                f"unexpected post-step joint position shape in {demo.name}: "
+                f"{post_step_joint_pos.shape}, expected {(frame_count, 6)}"
+            )
+        if not np.isfinite(post_step_joint_pos).all():
+            raise ValueError(f"non-finite post-step joint positions in {demo.name}")
+        if not np.allclose(
+            post_step_joint_pos[:-1], demo["obs/joint_pos"][1:], rtol=0, atol=1e-6
+        ):
+            raise ValueError(f"pre/post-step recorder alignment does not match in {demo.name}")
     action_step_norms = np.linalg.norm(np.diff(actions, axis=0), axis=1)
     if len(action_step_norms) and float(action_step_norms.max()) > max_action_step_norm:
         raise ValueError(
             f"action discontinuity in {demo.name}: max step norm={action_step_norms.max():.6f} "
             f"> limit={max_action_step_norm:.6f}"
         )
-    return frame_count
+    return output_frame_count
 
 
 def main() -> None:
@@ -186,6 +331,16 @@ def main() -> None:
     if not np.isfinite(args.max_action_step_norm) or args.max_action_step_norm <= 0:
         raise ValueError("max-action-step-norm must be finite and positive")
     validate_image_size(args.image_size)
+    joint_limits = None
+    joint_limits_provenance = None
+    clipping_stats = None
+    if args.action_source == "recorded_target":
+        if args.joint_limits_file is None:
+            raise ValueError(
+                "--joint-limits-file is required for --action-source recorded_target"
+            )
+        lower, upper, joint_limits_provenance = load_joint_limits(args.joint_limits_file)
+        joint_limits = (lower, upper)
     if output_root.exists():
         raise FileExistsError(f"output already exists: {output_root}")
     input_sha256 = sha256_file(input_path)
@@ -203,9 +358,16 @@ def main() -> None:
                 args.max_action_step_norm,
                 args.image_size,
                 args.action_source,
+                joint_limits,
             )
             for name in demo_names
         ]
+        if args.action_source == "recorded_target":
+            assert joint_limits is not None
+            clipping_stats = [
+                recorded_target_clipping_stats(hdf[f"data/{name}"], joint_limits)
+                for name in demo_names
+            ]
         features = build_features(args.image_size)
         dataset = LeRobotDataset.create(
             repo_id=args.repo_id,
@@ -223,7 +385,7 @@ def main() -> None:
             zip(demo_names, frame_counts, strict=True)
         ):
             demo = hdf[f"data/{name}"]
-            actions = get_demo_actions(demo, args.action_source)
+            actions = get_demo_actions(demo, args.action_source, joint_limits)
             for frame_index in range(frame_count):
                 dataset.add_frame(
                     {
@@ -249,6 +411,8 @@ def main() -> None:
         args.image_size,
         demo_names,
         frame_counts,
+        joint_limits_provenance,
+        clipping_stats,
     )
     (output_root / "conversion_provenance.json").write_text(
         json.dumps(provenance, indent=2) + "\n",
