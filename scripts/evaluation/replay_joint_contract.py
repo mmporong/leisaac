@@ -28,6 +28,7 @@ import torch
 from isaaclab.utils.datasets import HDF5DatasetFileHandler
 from isaaclab_tasks.utils import parse_env_cfg
 from leisaac.utils.env_utils import dynamic_reset_gripper_effort_limit_sim
+from leisaac.tasks.pick_cube_into_box.mdp.release_state import release_criteria_metadata
 
 import leisaac  # noqa: F401
 
@@ -169,6 +170,8 @@ def main():
                 print(json.dumps(result), flush=True)
                 (output / "evaluation.json").write_text(json.dumps({"dataset": str(args_cli.dataset.resolve()),
                     "mode": args_cli.mode, "gripper_effort_mode": args_cli.gripper_effort_mode,
+                    "success_criteria": release_criteria_metadata(success_term.params),
+                    "control_dt_s": float(env.step_dt),
                     "joint_names": robot.joint_names,
                     "joint_lower_limits_rad": lower.cpu().tolist(),
                     "joint_upper_limits_rad": upper.cpu().tolist(), "results": results}, indent=2))

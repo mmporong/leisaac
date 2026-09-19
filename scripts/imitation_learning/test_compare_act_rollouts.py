@@ -7,7 +7,7 @@ import sys
 import tempfile
 import unittest
 
-from scripts.evaluation.compare_act_rollouts import build_report
+from scripts.evaluation.compare_act_rollouts import EXPECTED_SUCCESS_CRITERIA, build_report
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "evaluation/compare_act_rollouts.py"
@@ -26,6 +26,7 @@ def write_evaluation(
     front_hash: str = "front",
     wrist_hash: str = "wrist",
     scene_hash: str = "a" * 64,
+    metadata_overrides: dict | None = None,
 ) -> None:
     directory = root / f"seed_{seed}"
     directory.mkdir(parents=True)
@@ -42,6 +43,20 @@ def write_evaluation(
         "render_width": 320,
         "render_height": 240,
         "policy_image_size": 84,
+        "control_dt_s": 1.0 / 60.0,
+        "reset_render_frames": 4,
+        "gripper_effort_mode": "task",
+        "success_criteria": dict(EXPECTED_SUCCESS_CRITERIA),
+        "joint_names": [
+            "shoulder_pan",
+            "shoulder_lift",
+            "elbow_flex",
+            "wrist_flex",
+            "wrist_roll",
+            "gripper",
+        ],
+        "joint_lower_limits_rad": [-1.0] * 6,
+        "joint_upper_limits_rad": [1.0] * 6,
         "results": [
             {
                 "seed": seed,
@@ -54,6 +69,8 @@ def write_evaluation(
             }
         ],
     }
+    if metadata_overrides:
+        evaluation.update(metadata_overrides)
     (directory / "evaluation.json").write_text(json.dumps(evaluation), encoding="utf-8")
 
 
@@ -135,6 +152,223 @@ class CompareActRolloutsTest(unittest.TestCase):
             horizon=600,
         )
         with self.assertRaisesRegex(ValueError, "condition mismatch.*horizon"):
+            build_report(self.baseline, self.recovery, [4000])
+
+    def test_rejects_mismatch_for_each_strict_evaluation_condition(self):
+        mismatches = {
+            "control_dt_s": 1.0 / 30.0,
+            "reset_render_frames": 0,
+            "gripper_effort_mode": "fixed",
+            "success_criteria": {**EXPECTED_SUCCESS_CRITERIA, "hold_time_s": 0.6},
+            "joint_names": ["different", "shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll", "gripper"],
+            "joint_lower_limits_rad": [-0.9] + [-1.0] * 5,
+            "joint_upper_limits_rad": [0.9] + [1.0] * 5,
+        }
+        for key, recovery_value in mismatches.items():
+            with self.subTest(key=key):
+                root = Path(self.temporary_directory.name) / f"mismatch_{key}"
+                baseline = root / "baseline"
+                recovery = root / "recovery"
+                write_evaluation(
+                    baseline, 4000, checkpoint="baseline/checkpoint", success=False, outcome="no_lift"
+                )
+                write_evaluation(
+                    recovery,
+                    4000,
+                    checkpoint="recovery/checkpoint",
+                    success=False,
+                    outcome="no_lift",
+                    metadata_overrides={key: recovery_value},
+                )
+                with self.assertRaisesRegex(ValueError, f"condition mismatch.*{key}"):
+                    build_report(baseline, recovery, [4000])
+
+    def test_rejects_changed_or_missing_success_criteria_fields(self):
+        for key, expected_value in EXPECTED_SUCCESS_CRITERIA.items():
+            changed = dict(EXPECTED_SUCCESS_CRITERIA)
+            changed[key] = "different" if isinstance(expected_value, str) else expected_value + 0.01
+            missing = dict(EXPECTED_SUCCESS_CRITERIA)
+            del missing[key]
+            for case, criteria in (("changed", changed), ("missing", missing)):
+                with self.subTest(key=key, case=case):
+                    root = Path(self.temporary_directory.name) / f"criteria_{case}_{key}"
+                    baseline = root / "baseline"
+                    recovery = root / "recovery"
+                    write_evaluation(
+                        baseline,
+                        4000,
+                        checkpoint="baseline/checkpoint",
+                        success=False,
+                        outcome="no_lift",
+                        metadata_overrides={"success_criteria": criteria},
+                    )
+                    write_evaluation(
+                        recovery,
+                        4000,
+                        checkpoint="recovery/checkpoint",
+                        success=False,
+                        outcome="no_lift",
+                    )
+                    expected_error = (
+                        "success_criteria.version"
+                        if key == "version" and case == "changed"
+                        else "success_criteria"
+                    )
+                    with self.assertRaisesRegex(ValueError, expected_error):
+                        build_report(baseline, recovery, [4000])
+
+    def test_rejects_nonfinite_success_criteria_numbers(self):
+        numeric_keys = [
+            key for key, value in EXPECTED_SUCCESS_CRITERIA.items() if isinstance(value, float)
+        ]
+        for key in numeric_keys:
+            with self.subTest(key=key):
+                root = Path(self.temporary_directory.name) / f"criteria_nonfinite_{key}"
+                baseline = root / "baseline"
+                recovery = root / "recovery"
+                criteria = dict(EXPECTED_SUCCESS_CRITERIA)
+                criteria[key] = float("nan")
+                write_evaluation(
+                    baseline,
+                    4000,
+                    checkpoint="baseline/checkpoint",
+                    success=False,
+                    outcome="no_lift",
+                    metadata_overrides={"success_criteria": criteria},
+                )
+                write_evaluation(
+                    recovery,
+                    4000,
+                    checkpoint="recovery/checkpoint",
+                    success=False,
+                    outcome="no_lift",
+                )
+                with self.assertRaisesRegex(ValueError, f"success_criteria.{key} must be finite and positive"):
+                    build_report(baseline, recovery, [4000])
+
+    def test_allows_same_valid_custom_success_criteria_in_both_arms(self):
+        custom_criteria = {**EXPECTED_SUCCESS_CRITERIA, "hold_time_s": 1.0}
+        write_evaluation(
+            self.baseline,
+            4000,
+            checkpoint="baseline/checkpoint",
+            success=False,
+            outcome="no_lift",
+            metadata_overrides={"success_criteria": custom_criteria},
+        )
+        write_evaluation(
+            self.recovery,
+            4000,
+            checkpoint="recovery/checkpoint",
+            success=False,
+            outcome="no_lift",
+            metadata_overrides={"success_criteria": custom_criteria},
+        )
+
+        report = build_report(self.baseline, self.recovery, [4000])
+
+        self.assertEqual(report["conditions"]["success_criteria"]["hold_time_s"], 1.0)
+
+    def test_rejects_nonpositive_and_reversed_success_criteria_bounds(self):
+        invalid_criteria = {
+            "nonpositive": {**EXPECTED_SUCCESS_CRITERIA, "hold_time_s": 0.0},
+            "reversed_heights": {
+                **EXPECTED_SUCCESS_CRITERIA,
+                "min_height_m": EXPECTED_SUCCESS_CRITERIA["max_height_m"],
+            },
+        }
+        for case, criteria in invalid_criteria.items():
+            with self.subTest(case=case):
+                root = Path(self.temporary_directory.name) / f"criteria_{case}"
+                baseline = root / "baseline"
+                recovery = root / "recovery"
+                write_evaluation(
+                    baseline,
+                    4000,
+                    checkpoint="baseline/checkpoint",
+                    success=False,
+                    outcome="no_lift",
+                    metadata_overrides={"success_criteria": criteria},
+                )
+                write_evaluation(
+                    recovery,
+                    4000,
+                    checkpoint="recovery/checkpoint",
+                    success=False,
+                    outcome="no_lift",
+                )
+                with self.assertRaisesRegex(ValueError, "success_criteria"):
+                    build_report(baseline, recovery, [4000])
+
+    def test_rejects_missing_strict_evaluation_metadata(self):
+        for key in (
+            "control_dt_s",
+            "reset_render_frames",
+            "gripper_effort_mode",
+            "success_criteria",
+            "joint_names",
+            "joint_lower_limits_rad",
+            "joint_upper_limits_rad",
+        ):
+            with self.subTest(key=key):
+                root = Path(self.temporary_directory.name) / f"missing_{key}"
+                baseline = root / "baseline"
+                recovery = root / "recovery"
+                write_evaluation(
+                    baseline, 4000, checkpoint="baseline/checkpoint", success=False, outcome="no_lift"
+                )
+                path = baseline / "seed_4000" / "evaluation.json"
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                del payload[key]
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                write_evaluation(
+                    recovery, 4000, checkpoint="recovery/checkpoint", success=False, outcome="no_lift"
+                )
+                with self.assertRaisesRegex(ValueError, key):
+                    build_report(baseline, recovery, [4000])
+
+    def test_rejects_invalid_strict_metadata_values(self):
+        invalid_values = {
+            "control_dt_s": float("nan"),
+            "reset_render_frames": -1,
+            "gripper_effort_mode": "unknown",
+            "success_criteria": {**EXPECTED_SUCCESS_CRITERIA, "extra": 1},
+            "joint_names": ["duplicate"] * 6,
+            "joint_lower_limits_rad": [float("nan")] + [-1.0] * 5,
+            "joint_upper_limits_rad": [float("inf")] + [1.0] * 5,
+        }
+        for key, value in invalid_values.items():
+            with self.subTest(key=key):
+                root = Path(self.temporary_directory.name) / f"invalid_{key}"
+                baseline = root / "baseline"
+                recovery = root / "recovery"
+                write_evaluation(
+                    baseline,
+                    4000,
+                    checkpoint="baseline/checkpoint",
+                    success=False,
+                    outcome="no_lift",
+                    metadata_overrides={key: value},
+                )
+                write_evaluation(
+                    recovery, 4000, checkpoint="recovery/checkpoint", success=False, outcome="no_lift"
+                )
+                with self.assertRaisesRegex(ValueError, key):
+                    build_report(baseline, recovery, [4000])
+
+    def test_rejects_nonpositive_control_dt(self):
+        write_evaluation(
+            self.baseline,
+            4000,
+            checkpoint="baseline/checkpoint",
+            success=False,
+            outcome="no_lift",
+            metadata_overrides={"control_dt_s": 0.0},
+        )
+        write_evaluation(
+            self.recovery, 4000, checkpoint="recovery/checkpoint", success=False, outcome="no_lift"
+        )
+        with self.assertRaisesRegex(ValueError, "control_dt_s must be finite and positive"):
             build_report(self.baseline, self.recovery, [4000])
 
     def test_rejects_initial_state_mismatch_with_exact_difference(self):

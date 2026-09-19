@@ -18,27 +18,51 @@ import numpy as np
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 from scripts.imitation_learning.run_mimic_image_batch import atomic_json, check_free_space, sha256
+from scripts.imitation_learning.action_contract import CONTRACT_FILENAME, validate_split_contract
 from scripts.evaluation.compare_act_rollouts import _load_rollout
 
 
-def validate_split(root: Path) -> dict:
+def validate_split(root: Path, allow_legacy_action_source: bool = False) -> dict:
     marker = json.loads((root / "split_provenance.json").read_text())
     if marker.get("schema_version") != 1 or marker.get("success") is not True:
         raise ValueError("split marker does not record successful validation")
     source = Path(marker["source"])
     if sha256(source / "meta/info.json") != marker["source_info_sha256"]:
         raise ValueError("source metadata changed after splitting")
+    contract_path = root / CONTRACT_FILENAME
+    contract = None
+    if contract_path.is_file():
+        contract = validate_split_contract(root, allow_legacy=allow_legacy_action_source)
+        if sha256(contract_path) != marker.get("action_contract_sha256"):
+            raise ValueError("split action contract changed after validation")
+        if marker.get("action_source") != contract["action_source"]:
+            raise ValueError("split provenance action source differs from action contract")
+        marker["action_contract_status"] = "validated"
+    elif allow_legacy_action_source:
+        if marker.get("action_source") not in ("next_observed", "stored"):
+            raise ValueError(
+                "uncontracted legacy opt-in requires explicit stored/next_observed action_source "
+                "in provenance; missing or recorded_target provenance cannot use this fallback"
+            )
+        marker["action_contract_status"] = "legacy_uncontracted_explicit_opt_in"
+    else:
+        raise FileNotFoundError(
+            f"recorded_target training requires {contract_path}; "
+            "old splits require explicit --allow-legacy-action-source"
+        )
     groups = marker["splits"]
     train_ids = groups["train"]["original_episode_indices"]
     valid_ids = groups["valid"]["original_episode_indices"]
-    if len(train_ids) != 400 or len(valid_ids) != 100:
-        raise ValueError("this experiment requires 400 train and 100 validation episodes")
-    if set(train_ids) & set(valid_ids) or sorted(train_ids + valid_ids) != list(range(500)):
+    total_episodes = len(train_ids) + len(valid_ids)
+    if not train_ids or not valid_ids:
+        raise ValueError("training and validation splits must both be nonempty")
+    if set(train_ids) & set(valid_ids) or sorted(train_ids + valid_ids) != list(range(total_episodes)):
         raise ValueError("train/validation overlap or incomplete coverage")
     for name in ("train", "valid"):
         part = root / name
         info = json.loads((part / "meta/info.json").read_text())
         expected = groups[name]
+        contract_part = contract["splits"][name] if contract else None
         if Path(expected["root"]).resolve() != part.resolve():
             raise ValueError(f"split root does not match provenance: {name}")
         if any(expected["stats_validation"].get(key) != "passed" for key in
@@ -46,6 +70,13 @@ def validate_split(root: Path) -> dict:
             raise ValueError(f"split statistics were not verified: {name}")
         if info["total_episodes"] != expected["episode_count"] or info["total_frames"] != expected["frame_count"]:
             raise ValueError(f"split count mismatch: {name}")
+        if contract_part:
+            if expected["original_episode_indices"] != contract_part["source_episode_indices"]:
+                raise ValueError(f"split episode mapping differs from action contract: {name}")
+            if (expected["episode_count"], expected["frame_count"]) != (
+                contract_part["episode_count"], contract_part["frame_count"]
+            ):
+                raise ValueError(f"split counts differ from action contract: {name}")
         if sha256(part / "meta/stats.json") != expected["stats_sha256"]:
             raise ValueError(f"split stats changed after validation: {name}")
         for camera in ("front", "wrist"):
@@ -62,7 +93,7 @@ def training_command(split: Path, output: Path, repo_id: str, steps: int, batch_
         f"--dataset.root={split}", f"--dataset.repo_id={repo_id}",
         "--dataset.use_imagenet_stats=true", "--dataset.eval_split=0",
         "--policy.type=act", "--policy.device=cuda", "--policy.push_to_hub=false",
-        "--policy.repo_id=local/so101_act_vision224_train400", "--policy.chunk_size=30",
+        "--policy.repo_id=local/so101_act_vision224", "--policy.chunk_size=30",
         "--policy.n_action_steps=30", "--policy.dim_model=256", "--policy.n_heads=8",
         "--policy.dim_feedforward=1024", "--policy.n_encoder_layers=4", "--policy.use_vae=true",
         "--policy.optimizer_lr=0.0001", "--policy.optimizer_lr_backbone=0.00001",
@@ -143,9 +174,10 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--eval-seeds", type=int, nargs="+", default=list(range(4000, 4010)))
     parser.add_argument("--min-free-gib", type=float, default=8)
+    parser.add_argument("--allow-legacy-action-source", action="store_true")
     args = parser.parse_args()
     split = args.split_root.expanduser().resolve(strict=True)
-    marker = validate_split(split)
+    marker = validate_split(split, args.allow_legacy_action_source)
     isaac_python = args.isaac_python.expanduser().resolve(strict=True)
     root = args.output_dir.expanduser().resolve()
     command = training_command(split / "train", root / "model", marker["splits"]["train"]["repo_id"],
@@ -156,6 +188,12 @@ def main() -> None:
     root.mkdir(exist_ok=False)
     (root / "logs").mkdir()
     plan = {"split_root": str(split), "split_provenance_sha256": sha256(split / "split_provenance.json"),
+            "action_contract_sha256": (
+                sha256(split / CONTRACT_FILENAME) if (split / CONTRACT_FILENAME).is_file() else None
+            ),
+            "action_source": marker["action_source"],
+            "action_contract_status": marker["action_contract_status"],
+            "legacy_action_source_explicit": args.allow_legacy_action_source,
             "training_command": command, "eval_seeds": args.eval_seeds, "steps": args.steps,
             "batch_size": args.batch_size, "min_free_gib": args.min_free_gib,
             "checkpoint_selection": "predeclared final step; no selection on rollout results",
@@ -164,9 +202,13 @@ def main() -> None:
             "code_sha256": {name: sha256(REPO / name) for name in (
                 "scripts/imitation_learning/run_act_vision_experiment.py",
                 "scripts/imitation_learning/prepare_mimic_act_split.py",
+                "scripts/imitation_learning/action_contract.py",
                 "scripts/imitation_learning/serve_lerobot_act.py",
                 "scripts/evaluation/lerobot_act_offline.py",
                 "scripts/evaluation/lerobot_act_so101.py",
+                "scripts/evaluation/compare_act_rollouts.py",
+                "source/leisaac/leisaac/tasks/pick_cube_into_box/mdp/terminations.py",
+                "source/leisaac/leisaac/tasks/pick_cube_into_box/mdp/release_state.py",
             )},
             "git_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip()}
     atomic_json(root / "plan.json", plan)

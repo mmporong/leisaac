@@ -415,6 +415,7 @@ def main():
                     sm.pre_step(env)
                     actions = sm.get_action(env)
                     env.step(actions)
+                    sm.observe_step(env)
                     sm.advance()
 
                 if rate_limiter:

@@ -38,7 +38,7 @@ class MimicActSplitTest(unittest.TestCase):
     def test_invalid_split_inputs_are_rejected(self):
         invalid = (
             (0, 43, 25, 5),
-            (499, 43, 25, 5),
+            (1, 43, 25, 5),
             (500, -1, 25, 5),
             (500, 43, 1, 0),
             (500, 43, 25, 0),
@@ -47,6 +47,11 @@ class MimicActSplitTest(unittest.TestCase):
         for arguments in invalid:
             with self.subTest(arguments=arguments), self.assertRaises(ValueError):
                 build_split_indices(*arguments)
+
+    def test_small_pilot_split_is_deterministic_nonempty_and_complete(self):
+        split = build_split_indices(3, seed=43, shard_size=25, valid_per_shard=5)
+        self.assertEqual((len(split["train"]), len(split["valid"])), (1, 2))
+        self.assertEqual(sorted(split["train"] + split["valid"]), [0, 1, 2])
 
     def test_existing_output_is_rejected_before_dataset_loading(self):
         with tempfile.TemporaryDirectory() as directory:

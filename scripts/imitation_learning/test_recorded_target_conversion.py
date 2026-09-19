@@ -213,6 +213,18 @@ class RecordedTargetConversionTest(unittest.TestCase):
                 (np.full(6, -1.0), np.full(6, 1.0)),
             )
 
+    def test_audit_collects_all_failures_without_auto_selecting(self):
+        accepted = self.make_demo()
+        rejected = self.make_demo()
+        rejected.attrs = {"success": False}
+        hdf = {"data/demo_0": accepted, "data/demo_1": rejected}
+        results = self.converter.audit_demonstrations(
+            hdf, ["demo_0", "demo_1"], 3.0, 4, "recorded_target",
+            (np.full(6, -1.0), np.full(6, 1.0)),
+        )
+        self.assertEqual([item["accepted"] for item in results], [True, False])
+        self.assertIn("non-successful", results[1]["error"])
+
 
 if __name__ == "__main__":
     unittest.main()

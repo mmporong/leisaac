@@ -333,6 +333,9 @@ def replay_episode(
         if env.cfg.dynamic_reset_gripper_effort_limit:
             dynamic_reset_gripper_effort_limit_sim(env, task_type)
         env.step(torch.Tensor(action_tensor))
+        if success_term is not None:
+            # Stateful release criteria must observe every control step, not only the final frame.
+            success_term.func(env, **success_term.params)
     if success_term is not None:
         if not bool(success_term.func(env, **success_term.params)[0]):
             return False

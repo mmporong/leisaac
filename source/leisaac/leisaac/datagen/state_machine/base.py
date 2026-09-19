@@ -22,6 +22,7 @@ class StateMachineBase(ABC):
             sm.pre_step(env)
             actions = sm.get_action(env)
             env.step(actions)
+            sm.observe_step(env)
             sm.advance()
         success = sm.check_success(env)
         sm.reset()
@@ -53,6 +54,13 @@ class StateMachineBase(ABC):
         Override to inject direct joint-state writes or other per-step
         overrides that must happen before the action is applied (e.g. blended
         home-pose control).  Default implementation is a no-op.
+        """
+
+    def observe_step(self, env) -> None:
+        """Optional hook called once immediately after every ``env.step``.
+
+        Override this for stateful observations that must accumulate across
+        control steps. The default implementation is a no-op.
         """
 
     @abstractmethod

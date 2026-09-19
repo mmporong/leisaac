@@ -8,6 +8,9 @@ import unittest
 from scripts.imitation_learning.run_act_vision_experiment import (
     sha256, training_command, validate_offline_report, validate_split,
 )
+from scripts.imitation_learning.action_contract import (
+    CONTRACT_FILENAME, atomic_json, build_split_contract,
+)
 
 
 class ActVisionExperimentTest(unittest.TestCase):
@@ -35,13 +38,74 @@ class ActVisionExperimentTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_offline_report(report, valid)
 
+    def test_uncontracted_opt_in_never_relabels_recorded_target_or_unknown(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            info = root / "source/meta/info.json"
+            info.parent.mkdir(parents=True)
+            info.write_text('{}')
+            marker = {"schema_version": 1, "success": True, "source": str(root / "source"),
+                      "source_info_sha256": sha256(info)}
+            for source in ("recorded_target", "unknown", None):
+                with self.subTest(source=source):
+                    atomic_json(root / "split_provenance.json", marker | {"action_source": source})
+                    with self.assertRaisesRegex(ValueError, "uncontracted legacy opt-in"):
+                        validate_split(root, allow_legacy_action_source=True)
+
     def test_split_requires_disjoint_cover_and_unchanged_stats(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "source/meta").mkdir(parents=True)
             (root / "source/meta/info.json").write_text('{}')
+            raw = root / "raw.hdf5"
+            raw.write_bytes(b"raw")
+            limits = root / "limits.json"
+            limit_payload = {
+                "joint_names": ["a", "b", "c", "d", "e", "f"],
+                "joint_lower_limits_rad": [-1.0] * 6,
+                "joint_upper_limits_rad": [1.0] * 6,
+            }
+            limits.write_text(json.dumps(limit_payload))
+            limit_record = {
+                "path": str(limits), "sha256": sha256(limits),
+                **limit_payload,
+            }
+            conversion = root / "conversion_provenance.json"
+            atomic_json(conversion, {
+                "input_sha256": sha256(raw), "action_source": "recorded_target",
+                "target_alignment": "action[t] = obs/joint_pos_target[t+1]",
+                "episode_count": 500, "frame_count": 1000, "joint_limits": limit_record,
+                "episodes": [{"name": f"demo_{index}", "frame_count": 2} for index in range(500)],
+            })
+            source_contract = {
+                "schema_version": 1, "stage": "aggregate", "dataset_root": str(root / "source"),
+                "action_source": "recorded_target",
+                "alignment": "action[t] = obs/joint_pos_target[t+1]",
+                "legacy_action_source": False,
+                "joint_limits": limit_record,
+                "episode_count": 500, "frame_count": 1000,
+                "sources": [{
+                    "raw_path": str(raw), "raw_sha256": sha256(raw),
+                    "conversion_provenance_path": str(conversion),
+                    "conversion_provenance_sha256": sha256(conversion),
+                    "episode_count": 500, "frame_count": 1000,
+                }],
+                "episodes": [
+                    {"aggregate_episode_index": index, "raw_path": str(raw), "raw_sha256": sha256(raw),
+                     "raw_demo": f"demo_{index}", "frame_count": 2}
+                    for index in range(500)
+                ],
+            }
+            atomic_json(root / "source" / CONTRACT_FILENAME, source_contract)
+            split_contract = build_split_contract(
+                root / "source", source_contract,
+                {"train": list(range(400)), "valid": list(range(400, 500))},
+            )
+            atomic_json(root / CONTRACT_FILENAME, split_contract)
             marker = {"schema_version": 1, "success": True, "source": str(root / "source"),
-                      "source_info_sha256": sha256(root / "source/meta/info.json"), "splits": {}}
+                      "source_info_sha256": sha256(root / "source/meta/info.json"),
+                      "action_contract_sha256": sha256(root / CONTRACT_FILENAME),
+                      "action_source": "recorded_target", "splits": {}}
             for name, indices in (("train", list(range(400))), ("valid", list(range(400, 500)))):
                 meta = root / name / "meta"
                 meta.mkdir(parents=True)

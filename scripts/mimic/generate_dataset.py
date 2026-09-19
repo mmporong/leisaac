@@ -140,6 +140,8 @@ from isaaclab_mimic.datagen.generation import (
 )
 from isaaclab_mimic.datagen.utils import get_env_name_from_dataset, setup_output_paths
 from leisaac.utils.env_utils import get_task_type
+from leisaac.tasks.pick_cube_into_box.mdp.release_state import release_criteria_metadata
+from leisaac.tasks.pick_cube_into_box.mdp.terminations import cube_released_in_box
 from recovery_reset import (
     bounded_recovery_env_loop,
     load_recovery_snapshot,
@@ -343,6 +345,8 @@ def main():
         if recovery_snapshot is not None
         else None,
     }
+    if success_term.func is cube_released_in_box:
+        manifest["success_criteria"] = release_criteria_metadata(success_term.params)
     if guarded_runtime:
         manifest["stop_reason"] = stop_reason or (
             type(loop_error).__name__

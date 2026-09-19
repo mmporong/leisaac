@@ -79,6 +79,8 @@ import numpy as np
 import torch
 from isaaclab_tasks.utils import parse_env_cfg
 from leisaac.utils.env_utils import dynamic_reset_gripper_effort_limit_sim
+from leisaac.tasks.pick_cube_into_box.mdp.release_state import release_criteria_metadata
+from leisaac.tasks.pick_cube_into_box.mdp.terminations import cube_released_in_box
 
 import leisaac  # noqa: F401
 
@@ -271,6 +273,8 @@ def main() -> None:
         env_cfg.seed = args_cli.seed
         env_cfg.rerender_on_reset = args_cli.reset_render_frames > 0
         success_term = env_cfg.terminations.success
+        if success_term.func is not cube_released_in_box:
+            raise ValueError("this evaluator requires the pick-cube stable-release success criterion")
         env_cfg.terminations.success = None
         env = gym.make(args_cli.task, cfg=env_cfg).unwrapped
         robot = env.scene["robot"]
@@ -449,6 +453,8 @@ def main() -> None:
             "reset_render_frames": args_cli.reset_render_frames,
             "trace_steps": args_cli.trace_steps,
             "gripper_effort_mode": args_cli.gripper_effort_mode,
+            "success_criteria": release_criteria_metadata(success_term.params),
+            "control_dt_s": float(env.step_dt),
             "joint_names": robot.joint_names,
             "joint_lower_limits_rad": lower.cpu().tolist(),
             "joint_upper_limits_rad": upper.cpu().tolist(),

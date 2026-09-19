@@ -1,0 +1,219 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-19",
+  "purpose": "Mimic-to-ACT contract hardening and bounded integration smoke; not trained-policy performance evidence",
+  "base_commit": "87253d50166349c7b4bcbeb9b30f65f3dd7e7ca2",
+  "action_source": "recorded_target",
+  "alignment": "action[t] = obs/joint_pos_target[t+1]",
+  "success_criteria": {
+    "version": "stable_release_v2",
+    "hold_time_s": 0.5,
+    "max_linear_speed_m_s": 0.03,
+    "max_angular_speed_rad_s": 0.5,
+    "half_extent_xy_m": 0.045,
+    "min_height_m": 0.012,
+    "max_height_m": 0.075,
+    "open_threshold_rad": 0.26
+  },
+  "replay": {
+    "episodes": 3,
+    "successes": 3,
+    "first_success_steps": [
+      247,
+      220,
+      640
+    ],
+    "final_successes": 3,
+    "legacy_report_note": "Replay was run before control_dt_s metadata was added; historical report was not patched."
+  },
+  "audit": {
+    "episode_count": 25,
+    "accepted_count": 22,
+    "rejected_count": 3,
+    "max_action_step_norm": 1.0
+  },
+  "conversion": {
+    "selected_demos": [
+      "demo_0",
+      "demo_1",
+      "demo_2"
+    ],
+    "episodes": 3,
+    "frames": 1148,
+    "all_frame_alignment": "exact raw state and clipped next recorded target; aggregate plus both splits checked (2296 rows, 1148 unique source frames)"
+  },
+  "split": {
+    "train_episodes": [
+      0,
+      2
+    ],
+    "train_frames": 928,
+    "valid_episodes": [
+      1
+    ],
+    "valid_frames": 220
+  },
+  "training_smoke": {
+    "steps": 2,
+    "batch_size": 2,
+    "checkpoint_validation": {
+      "checked": [
+        "policy_preprocessor/action.mean",
+        "policy_preprocessor/action.std",
+        "policy_preprocessor/observation.state.mean",
+        "policy_preprocessor/observation.state.std",
+        "policy_postprocessor/action.mean",
+        "policy_postprocessor/action.std"
+      ],
+      "model_sha256": "df2a6d3440088016daac13e593888384415f10e08ba84c16408b9420344b2175",
+      "steps": 2,
+      "train_only_state_action_stats": true,
+      "visual_stats": "fixed ImageNet"
+    },
+    "offline": {
+      "checkpoint": "/data/lim/leisaac/outputs/evaluation/contract_hardening_20260918/act_smoke/model/checkpoints/000002/pretrained_model",
+      "dataset_root": "/data/lim/leisaac/outputs/evaluation/contract_hardening_20260918/split_smoke/valid",
+      "episodes": 1,
+      "frames": 220,
+      "first_frames": {
+        "samples": 1,
+        "rmse": 0.8077466487884521,
+        "mae": 0.7311521172523499,
+        "per_joint_rmse": [
+          0.8147745728492737,
+          0.7634375095367432,
+          0.25820326805114746,
+          1.1791353225708008,
+          0.3177903890609741,
+          1.0535717010498047
+        ]
+      },
+      "uniform_frames": {
+        "samples": 220,
+        "rmse": 0.7581208944320679,
+        "mae": 0.5889179110527039,
+        "per_joint_rmse": [
+          0.5923339128494263,
+          0.5652296543121338,
+          0.3197566866874695,
+          0.33596980571746826,
+          1.1277810335159302,
+          1.1362783908843994
+        ]
+      }
+    },
+    "rollout_seed": 4998,
+    "rollout_steps": 1200,
+    "successes": 0,
+    "outcome": "no_lift",
+    "control_dt_s": 0.016666666666666666,
+    "video": {
+      "frames": 1200,
+      "width": 1280,
+      "height": 480,
+      "fps": 60.0
+    },
+    "runner_status": "complete"
+  },
+  "verification": {
+    "unittest_command": "python -m unittest discover -s scripts/imitation_learning -p test_*.py -q",
+    "tests_passed": 114,
+    "old_uncontracted_split_default_rejected": true,
+    "post_review_selection_and_split_revalidation": "passed",
+    "note": "End-to-end smoke preceded final preflight guard strengthening; final guards revalidated against the same artifacts. Rollout and policy implementation did not change afterward."
+  },
+  "limitations": [
+    "Only three raw episodes replay-tested against stable_release_v2; historical 500 success flags remain legacy.",
+    "97 action-jump episodes from the earlier 500 audit remain unreviewed; none silently dropped.",
+    "No full ACT retraining, reinforcement learning, or physical-robot execution.",
+    "Contracts contain Linux absolute source paths; Windows relocation is not implemented.",
+    "No installed LSP/static-type checker; unit tests, source compilation and diff checks used."
+  ],
+  "artifacts": [
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/replay_stable_release/evaluation.json",
+      "sha256": "2e74bd744e1775a216d9b944e0a4aa951cfaa2f16673b5838ba1472641ec2627"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/shard_000_audit.json",
+      "sha256": "bb579b24cdc8c4944144f2a867eba52c60521cee66a1c3176274e47a0ab2e81b"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/smoke_selection.json",
+      "sha256": "1a369ff88bb8a19670cffd714ddd0c3276b9ad511b29ad03355490c1382786c2"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/batch_smoke/plan.json",
+      "sha256": "8cefaecf8496ca029c40652dac1401219dc54adf9bba32732708c1879221a08f"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/batch_smoke/lerobot_all/action_contract.json",
+      "sha256": "f1bf952dda7db5148f205cb1363f87517ad5313a972ead24fdb8debb9ff87e28"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/batch_smoke/lerobot_shards/shard_000/conversion_provenance.json",
+      "sha256": "574ea0dce3fe781b307ad9d1d77cc1fa1c17a2fba57a683b181ea97c515d1f80"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/split_smoke/action_contract.json",
+      "sha256": "302271673d1d2457ad17fcb5e497c18ebe0aad871dc091b41e49f776c93758ea"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/split_smoke/split_provenance.json",
+      "sha256": "e5c0bc04a559a6b4d7c92a72b034ce15269be6501120f38fc4b9e747afc6dd08"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/act_smoke/plan.json",
+      "sha256": "7df9f8a12128935704139d1c54821e48d41d4634da89526017ea999655800dda"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/act_smoke/checkpoint_validation.json",
+      "sha256": "1c4858599a7cd81dcb376f2ce26f0888a456170ca01c254eb6cb0194da914608"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/act_smoke/offline_valid.json",
+      "sha256": "2e7392214ef2caad5f3284015e4e631480830c5109d0b47b63b46695a483a547"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/act_smoke/rollouts/seed_4998/evaluation.json",
+      "sha256": "44a070269fdc484c0606c395004f239cd3e329d032330af9c0d65041e69813e9"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/act_smoke/progress.json",
+      "sha256": "12b37bd8dc0eeb8a14ecce7afbdf64c1738cc767a129d434bab2cdee0bca09da"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/act_smoke/evaluation_summary.json",
+      "sha256": "375836832dacebaa6e34a2ca4346b8805bba5e5e4823da66064a3258604e35df"
+    },
+    {
+      "path": "outputs/evaluation/contract_hardening_20260918/act_smoke/rollouts/seed_4998/rollout_001_failure.mp4",
+      "sha256": "826304b2c856f44ef0f48129194b4b799f2a532334dadfe308bc7789a6e42f91"
+    }
+  ],
+  "changed_python_sha256": {
+    "scripts/datagen/state_machine/generate.py": "9f53314c021a076b5517765c6a2f5c8496b3b165618c1a5008e2b7ad8227b94f",
+    "scripts/evaluation/compare_act_rollouts.py": "3b3af7b9aff21d88cb7d27c80597d0500b5f2b615850645e9900cb198e30fc53",
+    "scripts/evaluation/lerobot_act_so101.py": "cdcacf8e67677885c174720a60770309829dbdfb1872962170ce7fd3354af741",
+    "scripts/evaluation/replay_joint_contract.py": "a0d0ac55435f7fa553707d9e826ec85fac002cb7e3e328d65184c1960e0a229b",
+    "scripts/imitation_learning/convert_hdf5_to_lerobot.py": "ec6d1f67deb15a75d37bf655eb84f7efdf99ecebc82013b9b5c5f9bd80882aa7",
+    "scripts/imitation_learning/prepare_mimic_act_split.py": "b57dc8f63cb28a723b4befde18244b3cadd8a03f239595c07bbc6e46e3f65ea9",
+    "scripts/imitation_learning/run_act_vision_experiment.py": "5f82bf7f3130b0ed741dd7d52424294027f1b7b7dbae66a80eb02d141c0a4fcc",
+    "scripts/imitation_learning/run_mimic_image_batch.py": "6c2639482ba810f076d720fa2b18fcb67128af9537663a47238273673338b509",
+    "scripts/imitation_learning/test_act_vision_experiment.py": "95fb2957a2cddab225fdc98d1b8833561d33154f23fb8368fd4f56a8d227c4f4",
+    "scripts/imitation_learning/test_compare_act_rollouts.py": "c060a4eae1f7843b5978fbfbfdff7650c83628da265c14daa3fd52a0500c589d",
+    "scripts/imitation_learning/test_mimic_act_split.py": "a488c699ec638923521148310e85736ea5edeae1da557e106fc208fda6e53af7",
+    "scripts/imitation_learning/test_mimic_image_batch.py": "d5ce79d2989d16ae2cf6c6b35fc91b596053fc14a0814c0ef0cc6073cb2d166c",
+    "scripts/imitation_learning/test_recorded_target_conversion.py": "b6d74fdc1f32fc2b1b83e2a1804f6f11952e91f73d8da7803e6a9c74dfdf4e14",
+    "scripts/mimic/annotate_demos.py": "8cc670f41cf310a491af2e464cabb41c85a1ddc8dede7bb4cf422f7ba4ebe2fb",
+    "scripts/mimic/generate_dataset.py": "db096b1834cae1c7dbe169c517c528a9d4e3cd39b7250c3adc20607b17f22d44",
+    "source/leisaac/leisaac/datagen/state_machine/base.py": "1e49828115206e2e519d2f613c380a693595e217c14e93d5573ee1ead8b08bc2",
+    "source/leisaac/leisaac/datagen/state_machine/pick_cube_into_box.py": "00aca9a488674a85d3685a51746e519c5bd362c9e01501c348bdd17879529e18",
+    "source/leisaac/leisaac/tasks/pick_cube_into_box/mdp/terminations.py": "ba7b9049d33c2510624e6f2c3d4516e2285f92c7171a11f31b16cc3555e4131f",
+    "scripts/imitation_learning/action_contract.py": "71f747cc137ff26319b3b7445a21c4ee1f96bc06d2a7fb55e350374b37ba9301",
+    "scripts/imitation_learning/test_action_contract.py": "37e90e8502c4f7c7dcadb1d798f361d2b3a80538429c66136db52137305dc2b3",
+    "scripts/imitation_learning/test_stable_release.py": "817fd7878f754741cb9f1b08ef49bc6134345b046d4d84ee7a255056c94ebb73",
+    "scripts/imitation_learning/test_state_machine_success_observation.py": "3ca7e67959c5a022e94621a8685d602eaaf45bdce7491b87aeb09531f32eacd8",
+    "source/leisaac/leisaac/tasks/pick_cube_into_box/mdp/release_state.py": "4b6bd799738e16199ead1e33d50b7ffd3734599c3e0c007be21d43c9f6cb5090"
+  }
+}

@@ -1,10 +1,14 @@
 # 500회 Mimic 데이터 → 224 ACT 학습·평가 인계
 
+> **2026-09-19 갱신:** 현재 배치 기본 라벨은 `recorded_target`이며, 성공 판정은
+> `stable_release_v2`다. 이전 500회 데이터·30,000-step 모델은 보존된 과거 실험이다.
+> 최신 변경과 3회 통합 검증은 아래 [파이프라인 보완](#2026-09-19-파이프라인-보완)을 따른다.
+
 ## 범위
 
 증강 데이터 500회 생성은 끝났다. 이번 작업은 **ACT 모방학습과 시뮬레이션 평가**다.
 강화학습이나 실물 팔로워 실행은 포함하지 않는다. 큐브·박스·로봇·카메라 위치와
-기존 놓기/그리퍼 해제 성공 판정은 유지한다.
+기존 놓기/그리퍼 해제 성공 판정은 아래 과거 실험에 해당한다. 최신 판정은 안정 유지 조건을 추가했다.
 
 ## 생성 데이터 검증
 
@@ -60,6 +64,8 @@ LeRobot SDK의 `split_dataset()`으로 별도 데이터 루트를 만든다. `da
 ## 자동 실행·중단 조건
 
 Linux의 현재 저장소는 `/data/lim/leisaac`이다. 아래 경로는 현재 기기 배치 기준이다.
+아래 명령은 과거 실행 기록이다. 현재 코드는 출처 계약이 없는 기존 split을 기본 거부하므로
+새 실험에는 아래 최신 절차와 별도 출력 경로를 사용한다.
 
 ```bash
 cd "/data/$USER/leisaac"
@@ -229,6 +235,91 @@ CPU 회귀 테스트 79개, Python 컴파일, diff 검사를 통과했고 별도
 다음 순서는 **명령 급변 시연 검수 → 보존된 raw에서 새 라벨로 별도 배치 변환
 → 원 시연 식별자를 유지한 train/valid 분리 → ACT 재학습 → 새 평가 조건에서
 폐루프 검증**이다. 97회를 몰래 버리거나 허용치를 올려 통과시키지 않는다.
-기존 `run_mimic_image_batch.py`는 여전히 `next_observed` 경로이므로 새 라벨
-배치 변환 기능 없이 그대로 재실행하지 않는다. 조명·배경 증강과 강화학습은
+2026-09-18 당시 `run_mimic_image_batch.py`는 `next_observed` 경로였다.
+2026-09-19 변경으로 새 라벨 배치 경로를 연결했다. 조명·배경 증강과 강화학습은
 제어 계약이 맞는 정책의 기준 성능을 확보한 뒤 별도 비교한다.
+
+## 2026-09-19 파이프라인 보완
+
+### 변경한 동작
+
+1. 배치 기본값은 `recorded_target`이다. `--joint-limits-file`이 필수이며,
+   기존 라벨 사용에는 `--allow-legacy-action-source`를 명시해야 한다.
+   단독 변환기의 기존 기본값 `stored`는 호환성을 위해 유지한다.
+2. `--raw-dir --convert-only`로 원본을 복제·재생성하지 않고 재변환한다.
+   변환기의 `--audit-only --audit-output`은 에피소드별 통과/실패 이유를 기록한다.
+   배치 `--selection-manifest`는 raw 파일·검사 결과의 해시와 선택한 demo 이름을 검증한다.
+   누락·급변 시연을 자동으로 제외하지 않으며, 선택 후에도 변환 검사는 다시 적용한다.
+   audit의 schema·관절 제한·행동 급변 기준·통과/실패 개수는 현재 변환 설정과 일치해야 한다.
+3. `action_contract.json`에 raw SHA256·원 demo·라벨 정렬·관절 제한·프레임 수를 남긴다.
+   aggregate → split → training에서 출처와 학습/검증 매핑을 다시 검사한다.
+   출처 계약이 없는 기존 split은 기본 거부한다. 예외 허용은 과거 실험 재현용이지
+   기존 데이터가 새 목표각 라벨로 바뀌었다는 뜻이 아니다.
+   계약 없는 예외 경로도 provenance에 `stored` 또는 `next_observed`가 명시돼야 한다.
+   라벨 필드가 없거나 `recorded_target`이면 예외 옵션을 줘도 거부한다.
+4. 성공은 박스 영역 안에서 그리퍼를 열고 **0.5초 연속 안정 상태**를 유지해야 한다.
+   선속도 ≤ 0.03 m/s, 각속도 ≤ 0.5 rad/s다. 기존 영역 범위는 유지한다.
+   생성·annotation 재생·상태기계·평가에서 매 제어 스텝 관찰하며,
+   중복 호출·reset·관측 누락으로 유지 시간이 늘어나지 않게 했다.
+5. 평가 비교는 카메라 reset 렌더 횟수, 그리퍼 힘 방식, 제어 주기,
+   성공 기준, 관절 순서/제한까지 일치해야 한다. 이 값이 없는 과거 결과는
+   새 결과와 자동 비교하지 않는다. 과거 JSON에 새 기준을 소급해서 적지 않는다.
+
+안정 유지 값은 현재 태스크의 운영 기준이며 실물 캘리브레이션 값이 아니다.
+기존 raw 500개의 `success=true`는 과거 판정 결과다. 이번 변경만으로
+500개 모두 새 기준에 통과했다고 간주하지 않는다.
+
+### 실제 통합 검증
+
+작업 출력 루트: `outputs/evaluation/contract_hardening_20260918/`.
+9월 18일 재생 검증을 시작한 경로이며, 변환·학습 smoke는 9월 19일 수행했다.
+
+| 확인 항목 | 결과 |
+| --- | --- |
+| 새 성공 기준으로 원본 demo 0/1/2 목표각 재생 | 3/3 성공, 첫 성공 스텝 247/220/640 |
+| 첫 raw shard 25개 사전 검사 | 22개 통과·3개 불통과, 자동 제외 없음 |
+| 명시 선택 demo 0/1/2 변환·aggregate | 3개·1,148프레임 |
+| train/valid 분리 | demo 0/2: 928프레임 / demo 1: 220프레임 |
+| aggregate와 split의 모든 상태·행동 대조 | 총 2,296행, 원본 상태/제한 적용 목표각과 정확히 일치 |
+| ACT 연결 검사 | 2 updates·batch 2, checkpoint 및 train-only 정규화 검사 통과 |
+| 오프라인 검증 | 보류 220프레임 평가 완료, RMSE 약 0.7581 rad |
+| Isaac 폐루프·영상 | seed 4998, 1,200스텝·1280×480·60fps 저장 및 검사 완료 |
+| 해당 2-step 모델 집기 | 0/1, `no_lift` — 성능 검증용 학습이 아님 |
+| 회귀 검증 | CPU 단위 테스트 114개 통과, Python 컴파일·diff 검사 통과 |
+
+`act_smoke/progress.json`의 `complete`는 실행·산출물 검증 완료를 뜻한다.
+집기 성공 여부는 `evaluation_summary.json`의 `successes`를 별도로 읽는다.
+재생 3/3은 원본 명령 재현 결과이고 ACT 자율 성공률이 아니다.
+재생 JSON은 `control_dt_s` 기록 추가 전에 생성돼 그 필드가 없다.
+최종 ACT 평가 JSON에는 1/60초 및 새 성공 기준이 기록됐다.
+
+실행에 사용한 핵심 인수는 다음과 같다. 기존 출력은 보존하며 재실행에는 새 경로가 필요하다.
+
+```bash
+cd "/data/$USER/leisaac"
+"$HOME/miniforge3/envs/lerobot/bin/python" scripts/imitation_learning/run_mimic_image_batch.py \
+  --input datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5 \
+  --output-dir outputs/evaluation/contract_hardening_20260918/batch_smoke \
+  --raw-dir outputs/mimic_vision224_500_20260913/raw --convert-only \
+  --selection-manifest outputs/evaluation/contract_hardening_20260918/smoke_selection.json \
+  --joint-limits-file outputs/evaluation/act_diagnostics_20260918/render4_seed4001/evaluation.json \
+  --total 3 --chunk 3
+```
+
+분리는 `--shard-size 3 --valid-per-shard 1`, 학습 runner는
+`--steps 2 --batch-size 2 --eval-seeds 4998`로 실행했다.
+검사·선택·계약 JSON, 영상 및 해시 근거는
+[통합 검증 근거](evidence/act_pipeline_hardening_20260919.json)에 연결했다.
+
+### 남은 일과 제약
+
+- 97개 급변 시연 검수 → 확정한 선택 목록으로 별도 재변환 → 새 split → 본 학습 순서다.
+  403개 후보도 안정 놓기 재생 등 품질 검증을 마쳐야 한다.
+- 선택된 시연을 이어 붙인 뒤의 split은 고정 크기 묶음 기준이다. raw 생성 seed나
+  원 리더 시연을 통째로 보류한 OOD 분리가 아니다.
+- 이번 smoke에서 성공 여부로 모델·평가 seed를 고르지 않았다. seed 4998은 이제 사용 이력이 있다.
+- 새 계약의 경로는 현재 Linux 절대경로이며 원본 raw·limits·변환 provenance가 있어야 검증된다.
+  Windows로 폴더만 복사해 동일 계약 검증이 된다고 보장하지 않는다. 이식 시 경로 재지정과
+  원본 해시 보존을 위한 별도 절차가 필요하다.
+- 전체 500개 재변환, 본 ACT 재학습, 강화학습, 실물 검증은 이번 완료 범위가 아니다.
+  기존 원본·모델·영상을 삭제하거나 덮어쓰지 않았다.

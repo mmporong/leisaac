@@ -26,11 +26,17 @@ MAX_IMAGE_SIZE = 256
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True)
-    parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--output-root", type=Path)
     parser.add_argument("--repo-id", default="local/so101_mimic_act")
     parser.add_argument("--fps", type=int, default=60)
     parser.add_argument("--task", default="Pick up the red cube and place it inside the blue box")
     parser.add_argument("--max-episodes", type=int, default=None)
+    parser.add_argument(
+        "--demo-names", nargs="+",
+        help="Explicit demo names selected after a separate audit; cannot be combined with slicing.",
+    )
+    parser.add_argument("--audit-only", action="store_true")
+    parser.add_argument("--audit-output", type=Path)
     parser.add_argument(
         "--start-episode",
         type=int,
@@ -318,10 +324,40 @@ def validate_demo(
     return output_frame_count
 
 
+def audit_demonstrations(
+    hdf: h5py.File,
+    demo_names: list[str],
+    max_action_step_norm: float,
+    image_size: int,
+    action_source: str,
+    joint_limits: tuple[np.ndarray, np.ndarray] | None,
+) -> list[dict]:
+    results = []
+    for name in demo_names:
+        try:
+            frame_count = validate_demo(
+                hdf[f"data/{name}"], max_action_step_norm, image_size,
+                action_source, joint_limits,
+            )
+            results.append({"name": name, "accepted": True, "frame_count": frame_count})
+        except Exception as error:
+            results.append({"name": name, "accepted": False,
+                            "error": f"{type(error).__name__}: {error}"})
+    return results
+
+
 def main() -> None:
     args = parse_args()
     input_path = args.input.expanduser().resolve()
-    output_root = args.output_root.expanduser().resolve()
+    if args.output_root is None and not args.audit_only:
+        raise ValueError("--output-root is required unless --audit-only is used")
+    if args.audit_only and args.audit_output is None:
+        raise ValueError("--audit-only requires --audit-output")
+    if args.demo_names and (args.start_episode != 0 or args.max_episodes is not None):
+        raise ValueError("--demo-names cannot be combined with --start-episode or --max-episodes")
+    if args.demo_names and len(args.demo_names) != len(set(args.demo_names)):
+        raise ValueError("--demo-names must not contain duplicates")
+    output_root = args.output_root.expanduser().resolve() if args.output_root else None
     if args.fps <= 0:
         raise ValueError("fps must be positive")
     if args.start_episode < 0:
@@ -341,14 +377,43 @@ def main() -> None:
             )
         lower, upper, joint_limits_provenance = load_joint_limits(args.joint_limits_file)
         joint_limits = (lower, upper)
-    if output_root.exists():
+    if output_root is not None and output_root.exists():
         raise FileExistsError(f"output already exists: {output_root}")
+    audit_output = args.audit_output.expanduser().resolve() if args.audit_output else None
+    if audit_output is not None and audit_output.exists():
+        raise FileExistsError(f"audit output already exists: {audit_output}")
     input_sha256 = sha256_file(input_path)
 
     with h5py.File(input_path, "r") as hdf:
-        demo_names = sorted_demo_names(hdf)[args.start_episode:]
-        if args.max_episodes is not None:
-            demo_names = demo_names[: args.max_episodes]
+        all_demo_names = sorted_demo_names(hdf)
+        if args.audit_only:
+            audit = audit_demonstrations(
+                hdf, all_demo_names, args.max_action_step_norm, args.image_size,
+                args.action_source, joint_limits,
+            )
+            assert audit_output is not None
+            audit_output.parent.mkdir(parents=True, exist_ok=True)
+            audit_output.write_text(json.dumps({
+                "schema_version": 1, "input_path": str(input_path),
+                "input_sha256": input_sha256, "action_source": args.action_source,
+                "max_action_step_norm": args.max_action_step_norm,
+                "joint_limits": joint_limits_provenance,
+                "episode_count": len(audit),
+                "accepted_count": sum(item["accepted"] for item in audit),
+                "rejected_count": sum(not item["accepted"] for item in audit),
+                "episodes": audit,
+            }, indent=2) + "\n", encoding="utf-8")
+            print(f"Audited {len(audit)} episodes; no dataset was written", flush=True)
+            return
+        if args.demo_names:
+            missing = sorted(set(args.demo_names) - set(all_demo_names))
+            if missing:
+                raise ValueError(f"selected demos do not exist: {missing}")
+            demo_names = list(args.demo_names)
+        else:
+            demo_names = all_demo_names[args.start_episode:]
+            if args.max_episodes is not None:
+                demo_names = demo_names[: args.max_episodes]
         if not demo_names:
             raise ValueError("no demonstrations selected")
 
@@ -369,6 +434,7 @@ def main() -> None:
                 for name in demo_names
             ]
         features = build_features(args.image_size)
+        assert output_root is not None
         dataset = LeRobotDataset.create(
             repo_id=args.repo_id,
             fps=args.fps,
@@ -414,6 +480,7 @@ def main() -> None:
         joint_limits_provenance,
         clipping_stats,
     )
+    assert output_root is not None
     (output_root / "conversion_provenance.json").write_text(
         json.dumps(provenance, indent=2) + "\n",
         encoding="utf-8",

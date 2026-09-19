@@ -1,4 +1,4 @@
-"""Create a deterministic 400/100 train/valid split of the 500-episode Mimic ACT dataset."""
+"""Create a deterministic nonempty train/validation split for a Mimic ACT dataset."""
 
 import argparse
 import hashlib
@@ -6,6 +6,7 @@ import json
 import math
 from pathlib import Path
 import shutil
+import sys
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,15 @@ from lerobot.datasets.dataset_tools import _load_episode_with_stats, split_datas
 from lerobot.datasets.io_utils import load_stats
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
 from lerobot.datasets.utils import DEFAULT_DATA_PATH
+
+REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO))
+from scripts.imitation_learning.action_contract import (
+    CONTRACT_FILENAME,
+    build_split_contract,
+    validate_aggregate_contract,
+    validate_split_contract,
+)
 
 EXPECTED_EPISODES = 500
 FRAME_STATS_FEATURES = ("action", "observation.state")
@@ -49,25 +59,30 @@ def build_split_indices(
     valid_per_shard: int = 5,
 ) -> dict[str, list[int]]:
     """Select validation episodes independently within each contiguous source shard."""
-    if total_episodes <= 0:
-        raise ValueError("total episodes must be positive")
+    if total_episodes < 2:
+        raise ValueError("at least two episodes are required for a nonempty split")
     if seed < 0:
         raise ValueError("seed must be nonnegative")
-    if shard_size <= 1 or total_episodes % shard_size:
-        raise ValueError("shard-size must divide the total episode count and be greater than 1")
+    if shard_size <= 1:
+        raise ValueError("shard-size must be greater than 1")
     if not 0 < valid_per_shard < shard_size:
         raise ValueError("valid-per-shard must be between 1 and shard-size - 1")
 
     rng = np.random.default_rng(seed)
     valid: list[int] = []
     for start in range(0, total_episodes, shard_size):
-        shard = np.arange(start, start + shard_size)
-        valid.extend(int(index) for index in rng.choice(shard, size=valid_per_shard, replace=False))
+        shard = np.arange(start, min(start + shard_size, total_episodes))
+        count = min(valid_per_shard, len(shard) - 1)
+        if count > 0:
+            valid.extend(int(index) for index in rng.choice(shard, size=count, replace=False))
     valid_set = set(valid)
-    return {
+    result = {
         "train": [index for index in range(total_episodes) if index not in valid_set],
         "valid": sorted(valid_set),
     }
+    if not result["train"] or not result["valid"]:
+        raise ValueError("split parameters must produce nonempty train and validation sets")
+    return result
 
 
 def _episode_stats(dataset: LeRobotDataset, episode_indices: list[int]) -> dict:
@@ -209,6 +224,7 @@ def run_split(
     seed: int,
     shard_size: int,
     valid_per_shard: int,
+    allow_legacy_action_source: bool = False,
 ) -> dict:
     source_root = dataset_root.expanduser().resolve(strict=True)
     output_root = output_dir.expanduser().resolve()
@@ -219,14 +235,19 @@ def run_split(
             raise FileNotFoundError(required)
     check_free_space(_nearest_existing_parent(output_root.parent), 8.0)
 
+    source_contract = validate_aggregate_contract(
+        source_root, allow_legacy=allow_legacy_action_source
+    )
+
     source = LeRobotDataset(repo_id=repo_id, root=source_root)
-    if source.meta.total_episodes != EXPECTED_EPISODES:
+    if source.meta.total_episodes != source_contract["episode_count"]:
         raise ValueError(
-            f"source must contain exactly {EXPECTED_EPISODES} episodes, got {source.meta.total_episodes}"
+            "source dataset count differs from its action contract: "
+            f"{source.meta.total_episodes} != {source_contract['episode_count']}"
         )
     indices = build_split_indices(source.meta.total_episodes, seed, shard_size, valid_per_shard)
     if set(indices["train"]) & set(indices["valid"]) or sorted(indices["train"] + indices["valid"]) != list(
-        range(EXPECTED_EPISODES)
+        range(source.meta.total_episodes)
     ):
         raise AssertionError("internal split partition invariant failed")
 
@@ -236,11 +257,17 @@ def run_split(
         name: validate_split(source, created[name], selected, output_root / name)
         for name, selected in indices.items()
     }
-    source_expected_stats = _episode_stats(source, list(range(EXPECTED_EPISODES)))
+    source_expected_stats = _episode_stats(source, list(range(source.meta.total_episodes)))
     source_actual_stats = load_stats(source_root)
     if source_actual_stats is None:
         raise FileNotFoundError(source_root / "meta/stats.json")
     _assert_stats_close(source_actual_stats, source_expected_stats, "source")
+
+    split_contract = build_split_contract(source_root, source_contract, indices)
+    atomic_json(output_root / CONTRACT_FILENAME, split_contract)
+    validated_contract = validate_split_contract(
+        output_root, allow_legacy=allow_legacy_action_source
+    )
 
     marker = {
         "schema_version": 1,
@@ -249,6 +276,9 @@ def run_split(
         "source_repo_id": repo_id,
         "source_info_sha256": sha256(source_root / "meta/info.json"),
         "source_stats_sha256": sha256(source_root / "meta/stats.json"),
+        "action_contract_sha256": sha256(output_root / CONTRACT_FILENAME),
+        "action_source": validated_contract["action_source"],
+        "action_alignment": validated_contract["alignment"],
         "seed": seed,
         "shard_size": shard_size,
         "valid_per_shard": valid_per_shard,
@@ -267,11 +297,13 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=43)
     parser.add_argument("--shard-size", type=int, default=25)
     parser.add_argument("--valid-per-shard", type=int, default=5)
+    parser.add_argument("--allow-legacy-action-source", action="store_true")
     args = parser.parse_args()
     if not args.repo_id.strip():
         raise ValueError("repo-id must not be empty")
     marker = run_split(
-        args.dataset_root, args.repo_id, args.output_dir, args.seed, args.shard_size, args.valid_per_shard
+        args.dataset_root, args.repo_id, args.output_dir, args.seed, args.shard_size,
+        args.valid_per_shard, args.allow_legacy_action_source,
     )
     print(json.dumps(marker, sort_keys=True), flush=True)
 

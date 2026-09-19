@@ -17,9 +17,26 @@ CONDITION_KEYS = (
     "render_width",
     "render_height",
     "policy_image_size",
+    "control_dt_s",
+    "reset_render_frames",
+    "gripper_effort_mode",
+    "success_criteria",
+    "joint_names",
+    "joint_lower_limits_rad",
+    "joint_upper_limits_rad",
 )
 OUTCOMES = ("success", "no_lift", "low_after_lift", "lifted_not_completed")
 INITIAL_STATE_TOLERANCE = 1e-6
+EXPECTED_SUCCESS_CRITERIA = {
+    "version": "stable_release_v2",
+    "hold_time_s": 0.5,
+    "max_linear_speed_m_s": 0.03,
+    "max_angular_speed_rad_s": 0.5,
+    "half_extent_xy_m": 0.045,
+    "min_height_m": 0.012,
+    "max_height_m": 0.075,
+    "open_threshold_rad": 0.26,
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -107,6 +124,68 @@ def _load_rollout(root: Path, seed: int, arm: str) -> dict:
     for key in ("render_width", "render_height", "policy_image_size"):
         if type(conditions[key]) is not int or conditions[key] <= 0:
             raise ValueError(f"{key} must be a positive integer in {path}")
+    control_dt_s = conditions["control_dt_s"]
+    if (
+        isinstance(control_dt_s, bool)
+        or not isinstance(control_dt_s, (int, float))
+        or not math.isfinite(control_dt_s)
+        or control_dt_s <= 0
+    ):
+        raise ValueError(f"control_dt_s must be finite and positive in {path}")
+    conditions["control_dt_s"] = float(control_dt_s)
+    if type(conditions["reset_render_frames"]) is not int or conditions["reset_render_frames"] < 0:
+        raise ValueError(f"reset_render_frames must be a non-negative integer in {path}")
+    if conditions["gripper_effort_mode"] not in ("task", "fixed"):
+        raise ValueError(f"gripper_effort_mode must be task or fixed in {path}")
+    success_criteria = conditions["success_criteria"]
+    if not isinstance(success_criteria, dict) or set(success_criteria) != set(EXPECTED_SUCCESS_CRITERIA):
+        raise ValueError(
+            f"success_criteria must contain exactly these keys in {path}: "
+            f"{sorted(EXPECTED_SUCCESS_CRITERIA)!r}; got {success_criteria!r}"
+        )
+    if success_criteria["version"] != EXPECTED_SUCCESS_CRITERIA["version"]:
+        raise ValueError(
+            f"success_criteria.version must be {EXPECTED_SUCCESS_CRITERIA['version']!r} in {path}; "
+            f"got {success_criteria['version']!r}"
+        )
+    normalized_success_criteria = {"version": success_criteria["version"]}
+    for key in EXPECTED_SUCCESS_CRITERIA:
+        if key == "version":
+            continue
+        value = success_criteria[key]
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+            raise ValueError(f"success_criteria.{key} must be finite and positive in {path}; got {value!r}")
+        normalized_success_criteria[key] = float(value)
+    if normalized_success_criteria["min_height_m"] >= normalized_success_criteria["max_height_m"]:
+        raise ValueError(
+            f"success_criteria must satisfy min_height_m < max_height_m in {path}; "
+            f"got min_height_m={normalized_success_criteria['min_height_m']!r}, "
+            f"max_height_m={normalized_success_criteria['max_height_m']!r}"
+        )
+    joint_names = conditions["joint_names"]
+    if (
+        not isinstance(joint_names, list)
+        or len(joint_names) != 6
+        or any(not isinstance(name, str) or not name for name in joint_names)
+        or len(set(joint_names)) != 6
+    ):
+        raise ValueError(f"joint_names must contain 6 unique non-empty strings in {path}")
+    lower = _require_finite_vector(
+        conditions["joint_lower_limits_rad"], 6, f"{path}: joint_lower_limits_rad"
+    )
+    upper = _require_finite_vector(
+        conditions["joint_upper_limits_rad"], 6, f"{path}: joint_upper_limits_rad"
+    )
+    for index, (lower_value, upper_value) in enumerate(zip(lower, upper)):
+        if lower_value >= upper_value:
+            raise ValueError(
+                f"joint limits must satisfy lower < upper at index {index} in {path}: "
+                f"lower={lower_value!r}, upper={upper_value!r}"
+            )
+    conditions["success_criteria"] = normalized_success_criteria
+    conditions["joint_names"] = list(joint_names)
+    conditions["joint_lower_limits_rad"] = lower
+    conditions["joint_upper_limits_rad"] = upper
     return {
         "path": path,
         "checkpoint": checkpoint,

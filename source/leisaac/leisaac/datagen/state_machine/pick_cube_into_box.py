@@ -9,7 +9,7 @@ import torch
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.utils.math import quat_apply, quat_from_euler_xyz, quat_inv, quat_mul
 from leisaac.tasks.lift_cube.mdp import object_grasped
-from leisaac.tasks.pick_cube_into_box.mdp import cube_released_in_box
+from leisaac.tasks.pick_cube_into_box.mdp import cube_placed_in_box, cube_released_in_box
 
 from .base import StateMachineBase
 
@@ -110,11 +110,10 @@ class PickCubeIntoBoxStateMachine(StateMachineBase):
             "retreat": above_box,
         }
 
-        placed = cube_released_in_box(
+        placed = cube_placed_in_box(
             env,
             cube_cfg=SceneEntityCfg("cube"),
             box_cfg=SceneEntityCfg("box_target"),
-            robot_cfg=SceneEntityCfg("robot"),
         )
         grasped = object_grasped(
             env,
@@ -131,6 +130,15 @@ class PickCubeIntoBoxStateMachine(StateMachineBase):
 
         self._step_count = 0 if start_phase == 0 else self._phase_ends[start_phase - 1]
         self._episode_done = False
+
+    def observe_step(self, env) -> None:
+        """Advance the stable-release window once per simulated control step."""
+        cube_released_in_box(
+            env,
+            cube_cfg=SceneEntityCfg("cube"),
+            box_cfg=SceneEntityCfg("box_target"),
+            robot_cfg=SceneEntityCfg("robot"),
+        )
 
     def check_success(self, env) -> bool:
         success = cube_released_in_box(
@@ -153,11 +161,10 @@ class PickCubeIntoBoxStateMachine(StateMachineBase):
             ee_frame_cfg=SceneEntityCfg("ee_frame"),
             object_cfg=SceneEntityCfg("cube"),
         )
-        placed = cube_released_in_box(
+        placed = cube_placed_in_box(
             env,
             cube_cfg=SceneEntityCfg("cube"),
             box_cfg=SceneEntityCfg("box_target"),
-            robot_cfg=SceneEntityCfg("robot"),
         )
         print(
             "SM_DIAGNOSTIC",
