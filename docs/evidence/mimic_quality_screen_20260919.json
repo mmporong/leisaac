@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-19",
+  "scope": "원본 Mimic 시연 품질 검사와 목표각 재현 검사. 학습된 정책 성능 평가가 아님",
+  "audit_root": "outputs/evaluation/mimic_quality_verified_20260919",
+  "raw_episodes": 500,
+  "action_continuity_pass": 403,
+  "action_jump_rejected": 97,
+  "continuity_pass_but_final_release_rejected": 109,
+  "continuity_and_recorded_release_pass": 294,
+  "additional_clipping_exclusions": 218,
+  "unclipped_candidates": 76,
+  "candidate_frames": 34525,
+  "candidate_raw_shards": 20,
+  "diagnostics_sha256": "fe7c25fca9bf3cd9f8b491302506facd51f6915c37294b64264d18dfcc10c314",
+  "broad_replay": {
+    "report": "outputs/evaluation/mimic_quality_20260919/replay_cohort_run/evaluation.json",
+    "report_sha256": "fc9b7f2904341bc95d756285837e28927b68abfbbf1e3f438f69f3027df4ad2f",
+    "mode": "recorded_target",
+    "gripper_effort_mode": "task",
+    "success_criteria": "stable_release_v2",
+    "episodes": 20,
+    "final_successes": 17,
+    "failures": [
+      {"shard": "shard_001.hdf5", "demo": "demo_14", "clipped_steps": 27, "max_cube_lift_m": 0.0},
+      {"shard": "shard_009.hdf5", "demo": "demo_9", "clipped_steps": 0, "max_cube_lift_m": 0.0},
+      {"shard": "shard_016.hdf5", "demo": "demo_13", "clipped_steps": 1, "max_cube_lift_m": 0.16946379840373993}
+    ],
+    "videos": 20,
+    "process_exit_code": 0
+  },
+  "training_status": "held",
+  "training_blocker": "후보 76개에 포함된 shard_009/demo_9가 보정 없는 실제 재생에서 실패함",
+  "next_experiment": "76개 후보 중 고정한 새 표본 20개 재생. 알려진 후보 실패는 학습 게이트에서 계속 거부",
+  "regression_tests": {"command": "python -m unittest discover -s scripts/imitation_learning -p 'test_*.py' -q", "passed": 139},
+  "limitations": [
+    "기록 상태 검사 통과는 새 물리 재생 성공 보장이 아님",
+    "관절 제한 보정이 재생 실패의 유일한 원인이라는 증거는 없음",
+    "새 표본 20개 결과와 후보 변환 완료는 이 요약에 포함하지 않음",
+    "실물 실행 및 강화학습은 수행하지 않음"
+  ]
+}

@@ -7,9 +7,7 @@ Existing outputs are refused; interruption leaves checkpoints and logs intact.
 import argparse
 from datetime import datetime, timezone
 import json
-import os
 from pathlib import Path
-import signal
 import subprocess
 import sys
 
@@ -20,6 +18,38 @@ sys.path.insert(0, str(REPO))
 from scripts.imitation_learning.run_mimic_image_batch import atomic_json, check_free_space, sha256
 from scripts.imitation_learning.action_contract import CONTRACT_FILENAME, validate_split_contract
 from scripts.evaluation.compare_act_rollouts import _load_rollout
+from scripts.imitation_learning.run_screened_mimic_pipeline import (
+    group_has_live_processes, install_termination_handlers, terminate_owned_group,
+)
+
+
+def run_owned_stage(root: Path, min_free_gib: float, update, name: str, cmd: list[str]) -> None:
+    if (root / "STOP").exists():
+        raise RuntimeError("STOP file found at stage boundary; partial outputs preserved")
+    check_free_space(root, min_free_gib)
+    update(stage=name, status="running")
+    with (root / "logs" / f"{name}.log").open("x") as log:
+        process = subprocess.Popen(cmd, cwd=REPO, stdout=log, stderr=subprocess.STDOUT,
+                                   stdin=subprocess.DEVNULL, start_new_session=True)
+        lingering = False
+        try:
+            update(child_pid=process.pid)
+            while True:
+                try:
+                    code = process.wait(timeout=30)
+                    break
+                except subprocess.TimeoutExpired:
+                    check_free_space(root, min_free_gib)
+                    update(child_pid=process.pid)
+            if code:
+                raise subprocess.CalledProcessError(code, cmd)
+            lingering = group_has_live_processes(process.pid)
+        finally:
+            terminate_owned_group(process.pid)
+            process.wait()
+            update(child_pid=None)
+        if lingering:
+            raise RuntimeError(f"{name} leader exited with live descendants; owned group terminated")
 
 
 def validate_split(root: Path, allow_legacy_action_source: bool = False) -> dict:
@@ -166,6 +196,8 @@ def validate_video(output: Path, report: dict) -> None:
 
 
 def main() -> None:
+    # Let stage finally blocks clean their owned children on service shutdown.
+    install_termination_handlers()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--split-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -219,33 +251,7 @@ def main() -> None:
         atomic_json(root / "progress.json", status)
 
     def run_stage(name: str, cmd: list[str]) -> None:
-        if (root / "STOP").exists():
-            raise RuntimeError("STOP file found at stage boundary; partial outputs preserved")
-        check_free_space(root, args.min_free_gib)
-        update(stage=name, status="running")
-        with (root / "logs" / f"{name}.log").open("x") as log:
-            process = subprocess.Popen(cmd, cwd=REPO, stdout=log, stderr=subprocess.STDOUT,
-                                       stdin=subprocess.DEVNULL, start_new_session=True)
-            update(child_pid=process.pid)
-            try:
-                while True:
-                    try:
-                        code = process.wait(timeout=30)
-                        break
-                    except subprocess.TimeoutExpired:
-                        check_free_space(root, args.min_free_gib)
-                        update(child_pid=process.pid)
-                if code:
-                    raise subprocess.CalledProcessError(code, cmd)
-            finally:
-                if process.poll() is None:
-                    os.killpg(process.pid, signal.SIGTERM)
-                    try:
-                        process.wait(timeout=15)
-                    except subprocess.TimeoutExpired:
-                        os.killpg(process.pid, signal.SIGKILL)
-                        process.wait()
-                update(child_pid=None)
+        run_owned_stage(root, args.min_free_gib, update, name, cmd)
 
     try:
         run_stage("train", command)

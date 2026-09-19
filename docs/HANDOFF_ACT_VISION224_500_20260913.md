@@ -2,9 +2,12 @@
 
 > **2026-09-19 갱신:** 현재 배치 기본 라벨은 `recorded_target`이며, 성공 판정은
 > `stable_release_v2`다. 이전 500회 데이터·30,000-step 모델은 보존된 과거 실험이다.
-> 최신 변경과 3회 통합 검증은 아래 [파이프라인 보완](#2026-09-19-파이프라인-보완)을 따른다.
+> **현재 상태:** 500개는 보존 raw 전수다. 최신 후보는 76개이며 실제 재생 불일치가 발견돼
+> 본 학습은 보류한다. 최신 절차는 [급변 시연 전수 검수](#2026-09-19-급변-시연-전수-검수)가 우선이다.
+> 아래 400/100 분리·seed 4000~4009 계획은 과거 기록이다.
+> 앞선 3회 통합 검증은 [파이프라인 보완](#2026-09-19-파이프라인-보완)에 남겨뒀다.
 
-## 범위
+## 과거 500개 실험의 범위
 
 증강 데이터 500회 생성은 끝났다. 이번 작업은 **ACT 모방학습과 시뮬레이션 평가**다.
 강화학습이나 실물 팔로워 실행은 포함하지 않는다. 큐브·박스·로봇·카메라 위치와
@@ -22,7 +25,7 @@
 근거: [500회 전수 검증](evidence/mimic_vision224_500_complete_20260913.json).
 생성 데이터 성공률과 학습된 정책의 집기 성공률은 다른 지표다.
 
-## 누출 없는 데이터 분리
+## 과거 실험의 데이터 분리
 
 `prepare_mimic_act_split.py`가 seed 43으로 각 25회 생성 묶음에서 20회 학습,
 5회 검증을 뽑는다. 최종 **train 400 / valid 100**, 에피소드 중복·누락 없음.
@@ -39,7 +42,7 @@ LeRobot SDK의 `split_dataset()`으로 별도 데이터 루트를 만든다. `da
   검증 영상에서 평균/분산을 구해 학습에 넣지 않는다.
 - checkpoint에 저장된 활성 정규화 텐서를 위 값과 다시 대조한다.
 
-## 사전 고정한 학습·평가 계획
+## 과거 실험의 사전 고정 학습·평가 계획
 
 | 항목 | 설정 |
 | --- | --- |
@@ -323,3 +326,133 @@ cd "/data/$USER/leisaac"
   원본 해시 보존을 위한 별도 절차가 필요하다.
 - 전체 500개 재변환, 본 ACT 재학습, 강화학습, 실물 검증은 이번 완료 범위가 아니다.
   기존 원본·모델·영상을 삭제하거나 덮어쓰지 않았다.
+
+## 2026-09-19 급변 시연 전수 검수
+
+`audit_mimic_quality.py`로 원본 20개 shard·500개 시연을 읽기 전용 검사했다.
+결과는 `outputs/evaluation/mimic_quality_20260919/`에 있으며, 위 3회 smoke와 별개다.
+목표각 변화 기준 `||u[t+1]−u[t]||₂ ≤ 1 rad`와 `stable_release_v2`는 바꾸지 않았다.
+
+| 분류 | 개수 | 처리 |
+| --- | --- | --- |
+| 목표각 급변 기준 불통과 | 97 | 원본 보존, 이번 학습 후보에서 제외 |
+| 급변 기준 통과하지만 마지막 안정 놓기 불충족 | 109 | 원본 보존, 이번 학습 후보에서 제외 |
+| 두 조건 모두 통과 | 294 | 178,239프레임, 실제 재생 확인 전 후보 |
+
+급변 97개에서 기준을 넘는 전이는 15,685개다. 최대 변화 관절 기준으로
+팔꿈치 15,662개, 어깨 올림 23개였으며, 그리퍼 개폐만으로 걸린 시연은 없었다.
+해당 전이의 목표각 변화 norm 중앙값은 약 2.0138 rad, 기록된 관절 상태 변화
+중앙값은 약 0.2560 rad다. EEF 위치 명령 변화의 중앙값은 약 0.00675 m다.
+관측 변화량은 새 목표각을 적용한 전이에 맞춰 계산했으며, 별도 리뷰에서 찾은
+진단용 인덱스 한 스텝 오차를 수정한 뒤 다시 계산했다. 이 0.2560 rad 수치의 출처는
+`outputs/evaluation/mimic_quality_verified_20260919/episode_diagnostics.json`이다.
+최초 broad 출력은 수정 전 0.2562 rad 및 294개 선정의 보존 기록이다.
+인덱스 수정은 선택된 시연 집합에는 영향이 없다.
+pre/post-step 기록 정렬을 포함한 기존 변환 검사 결과는 403개 통과·97개 급변 불통과로
+이전 전수 조사와 일치했다. 이는 시연별 목표각 급변을 확인한 결과이며,
+IK의 어떤 설정이 급변을 일으켰는지까지 인과적으로 검증한 것은 아니다.
+
+현재 Mimic 경로는 EEF pose → absolute DLS IK → 관절 목표각이다.
+관련 코드는 `devices/action_process.py`, `enhance/envs/manager_based_rl_leisaac_mimic_env.py`,
+Isaac Lab의 `DifferentialInverseKinematicsAction.apply_actions()`다.
+subtask 시작점을 이전 실제 pose가 아닌 이전 목표 pose로 보간하는 설정도 있지만,
+급변 발생 원인으로 확정하지 않았다. 원인을 분리하려면 같은 시점의 Jacobian·IK 오차와
+subtask 경계를 추가로 대조해야 한다. 이번에는 명령을 평활화하거나 허용치를 올리지 않았다.
+
+### 기록 상태 검사와 실제 재생의 구분
+
+기록 상태 검사는 저장된 cube/box pose·cube 속도·그리퍼 각도로 공용 성공 함수를 적용한다.
+제어 주기는 보존된 평가 JSON의 `control_dt_s`를 참조하며 출처 해시를 남긴다.
+학습 가능한 목표각에 대응하는 **T−1개 post-step 상태만** 사용하므로,
+라벨이 없는 마지막 전이로 0.5초 조건을 채우지 않는다.
+학습 후보는 마지막에도 30스텝 연속 안정 상태여야 한다.
+
+이 검사는 새 물리 재생의 성공 보장이 아니다. 이전 demo 0의 기록상 첫 성공은
+249스텝, 목표각 재생에서는 247스텝이었다. 관절 제한 적용 등으로 재생 궤적이
+조금 달라질 수 있다. demo 1/2는 각각 220/640스텝으로 일치했다.
+
+후보 294개 목록은 `candidate_selection.json`에 명시했다. 별도 replay cohort는
+각 raw shard의 숫자순 통과 후보 목록에서 중앙 항목 1개씩, 총 20개를 선정했다.
+선정은 재생 결과를 보기 전에 고정했으며, `replay_cohort.json`의 해시로 추적한다.
+`replay_joint_contract.py --selection-manifest`는 이 20개를 한 Isaac 프로세스에서
+순서대로 재생하고 raw 파일 해시·시연 이름·초기 상태·최종 성공 여부와 영상을 남긴다.
+cohort는 학습 정책 성능 평가나 미관측 테스트셋이 아니라 데이터 재현 점검용이다.
+
+### 관절 제한 보정 없는 76개 후보와 자동 진행 조건
+
+첫 cohort의 `shard_001/demo_14`는 기록 검사에서는 통과했지만 목표각 재생에서는
+집지 못했다. 손목 관절에 27프레임·최대 약 0.06828 rad의 제한 보정이 적용됐다.
+이 보정이 실패의 원인이라는 결론은 아직 내리지 않았다. 다만 원본과 실행 명령이
+달라지는 시연은 보수적인 기준 모델에서 분리하기로 했다. 첫 cohort는 20회 재생을
+완료했고 17회 최종 성공·3회 실패였다. 성공·실패 모두 영상 20개를 보존했다.
+실패 시연을 성공 집계에서 빼지 않는다.
+
+`--require-unclipped-targets`를 추가해 기준을 강화했다. 기본값은 꺼짐이며,
+켜면 원본 `joint_pos_target[1:]`를 관절 제한으로 한 값이라도 바꾸는 시연을 제외한다.
+검사 기준을 완화하거나 원본 명령을 평활화한 것이 아니다.
+
+- 기존 두 조건 통과: 294개
+- 그중 관절 제한 보정이 필요한 시연: 218개, 이번 기준 모델 후보에서 제외
+- 보정 없이 통과: **76개·34,525프레임**, raw 20개 shard 모두 포함
+- 최종 검사 경로: `outputs/evaluation/mimic_quality_verified_20260919/`
+- 후보 변환 경로: `outputs/mimic_target_unclipped_76_20260919/`
+
+앞선 검사 출력은 보존했다. 최종 `verified` 디렉터리의 plan·diagnostics·selection을
+이후 단계의 기준으로 사용한다. 상태 기록 검사에 통과했다는 뜻이며, 경로 이름만으로
+76개 전부 실제 재생 검증까지 끝났다고 해석하지 않는다.
+
+자동 runner는 다음 순서로 진행한다.
+
+1. 기존 broad cohort 재생이 완료될 때까지 기다린다. 이 결과의 성패는 지우지 않는다.
+2. 새 76개 후보에서 raw shard별 중앙 항목 1개씩, 새 cohort 20개를 재생한다.
+3. 명시한 raw SHA·시연·성공 기준·관절 제한이 일치하고 **20개 모두 최종 성공,
+   목표각 보정 0회**이며, 별도 재생에서 확인된 후보 실패도 없을 때만 다음 단계로 넘어간다.
+4. 76개 변환 완료와 원본→변환 계약을 검증한 뒤 train/valid를 분리한다.
+5. 사전 고정한 ACT 30,000 updates·batch 8을 실행하고 마지막 checkpoint를 평가한다.
+   평가 seed는 5000~5009로 고정한다. 결과를 보고 좋은 checkpoint만 고르지 않는다.
+
+실패·누락·변조·여유 공간 8GiB 미만이면 학습 단계로 넘어가지 않는다.
+현재 실행은 실물 로봇을 사용하지 않으며, 다른 시뮬레이터를 종료하지 않는다.
+20개 cohort 검증은 76개 전수 재생이나 실물 성공 보장이 아니다.
+
+**현재 추가 차단 사유:** broad replay의 `shard_009/demo_9`는 보정 0회인데도
+집지 못했다. 관절 RMSE는 약 0.02473 rad였고 이 시연은 후보 76개에 포함된다.
+따라서 관절 제한 보정만으로 실패를 설명할 수 없다. 이 시연이 새로운 20개 표본에
+없더라도 `known_candidate_failures`로 남겨 학습을 막는다. 이미 확인된 실패를
+좋은 표본 결과로 덮거나 목록에서 숨기지 않는다. 후보의 실제 재현성을 더 점검해야 한다.
+재생 초기 velocity가 원인인지도 점검했지만, 이 시연과 대조 시연의 원본 초기 관절 속도는
+모두 0이었다. 이 값만으로 실패 원인을 설명할 근거는 없다.
+
+### 완료된 broad 재생과 후속 실행
+
+첫 cohort 결과는 `outputs/evaluation/mimic_quality_20260919/replay_cohort_run/evaluation.json`이다.
+실패 목록은 `shard_001/demo_14`(보정 27회·들기 없음), `shard_009/demo_9`(보정 0회·들기 없음),
+`shard_016/demo_13`(보정 1회·최대 0.16946 m 들었지만 최종 안정 놓기 불충족)이다.
+17/20은 **시연 재현 결과**이며 학습 정책 성공률이 아니다.
+요약과 결과 파일 해시는 [검수 근거](evidence/mimic_quality_screen_20260919.json)에 보존한다.
+
+후속 runner는 `scripts/imitation_learning/run_screened_mimic_pipeline.py`다.
+기존 broad 프로세스의 정상 종료를 확인한 뒤 아래 명령으로 실행한다. 아직 실행 중이면
+실제 Isaac Python PID를 `--wait-replay-pid`로 넘겨 결과 저장 후 앱 정리까지 기다린다.
+같은 출력 경로로 재실행하지 않는다. 기존 결과를 덮어쓰지 않도록 거부한다.
+
+```bash
+cd "/data/$USER/leisaac"
+"$HOME/miniforge3/envs/lerobot/bin/python" -u scripts/imitation_learning/run_screened_mimic_pipeline.py \
+  --audit-root outputs/evaluation/mimic_quality_verified_20260919 \
+  --wait-replay-dir outputs/evaluation/mimic_quality_20260919/replay_cohort_run \
+  --wait-replay-manifest outputs/evaluation/mimic_quality_20260919/replay_cohort.json \
+  --batch-root outputs/mimic_target_unclipped_76_20260919 \
+  --output-dir outputs/evaluation/screened_mimic_pipeline_20260919 \
+  --isaac-python "/data/$USER/conda-envs/leisaac/bin/python"
+```
+
+상태는 출력 디렉터리의 `progress.json`, 고정 계획은 `plan.json`, 새 영상과 재생 결과는
+`strict_replay/`, 실행 로그는 `logs/strict_replay.log`에 남긴다.
+현재 데이터에서는 이미 알려진 후보 실패 때문에 새 표본이 모두 성공해도 `rejected`로
+끝나며 ACT를 시작하지 않는다. 새 표본 재생은 실패 범위를 확인하는 진단 작업이다.
+원인을 해결한 뒤에는 새 증거와 새 후보 목록을 만들어 별도 실험으로 검증해야 한다.
+
+`STOP` 파일은 단계 경계·외부 작업 대기에서 확인한다. 진행 중인 시연 한가운데를
+강제로 멈추는 버튼은 아니다. runner에 SIGTERM을 보내면 해당 runner가 생성한
+자식 프로세스 그룹만 정리한다. 별도 시뮬레이터나 외부 변환 프로세스에는 신호를 보내지 않는다.
