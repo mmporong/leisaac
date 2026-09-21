@@ -1,0 +1,404 @@
+{
+  "scope": "Test of one factor: replace the stale first two camera frames of the 76 training candidates with re-renders of the stored initial_state, keep everything else identical (same demos, same split, same training config), train 10,000 steps and evaluate on the same seeds. A control run retrains the unmodified data with the same fresh 10,000-step recipe. No physical robot, no dataset regeneration.",
+  "date": "2026-09-21",
+  "base_commit": "4e7db70",
+  "derived_dataset": {
+    "tool": "scripts/mimic/rerender_initial_frames.py",
+    "raw_dir": "outputs/mimic_reset_fixed_76_20260921/raw (1.3 GB local)",
+    "provenance": "outputs/mimic_reset_fixed_76_20260921/raw/rerender_provenance.json",
+    "provenance_sha256": "4afc9985b7802d81e63a554cfb3c178e4dd5c7af29c7f3f16ce5a9ff239d3f63",
+    "summary": {
+      "demo_count": 76,
+      "max_joint_pos_error_rad": 0.0,
+      "front_mae_new0_vs_old0_median": 4.934663318452381,
+      "front_mae_new0_vs_old2_median": 3.064456446641157,
+      "wrist_mae_new0_vs_old0_median": 56.15606730973639,
+      "wrist_mae_new0_vs_old2_median": 3.9806780133928568,
+      "front_mae_new0_vs_old2_max": 4.674379517431973,
+      "wrist_mae_new0_vs_old2_max": 4.615533322704081
+    },
+    "refresh_frames": 4,
+    "audit": {
+      "root": "outputs/evaluation/mimic_quality_reset_fixed_20260921",
+      "same_gates": "audit_mimic_quality.py --require-unclipped-targets --max-action-step-norm 1.0 with the original joint limits and timing reference",
+      "selection_identical_to_original_76": true,
+      "candidate_selection_sha256": "bbe0ccbe583f5ae99c9d73c43cddf3730310470cba17c083c715fcdb8b8311fa"
+    },
+    "conversion": {
+      "root": "outputs/mimic_reset_fixed_76_20260921",
+      "runner": "run_mimic_image_batch.py --convert-only --raw-dir <derived> --selection-manifest <new> --total 76",
+      "episodes": 76,
+      "frames": 34525,
+      "info_json_sha256_equals_original": true,
+      "note": "the batch plan records reset_render_frames=0 because that flag only governs generation; the derived shards carry their refresh in rerender_provenance.json and per-shard derived manifests"
+    },
+    "split": {
+      "root": "outputs/act_reset_fixed_76_20260921_split",
+      "seed": 43,
+      "train_valid": [
+        61,
+        15
+      ],
+      "episode_indices_and_frame_counts_identical_to_original": true,
+      "action_contract_sha256": "224f4b0d15aaf1a488147b7a8d36ab1a9963d74470c5c9648e619a3f403028af"
+    }
+  },
+  "experiments": {
+    "legacy_resume_10000": {
+      "output": "outputs/act_resume_10000_20260921",
+      "git_commit": null,
+      "split_root": "outputs/act_pilot_76_20260921_split",
+      "split_provenance_sha256": "456ba05c5fa56d2c7867055e68ed9b50d823b5babaf6760e933433e2e1c381af",
+      "model_sha256": "a82ab0e5ddc2c7d11e2a6e16955885dae6cd562b2958542f90931fda79330f51",
+      "offline_valid": {
+        "first_frames_rmse": 0.1451893448829651,
+        "first_frames_per_joint_rmse": [
+          0.06189936771988869,
+          0.17000223696231842,
+          0.1801104098558426,
+          0.11155261099338531,
+          0.04062669351696968,
+          0.21728579699993134
+        ],
+        "uniform_500_rmse": 0.05001060292124748
+      },
+      "successes": 0,
+      "num_rollouts": 3,
+      "rollouts": [
+        {
+          "seed": 4100,
+          "outcome": "no_lift",
+          "max_cube_lift_m": 0.0,
+          "clipped_steps": 0,
+          "first_action": [
+            -0.0955863744020462,
+            -0.24985241889953613,
+            0.254325270652771,
+            -0.07612490653991699,
+            0.060257017612457275,
+            0.9497367143630981
+          ],
+          "initial_cube_xyz": [
+            0.27524444460868835,
+            -0.36720994114875793,
+            0.06145733594894409
+          ],
+          "final_gripper_position_rad": 1.2808178663253784
+        },
+        {
+          "seed": 4101,
+          "outcome": "no_lift",
+          "max_cube_lift_m": 0.0,
+          "clipped_steps": 0,
+          "first_action": [
+            -0.08577291667461395,
+            -0.2642294764518738,
+            0.27804291248321533,
+            -0.07720649242401123,
+            0.06828075647354126,
+            0.9634464979171753
+          ],
+          "initial_cube_xyz": [
+            0.36009588837623596,
+            -0.3745215833187103,
+            0.06145733594894409
+          ],
+          "final_gripper_position_rad": 0.7375326156616211
+        },
+        {
+          "seed": 4102,
+          "outcome": "no_lift",
+          "max_cube_lift_m": 0.0,
+          "clipped_steps": 290,
+          "first_action": [
+            -0.09154225885868073,
+            -0.2506803870201111,
+            0.23819535970687866,
+            -0.06960797309875488,
+            0.05306953191757202,
+            0.9074153304100037
+          ],
+          "initial_cube_xyz": [
+            0.37154433131217957,
+            -0.3424868881702423,
+            0.06145733594894409
+          ],
+          "final_gripper_position_rad": 1.6179450750350952
+        }
+      ]
+    },
+    "fixed_frames_fresh_10000": {
+      "output": "outputs/act_reset_fixed_76_20260921",
+      "git_commit": "4e7db7030760b0d45976486af32a800591c03c91",
+      "split_root": "/data/lim/leisaac/outputs/act_reset_fixed_76_20260921_split",
+      "split_provenance_sha256": "9a8f6243b9dcbd159a1afa4361bbc75b71a743876b91e39b379d167efff5f65a",
+      "model_sha256": "ebed7e5415bf1f5501e7b834bfcb5f97c84593335fda145822f3c71fe4aeebab",
+      "offline_valid": {
+        "first_frames_rmse": 0.10626695305109024,
+        "first_frames_per_joint_rmse": [
+          0.030331052839756012,
+          0.12746836245059967,
+          0.15597261488437653,
+          0.11311691254377365,
+          0.08332792669534683,
+          0.08075522631406784
+        ],
+        "uniform_500_rmse": 0.049690715968608856
+      },
+      "successes": 0,
+      "num_rollouts": 3,
+      "rollouts": [
+        {
+          "seed": 4100,
+          "outcome": "no_lift",
+          "max_cube_lift_m": 0.0,
+          "clipped_steps": 0,
+          "first_action": [
+            -0.027416199445724487,
+            -0.17449352145195007,
+            0.1999143660068512,
+            -0.11627233028411865,
+            0.08735138177871704,
+            0.9820921421051025
+          ],
+          "initial_cube_xyz": [
+            0.27524444460868835,
+            -0.36720994114875793,
+            0.06145733594894409
+          ],
+          "final_gripper_position_rad": 0.4655812680721283
+        },
+        {
+          "seed": 4101,
+          "outcome": "no_lift",
+          "max_cube_lift_m": 0.0,
+          "clipped_steps": 0,
+          "first_action": [
+            -0.006928548216819763,
+            -0.18068096041679382,
+            0.19033288955688477,
+            -0.12066662311553955,
+            0.0985826849937439,
+            0.8939512968063354
+          ],
+          "initial_cube_xyz": [
+            0.36009588837623596,
+            -0.3745215833187103,
+            0.06145733594894409
+          ],
+          "final_gripper_position_rad": 0.44942787289619446
+        },
+        {
+          "seed": 4102,
+          "outcome": "no_lift",
+          "max_cube_lift_m": 0.0,
+          "clipped_steps": 0,
+          "first_action": [
+            -0.009858548641204834,
+            -0.1729813516139984,
+            0.1837283968925476,
+            -0.12043917179107666,
+            0.09547001123428345,
+            0.9025552868843079
+          ],
+          "initial_cube_xyz": [
+            0.37154433131217957,
+            -0.3424868881702423,
+            0.06145733594894409
+          ],
+          "final_gripper_position_rad": 0.34092679619789124
+        }
+      ]
+    },
+    "control_fresh_10000": {
+      "output": "outputs/act_control_fresh10000_76_20260921",
+      "git_commit": "4e7db7030760b0d45976486af32a800591c03c91",
+      "split_root": "/data/lim/leisaac/outputs/act_pilot_76_20260921_split",
+      "split_provenance_sha256": "456ba05c5fa56d2c7867055e68ed9b50d823b5babaf6760e933433e2e1c381af",
+      "model_sha256": "a82ab0e5ddc2c7d11e2a6e16955885dae6cd562b2958542f90931fda79330f51",
+      "offline_valid": {
+        "first_frames_rmse": 0.1451893448829651,
+        "first_frames_per_joint_rmse": [
+          0.06189936771988869,
+          0.17000223696231842,
+          0.1801104098558426,
+          0.11155261099338531,
+          0.04062669351696968,
+          0.21728579699993134
+        ],
+        "uniform_500_rmse": 0.05001060292124748
+      },
+      "successes": 0,
+      "num_rollouts": 3,
+      "rollouts": [
+        {
+          "seed": 4100,
+          "outcome": "no_lift",
+          "max_cube_lift_m": 0.0,
+          "clipped_steps": 0,
+          "first_action": [
+            -0.09685532748699188,
+            -0.2483012080192566,
+            0.25157296657562256,
+            -0.07619893550872803,
+            0.05759912729263306,
+            0.9465861320495605
+          ],
+          "initial_cube_xyz": [
+            0.27524444460868835,
+            -0.36720994114875793,
+            0.06145733594894409
+          ],
+          "final_gripper_position_rad": 1.1497316360473633
+        },
+        {
+          "seed": 4101,
+          "outcome": "no_lift",
+          "max_cube_lift_m": 0.0,
+          "clipped_steps": 0,
+          "first_action": [
+            -0.0861189216375351,
+            -0.2643973231315613,
+            0.2782038450241089,
+            -0.07703578472137451,
+            0.06827634572982788,
+            0.9640254378318787
+          ],
+          "initial_cube_xyz": [
+            0.36009588837623596,
+            -0.3745215833187103,
+            0.06145733594894409
+          ],
+          "final_gripper_position_rad": 0.9325886964797974
+        },
+        {
+          "seed": 4102,
+          "outcome": "no_lift",
+          "max_cube_lift_m": 0.0,
+          "clipped_steps": 267,
+          "first_action": [
+            -0.09184901416301727,
+            -0.25165772438049316,
+            0.23925796151161194,
+            -0.06961727142333984,
+            0.05319124460220337,
+            0.9085031747817993
+          ],
+          "initial_cube_xyz": [
+            0.37154433131217957,
+            -0.3424868881702423,
+            0.06145733594894409
+          ],
+          "final_gripper_position_rad": 1.6085031032562256
+        }
+      ]
+    }
+  },
+  "determinism_check": "control_fresh_10000 reproduces legacy_resume_10000 offline metrics bit-for-bit (first_frames_rmse 0.1451893448829651, uniform 0.05001060292124748) and near-identical first actions; the earlier resume-from-2000 run is therefore equivalent to a fresh 10,000-step run.",
+  "same_scene_demo9_comparison": {
+    "legacy_model_n30": {
+      "command_rmse_all_rad_by_window": {
+        "1": 0.15144359752214992,
+        "10": 0.1558989490194443,
+        "30": 0.1473693904436961,
+        "60": 0.16719927914482768,
+        "120": 0.3646269242173578,
+        "240": 0.4978964151669431
+      },
+      "gripper": {
+        "demo_first_target_below_threshold_step": 278,
+        "policy_first_command_below_threshold_step": 138,
+        "policy_min_gripper_command_rad": 0.15570738911628723,
+        "policy_min_gripper_command_step": 180,
+        "demo_min_gripper_target_rad": 0.11987358331680298
+      },
+      "cube": {
+        "demo_first_lift_step": 401,
+        "demo_max_lift_m": 0.11531360447406769,
+        "policy_max_lift_in_trace_m": 0.0,
+        "policy_max_xy_drift_in_trace_m": 0.014413055805815991,
+        "policy_first_xy_drift_over_5mm_step": 184,
+        "demo_first_xy_drift_over_5mm_frame": 279
+      },
+      "initial_state_match": 0.0
+    },
+    "fixed_frames_model_n30": {
+      "command_rmse_all_rad_by_window": {
+        "1": 0.11764309524960374,
+        "10": 0.1264692269365944,
+        "30": 0.13722908659973676,
+        "60": 0.118754701794973,
+        "120": 0.10973390742699884,
+        "240": 0.11773873678343322
+      },
+      "gripper": {
+        "demo_first_target_below_threshold_step": 278,
+        "policy_first_command_below_threshold_step": null,
+        "policy_min_gripper_command_rad": 0.7542028427124023,
+        "policy_min_gripper_command_step": 13,
+        "demo_min_gripper_target_rad": 0.11987358331680298
+      },
+      "cube": {
+        "demo_first_lift_step": 401,
+        "demo_max_lift_m": 0.11531360447406769,
+        "policy_max_lift_in_trace_m": 0.0,
+        "policy_max_xy_drift_in_trace_m": 8.052144101921497e-06,
+        "policy_first_xy_drift_over_5mm_step": null,
+        "demo_first_xy_drift_over_5mm_frame": 279
+      },
+      "initial_state_match": 0.0,
+      "outcome": "no_lift",
+      "clipped_steps": 0,
+      "action_min": [
+        -0.22621487081050873,
+        -0.1797080636024475,
+        -0.4690319299697876,
+        -0.12717032432556152,
+        -1.40277099609375,
+        0.7542028427124023
+      ],
+      "action_max": [
+        0.3480781316757202,
+        0.37212541699409485,
+        0.3295106291770935,
+        1.560749888420105,
+        0.08335012197494507,
+        0.8415489196777344
+      ],
+      "final_gripper_position_rad": 0.8000431656837463,
+      "initial_scene_state_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205"
+    },
+    "demo_reference": {
+      "gripper_close_step": 278,
+      "first_lift_step": 401
+    }
+  },
+  "confirmed": [
+    "Re-rendering frames 0/1 from initial_state gives a dataset whose only difference is those two frames per episode: audit selection, converted episode/frame counts, info.json and split indices are identical to the original 76-candidate pipeline.",
+    "Offline hold-out first-frame RMSE drops from 0.1452 to 0.1063 rad (uniform-frame RMSE unchanged, 0.0500 -> 0.0497).",
+    "Rollout success stays 0/3 on seeds 4100-4102 for the fixed-frame model; the control also stays 0/3.",
+    "On the identical demo_9 scene the fixed-frame model tracks the demo far better over the first 240 steps (command RMSE 0.118 vs 0.498 for the legacy model at window 240) but never commands the gripper below 0.75 rad and never touches the cube; the legacy model closed early (step 138) and pushed the cube."
+  ],
+  "inferred_not_proven": [
+    "That the remaining failure is a grasp-decision problem (gripper close timing) rather than reach accuracy; one demo scene and three seeds only.",
+    "That the 30 Hz camera duplication or the small train set (61 episodes from 10 source demos) is the dominant remaining cause."
+  ],
+  "limitations": [
+    "One model per condition, three evaluation seeds, one same-scene comparison; not a success-rate estimate.",
+    "Frames 0/1 come from a different render process than frames 2+ (front-camera floor ~3 MAE).",
+    "No physical robot."
+  ],
+  "commands": {
+    "rerender": "isaac python scripts/mimic/rerender_initial_frames.py --selection-manifest outputs/evaluation/mimic_quality_verified_20260919/candidate_selection.json --output-dir outputs/mimic_reset_fixed_76_20260921/raw --refresh-frames 4 --headless --device cuda:0",
+    "audit": "lerobot python scripts/imitation_learning/audit_mimic_quality.py --raw-dir outputs/mimic_reset_fixed_76_20260921/raw --joint-limits-file outputs/evaluation/act_diagnostics_20260918/render4_seed4001/evaluation.json --timing-reference outputs/evaluation/contract_hardening_20260918/act_smoke/rollouts/seed_4998/evaluation.json --output-dir outputs/evaluation/mimic_quality_reset_fixed_20260921 --max-action-step-norm 1.0 --image-size 224 --require-unclipped-targets",
+    "convert": "lerobot python scripts/imitation_learning/run_mimic_image_batch.py --input datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5 --output-dir outputs/mimic_reset_fixed_76_20260921 --convert-only --raw-dir outputs/mimic_reset_fixed_76_20260921/raw --selection-manifest outputs/evaluation/mimic_quality_reset_fixed_20260921/candidate_selection.json --joint-limits-file outputs/evaluation/act_diagnostics_20260918/render4_seed4001/evaluation.json --image-size 224 --total 76 --min-free-gib 8",
+    "split": "lerobot python scripts/imitation_learning/prepare_mimic_act_split.py --dataset-root outputs/mimic_reset_fixed_76_20260921/lerobot_all --repo-id local/so101_mimic_vision224_76 --output-dir outputs/act_reset_fixed_76_20260921_split --seed 43 --shard-size 76 --valid-per-shard 15",
+    "train_eval": "lerobot python scripts/imitation_learning/run_act_vision_experiment.py --split-root <split> --output-dir <out> --isaac-python /data/$USER/conda-envs/leisaac/bin/python --steps 10000 --batch-size 8 --eval-seeds 4100 4101 4102 --min-free-gib 8",
+    "same_scene": "isaac python scripts/evaluation/lerobot_act_so101.py --checkpoint outputs/act_reset_fixed_76_20260921/model/checkpoints/010000/pretrained_model --num-rollouts 1 --seed 4101 --initial-state-hdf5 outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5 --initial-state-demo demo_9 --n-action-steps 30 --trace-steps 420 --reset-render-frames 4 --policy-image-size 224 --render-width 640 --render-height 480 --video-count 0 --headless"
+  },
+  "storage": {
+    "cleanup_record": "docs/evidence/storage_cleanup_20260921.json",
+    "data_free_after_gb": 17,
+    "new_local_outputs": "derived raw 1.4 GB, split 78 MB, two experiments 440 MB each"
+  }
+}

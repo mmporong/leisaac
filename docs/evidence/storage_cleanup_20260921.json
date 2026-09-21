@@ -1,0 +1,169 @@
+{
+  "date": "2026-09-21",
+  "operation": "remove disposable Mimic-related datasets to make room for regeneration/derived datasets; preserve teleop sources, annotated sources, referenced generated sets, the 500-demo raw, models and evidence",
+  "decision_rule": [
+    "*_failed.hdf5: discarded Mimic attempts, never used for training",
+    "84x84 delta/repaired variants with zero references in docs, scripts, source and manifests",
+    "2026-09-12 recovery/oracle diagnostic exports with zero references"
+  ],
+  "reference_check": "grep -rl over docs/, scripts/, source/ and outputs/*/*.json for each filename; only files with 0 references (or references that describe them as failed attempts) were removed",
+  "removed": [
+    {
+      "path": "datasets/pick_cube_into_box_mimic_generated_10_20260911_failed.hdf5",
+      "bytes": 852008268,
+      "mtime": "2026-09-11T16:30:32"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_mimic_generated_wrist_100_seed43_20260912_failed.hdf5",
+      "bytes": 3771845395,
+      "mtime": "2026-09-12T10:25:18"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_mimic_generated_wrist_50_20260911_failed.hdf5",
+      "bytes": 2443504776,
+      "mtime": "2026-09-11T19:53:03"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_mimic_joint_delta_front_wrist_50_84x84_20260912.hdf5",
+      "bytes": 464680235,
+      "mtime": "2026-09-12T01:36:54"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_mimic_joint_delta_repaired_front_wrist_50_84x84_20260912.hdf5",
+      "bytes": 464680201,
+      "mtime": "2026-09-12T01:38:11"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_mimic_joint_target_repaired_front_wrist_50_84x84_20260912.hdf5",
+      "bytes": 464534530,
+      "mtime": "2026-09-12T01:50:00"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_mimic_recovery_seed3100_step1200_seed44_bounded_failed.hdf5",
+      "bytes": 8192,
+      "mtime": "2026-09-12T13:51:43"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_mimic_recovery_seed3101_step1200_seed44_bounded_failed.hdf5",
+      "bytes": 8192,
+      "mtime": "2026-09-12T13:49:41"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_mimic_recovery_seed3101_step1200_seed44_failed.hdf5",
+      "bytes": 8192,
+      "mtime": "2026-09-12T13:44:47"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_mimic_recovery_seed3102_step1200_seed44_bounded_failed.hdf5",
+      "bytes": 13172960,
+      "mtime": "2026-09-12T13:52:57"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_mimic_recovery_seed3102_step1200_seed45_bounded_failed.hdf5",
+      "bytes": 8192,
+      "mtime": "2026-09-12T13:56:16"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_mimic_recovery_seed3103_step1200_seed44_bounded_failed.hdf5",
+      "bytes": 8192,
+      "mtime": "2026-09-12T13:54:09"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_oracle_diagnostic_seed5001.hdf5",
+      "bytes": 138372618,
+      "mtime": "2026-09-12T12:29:20"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_oracle_known_state_diagnostic.hdf5",
+      "bytes": 139593364,
+      "mtime": "2026-09-12T12:31:57"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_recovery_seed3000_step1200_export_check.hdf5",
+      "bytes": 152049182,
+      "mtime": "2026-09-12T13:08:50"
+    },
+    {
+      "path": "datasets/pick_cube_into_box_recovery_seed3000_step1200_final_export.hdf5",
+      "bytes": 151981977,
+      "mtime": "2026-09-12T13:10:51"
+    },
+    {
+      "path": "datasets/recovery_round1_fixed_seed3101_step1200.hdf5",
+      "bytes": 159462029,
+      "mtime": "2026-09-12T13:23:00"
+    },
+    {
+      "path": "datasets/recovery_round1_fixed_source_seed3101_step1200.hdf5",
+      "bytes": 159042221,
+      "mtime": "2026-09-12T13:24:34"
+    },
+    {
+      "path": "datasets/recovery_round1_lower_seed3101_step1200.hdf5",
+      "bytes": 181973013,
+      "mtime": "2026-09-12T13:27:56"
+    },
+    {
+      "path": "datasets/recovery_round1_seed3100_step1200.hdf5",
+      "bytes": 156724921,
+      "mtime": "2026-09-12T13:18:02"
+    },
+    {
+      "path": "datasets/recovery_round1_seed3100_step600.hdf5",
+      "bytes": 156727093,
+      "mtime": "2026-09-12T13:18:34"
+    },
+    {
+      "path": "datasets/recovery_round1_seed3101_step1200.hdf5",
+      "bytes": 156948244,
+      "mtime": "2026-09-12T13:19:07"
+    },
+    {
+      "path": "datasets/recovery_round1_seed3101_step600.hdf5",
+      "bytes": 157055152,
+      "mtime": "2026-09-12T13:19:40"
+    },
+    {
+      "path": "datasets/recovery_round1_seed3102_step1200.hdf5",
+      "bytes": 154846564,
+      "mtime": "2026-09-12T13:20:12"
+    },
+    {
+      "path": "datasets/recovery_round1_seed3102_step600.hdf5",
+      "bytes": 154646116,
+      "mtime": "2026-09-12T13:20:44"
+    },
+    {
+      "path": "datasets/recovery_round1_seed3103_step1200.hdf5",
+      "bytes": 157662838,
+      "mtime": "2026-09-12T13:21:17"
+    },
+    {
+      "path": "datasets/recovery_round1_seed3103_step600.hdf5",
+      "bytes": 157198155,
+      "mtime": "2026-09-12T13:21:50"
+    },
+    {
+      "path": "datasets/recovery_round1_settle_seed3101_step1200.hdf5",
+      "bytes": 182079603,
+      "mtime": "2026-09-12T13:26:29"
+    },
+    {
+      "path": "datasets/recovery_round1_source_pose_seed3101_step1200.hdf5",
+      "bytes": 173287529,
+      "mtime": "2026-09-12T13:30:06"
+    }
+  ],
+  "removed_bytes": 11164117944,
+  "removed_count": 29,
+  "kept_examples": [
+    "datasets/pick_cube_into_box_source_10_20260911.hdf5",
+    "datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5",
+    "datasets/pick_cube_into_box_mimic_generated_wrist_100_seed43_20260912.hdf5",
+    "datasets/pick_cube_into_box_mimic_generated_wrist_50_20260911.hdf5",
+    "datasets/pick_cube_into_box_mimic100_*_next_state_84.hdf5",
+    "outputs/mimic_vision224_500_20260913/raw",
+    "outputs/lerobot",
+    "outputs/robomimic"
+  ]
+}
