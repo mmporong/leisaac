@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-21",
+  "scope": "시연 재생과 별도 안정화 관찰; 학습 정책 평가가 아님",
+  "implementation_commit": "e54194e",
+  "evaluation_path": "outputs/evaluation/settling_cohort_20260921/evaluation.json",
+  "evaluation_sha256": "a267ca01895d05abdc23e09bc722666e3718ca70d6c3de51dac3b5d2155aa64b",
+  "selection_manifest": "/data/lim/leisaac/outputs/evaluation/mimic_quality_verified_20260919/replay_cohort.json",
+  "selection_manifest_sha256": "b2bc487737633e51c26b8b00243ce2172af597ac12ea2a6053f8b53931a35bd3",
+  "implementation_sha256": {
+    "replay_joint_contract.py": "a6139b6bfdf4e173c6dd61cae812ec20f5961f54acd6b31da140ab8ebd6e8f70",
+    "replay_settling.py": "d75654f397647dedf283bc4d0fa420fe83dbc49081bb4a4a18b2971d5bdd78a9"
+  },
+  "process_exit_code": 0,
+  "episodes": 20,
+  "source_horizon_successes": 18,
+  "after_observation_successes": 19,
+  "classifications": {
+    "stable_at_source_horizon": 18,
+    "unresolved_after_observation": 1,
+    "settled_during_observation": 1
+  },
+  "observation_frames_independently_checked": 1200,
+  "counter_disagreements": 0,
+  "videos_metadata_verified": 40,
+  "video_dimensions": [
+    1280,
+    480
+  ],
+  "regression_tests_passed": 145,
+  "training_started": false,
+  "training_gate": "positive settling reports rejected as diagnostic only",
+  "source_horizon_failures": [
+    {
+      "shard": "shard_002.hdf5",
+      "episode": "demo_17",
+      "max_cube_lift_m": 0,
+      "source_stable_steps": 0,
+      "settling_classification": "unresolved_after_observation",
+      "settling_first_success_step": null
+    },
+    {
+      "shard": "shard_019.hdf5",
+      "episode": "demo_16",
+      "max_cube_lift_m": 0.1291721761226654,
+      "source_stable_steps": 29,
+      "settling_classification": "settled_during_observation",
+      "settling_first_success_step": 1
+    }
+  ],
+  "limitations": [
+    "추가 관찰 이후 다음 시연을 reset하므로 과거 실행과 물리 컨텍스트 동일 보장 없음",
+    "표본 20개 검사이며 후보 76개 전수 재생 검증은 아님",
+    "LSP/flake8 미설치; compileall, unittest, 실제 재생으로 검증"
+  ]
+}
