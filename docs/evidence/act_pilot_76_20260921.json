@@ -1,0 +1,665 @@
+{
+  "scope": "User-authorized diagnostic ACT pilot; strict production gate unchanged",
+  "status": {
+    "child_pid": null,
+    "eval_completed": 3,
+    "stage": "evaluated",
+    "status": "complete",
+    "successes": 0,
+    "summary": "/data/lim/leisaac/outputs/act_pilot_76_20260921/evaluation_summary.json",
+    "updated_at": "2026-09-21T02:19:34.278922+00:00"
+  },
+  "runner_exit_code": 0,
+  "plan": {
+    "action_contract_sha256": "a17e732dc07a0b472f3db371a364a5a16f8943ac2f18ec697e7203c963c8ea56",
+    "action_contract_status": "validated",
+    "action_source": "recorded_target",
+    "batch_size": 8,
+    "checkpoint_selection": "predeclared final step; no selection on rollout results",
+    "code_sha256": {
+      "scripts/evaluation/compare_act_rollouts.py": "3b3af7b9aff21d88cb7d27c80597d0500b5f2b615850645e9900cb198e30fc53",
+      "scripts/evaluation/lerobot_act_offline.py": "7a601b5d478dee0a6ec47e1878152bfa9d3768d4e8387ffb61aacf7df764e997",
+      "scripts/evaluation/lerobot_act_so101.py": "cdcacf8e67677885c174720a60770309829dbdfb1872962170ce7fd3354af741",
+      "scripts/imitation_learning/action_contract.py": "71f747cc137ff26319b3b7445a21c4ee1f96bc06d2a7fb55e350374b37ba9301",
+      "scripts/imitation_learning/prepare_mimic_act_split.py": "b57dc8f63cb28a723b4befde18244b3cadd8a03f239595c07bbc6e46e3f65ea9",
+      "scripts/imitation_learning/run_act_vision_experiment.py": "1cf59ecbdab2327f1ccd1e41b3c61e4fe5981288d12ee7d9b86f8cd0b98f8b4b",
+      "scripts/imitation_learning/serve_lerobot_act.py": "e7caf7d50770666d228765199d2d2e278de685fa7def5a606ee54bfa659785a9",
+      "source/leisaac/leisaac/tasks/pick_cube_into_box/mdp/release_state.py": "4b6bd799738e16199ead1e33d50b7ffd3734599c3e0c007be21d43c9f6cb5090",
+      "source/leisaac/leisaac/tasks/pick_cube_into_box/mdp/terminations.py": "ba7b9049d33c2510624e6f2c3d4516e2285f92c7171a11f31b16cc3555e4131f"
+    },
+    "eval_seeds": [
+      4100,
+      4101,
+      4102
+    ],
+    "git_commit": "24626a123143999194296a7260e0c308c88ee9b3",
+    "gripper_effort_mode": "task",
+    "horizon": 1200,
+    "legacy_action_source_explicit": false,
+    "min_free_gib": 8.0,
+    "policy_image_size": 224,
+    "render_dimensions": [
+      640,
+      480
+    ],
+    "reset_render_frames": 4,
+    "split_provenance_sha256": "456ba05c5fa56d2c7867055e68ed9b50d823b5babaf6760e933433e2e1c381af",
+    "split_root": "/data/lim/leisaac/outputs/act_pilot_76_20260921_split",
+    "steps": 2000,
+    "trace_steps": 60,
+    "training_command": [
+      "/home/lim/miniforge3/envs/lerobot/bin/python",
+      "-u",
+      "-m",
+      "lerobot.scripts.lerobot_train",
+      "--dataset.root=/data/lim/leisaac/outputs/act_pilot_76_20260921_split/train",
+      "--dataset.repo_id=local/so101_mimic_vision224_76_train",
+      "--dataset.use_imagenet_stats=true",
+      "--dataset.eval_split=0",
+      "--policy.type=act",
+      "--policy.device=cuda",
+      "--policy.push_to_hub=false",
+      "--policy.repo_id=local/so101_act_vision224",
+      "--policy.chunk_size=30",
+      "--policy.n_action_steps=30",
+      "--policy.dim_model=256",
+      "--policy.n_heads=8",
+      "--policy.dim_feedforward=1024",
+      "--policy.n_encoder_layers=4",
+      "--policy.use_vae=true",
+      "--policy.optimizer_lr=0.0001",
+      "--policy.optimizer_lr_backbone=0.00001",
+      "--batch_size=8",
+      "--num_workers=2",
+      "--steps=2000",
+      "--save_freq=2000",
+      "--log_freq=100",
+      "--eval_steps=0",
+      "--seed=43",
+      "--cudnn_deterministic=true",
+      "--wandb.enable=false",
+      "--output_dir=/data/lim/leisaac/outputs/act_pilot_76_20260921/model"
+    ]
+  },
+  "split_provenance": {
+    "action_alignment": "action[t] = obs/joint_pos_target[t+1]",
+    "action_contract_sha256": "a17e732dc07a0b472f3db371a364a5a16f8943ac2f18ec697e7203c963c8ea56",
+    "action_source": "recorded_target",
+    "schema_version": 1,
+    "seed": 43,
+    "shard_size": 76,
+    "source": "/data/lim/leisaac/outputs/mimic_target_unclipped_76_20260919/lerobot_all",
+    "source_info_sha256": "1f8b12ae8fd30998486df8cf46bfa469a2c5c50a975aac4b14519ea4a53ff3d8",
+    "source_repo_id": "local/so101_mimic_vision224_76",
+    "source_stats_sha256": "c201f93c7f57d20495f90124466cfac6c1ee1c4ff3e1dc47242beaa0fbe24e81",
+    "source_stats_validation": {
+      "episode_stats_aggregate": "passed"
+    },
+    "splits": {
+      "train": {
+        "episode_count": 61,
+        "frame_count": 26527,
+        "original_episode_indices": [
+          0,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          26,
+          27,
+          29,
+          30,
+          33,
+          34,
+          35,
+          36,
+          37,
+          39,
+          40,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          58,
+          59,
+          60,
+          61,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          71,
+          72,
+          73,
+          74,
+          75
+        ],
+        "original_to_new_episode_index": {
+          "0": 0,
+          "10": 8,
+          "11": 9,
+          "12": 10,
+          "13": 11,
+          "14": 12,
+          "15": 13,
+          "17": 14,
+          "19": 15,
+          "20": 16,
+          "21": 17,
+          "22": 18,
+          "23": 19,
+          "24": 20,
+          "26": 21,
+          "27": 22,
+          "29": 23,
+          "3": 1,
+          "30": 24,
+          "33": 25,
+          "34": 26,
+          "35": 27,
+          "36": 28,
+          "37": 29,
+          "39": 30,
+          "4": 2,
+          "40": 31,
+          "42": 32,
+          "43": 33,
+          "44": 34,
+          "45": 35,
+          "46": 36,
+          "47": 37,
+          "48": 38,
+          "49": 39,
+          "5": 3,
+          "50": 40,
+          "51": 41,
+          "52": 42,
+          "53": 43,
+          "54": 44,
+          "55": 45,
+          "58": 46,
+          "59": 47,
+          "6": 4,
+          "60": 48,
+          "61": 49,
+          "63": 50,
+          "64": 51,
+          "65": 52,
+          "66": 53,
+          "67": 54,
+          "68": 55,
+          "7": 5,
+          "71": 56,
+          "72": 57,
+          "73": 58,
+          "74": 59,
+          "75": 60,
+          "8": 6,
+          "9": 7
+        },
+        "repo_id": "local/so101_mimic_vision224_76_train",
+        "root": "/data/lim/leisaac/outputs/act_pilot_76_20260921_split/train",
+        "stats_sha256": "b92e370671aa9dd8d3f84673145dd402b55049eed8f4de8729d81c59c2c619cf",
+        "stats_validation": {
+          "episode_stats_aggregate": "passed",
+          "independent_features": [
+            "action",
+            "observation.state"
+          ],
+          "independent_full_frame_mean_std": "passed"
+        }
+      },
+      "valid": {
+        "episode_count": 15,
+        "frame_count": 7998,
+        "original_episode_indices": [
+          1,
+          2,
+          16,
+          18,
+          25,
+          28,
+          31,
+          32,
+          38,
+          41,
+          56,
+          57,
+          62,
+          69,
+          70
+        ],
+        "original_to_new_episode_index": {
+          "1": 0,
+          "16": 2,
+          "18": 3,
+          "2": 1,
+          "25": 4,
+          "28": 5,
+          "31": 6,
+          "32": 7,
+          "38": 8,
+          "41": 9,
+          "56": 10,
+          "57": 11,
+          "62": 12,
+          "69": 13,
+          "70": 14
+        },
+        "repo_id": "local/so101_mimic_vision224_76_valid",
+        "root": "/data/lim/leisaac/outputs/act_pilot_76_20260921_split/valid",
+        "stats_sha256": "68a4db7e155f4f5f6a0adba952d90f963f40bb297a024ded4705cc7c4caebe7a",
+        "stats_validation": {
+          "episode_stats_aggregate": "passed",
+          "independent_features": [
+            "action",
+            "observation.state"
+          ],
+          "independent_full_frame_mean_std": "passed"
+        }
+      }
+    },
+    "success": true,
+    "valid_per_shard": 15
+  },
+  "checkpoint_validation": {
+    "checked": [
+      "policy_preprocessor/action.mean",
+      "policy_preprocessor/action.std",
+      "policy_preprocessor/observation.state.mean",
+      "policy_preprocessor/observation.state.std",
+      "policy_postprocessor/action.mean",
+      "policy_postprocessor/action.std"
+    ],
+    "model_sha256": "c34e411da1a3a9b5ad0b19cb0a10b2e4af24559de658c0a088b2016bea90007d",
+    "steps": 2000,
+    "train_only_state_action_stats": true,
+    "visual_stats": "fixed ImageNet"
+  },
+  "offline": {
+    "checkpoint": "/data/lim/leisaac/outputs/act_pilot_76_20260921/model/checkpoints/002000/pretrained_model",
+    "dataset_root": "/data/lim/leisaac/outputs/act_pilot_76_20260921_split/valid",
+    "episodes": 15,
+    "first_frames": {
+      "mae": 0.20202431082725525,
+      "per_joint_rmse": [
+        0.03828005492687225,
+        0.12707854807376862,
+        0.039515171200037,
+        0.293456107378006,
+        0.6086362600326538,
+        0.20371706783771515
+      ],
+      "rmse": 0.2936071455478668,
+      "samples": 15
+    },
+    "frames": 7998,
+    "uniform_frames": {
+      "mae": 0.0592665821313858,
+      "per_joint_rmse": [
+        0.05243127420544624,
+        0.07669375091791153,
+        0.08798389881849289,
+        0.0935235321521759,
+        0.11431045085191727,
+        0.09145664423704147
+      ],
+      "rmse": 0.08808139711618423,
+      "samples": 500
+    }
+  },
+  "successes": 0,
+  "num_rollouts": 3,
+  "regression_tests_passed": 146,
+  "rollouts": [
+    {
+      "report": "outputs/act_pilot_76_20260921/rollouts/seed_4100/evaluation.json",
+      "sha256": "f793ff58dc8c068a3901507b8e4a8a3141bd231b6174c294a924e9c74476af74",
+      "result": {
+        "trial": 0,
+        "seed": 4100,
+        "cube_xy": [
+          0.27524444460868835,
+          -0.36720994114875793
+        ],
+        "success": false,
+        "steps": 1200,
+        "clipped_steps": 0,
+        "clipped_steps_by_joint": {
+          "shoulder_pan": 0,
+          "shoulder_lift": 0,
+          "elbow_flex": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0,
+          "gripper": 0
+        },
+        "max_clip_correction_rad": {
+          "shoulder_pan": 0.0,
+          "shoulder_lift": 0.0,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.0,
+          "gripper": 0.0
+        },
+        "mean_tracking_error_rad": {
+          "shoulder_pan": 0.0035377144813537598,
+          "shoulder_lift": 0.019822029396891594,
+          "elbow_flex": 0.010196410119533539,
+          "wrist_flex": 0.004736317787319422,
+          "wrist_roll": 0.0052744136191904545,
+          "gripper": 0.0049132779240608215
+        },
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "initial_joint_pos": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "initial_observation_sha256": {
+          "front": "bd9ba582959284b897cc68fe5882221ef79af6867d039bb01fba17a00a425975",
+          "wrist": "3e23c4287809e1a54404afaa7fce80fa83e11f7ddc27d45b1511ed9150e6a886"
+        },
+        "initial_scene_state_sha256": "7dd37f8afe8ccad07eac4152e6f790a49d03e74c590c50cab75078fbb65045d9",
+        "first_action": [
+          -0.12037985026836395,
+          0.1575646698474884,
+          -0.030388742685317993,
+          0.30900996923446655,
+          -0.705312967300415,
+          0.8540156483650208
+        ],
+        "action_min": [
+          -0.3882693648338318,
+          0.1573156714439392,
+          -0.08198897540569305,
+          0.30900996923446655,
+          -2.0619826316833496,
+          0.6446194648742676
+        ],
+        "action_max": [
+          -0.12037985026836395,
+          0.30112630128860474,
+          0.1766696274280548,
+          1.2316991090774536,
+          -0.7044386267662048,
+          1.280043125152588
+        ],
+        "final_cube_xyz": [
+          0.27524369955062866,
+          -0.36720889806747437,
+          0.055987901985645294
+        ],
+        "initial_cube_xyz": [
+          0.27524444460868835,
+          -0.36720994114875793,
+          0.06145733594894409
+        ],
+        "max_cube_lift_m": 0.0,
+        "final_cube_lift_m": -0.005469433963298798,
+        "final_gripper_position_rad": 0.6459532380104065,
+        "outcome": "no_lift"
+      },
+      "video": "outputs/act_pilot_76_20260921/rollouts/seed_4100/rollout_001_failure.mp4",
+      "video_sha256": "cc66e3e54a506a652b74da66180596c78cbca3760a40ee828cb83f8c97048a88",
+      "video_metadata": {
+        "width": 1280,
+        "height": 480,
+        "r_frame_rate": "60/1",
+        "nb_frames": "1200"
+      }
+    },
+    {
+      "report": "outputs/act_pilot_76_20260921/rollouts/seed_4101/evaluation.json",
+      "sha256": "3c9b9f46bfc5bba5fbb4a5558c8ecdf0f29549b1af2400266556593ba4ebc579",
+      "result": {
+        "trial": 0,
+        "seed": 4101,
+        "cube_xy": [
+          0.36009588837623596,
+          -0.3745215833187103
+        ],
+        "success": false,
+        "steps": 1200,
+        "clipped_steps": 0,
+        "clipped_steps_by_joint": {
+          "shoulder_pan": 0,
+          "shoulder_lift": 0,
+          "elbow_flex": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0,
+          "gripper": 0
+        },
+        "max_clip_correction_rad": {
+          "shoulder_pan": 0.0,
+          "shoulder_lift": 0.0,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.0,
+          "gripper": 0.0
+        },
+        "mean_tracking_error_rad": {
+          "shoulder_pan": 0.006479238159954548,
+          "shoulder_lift": 0.043365079909563065,
+          "elbow_flex": 0.026182593777775764,
+          "wrist_flex": 0.006344315595924854,
+          "wrist_roll": 0.006572744809091091,
+          "gripper": 0.005947942845523357
+        },
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.768000066280365
+        ],
+        "initial_joint_pos": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "initial_observation_sha256": {
+          "front": "9681079e3f2c501160fa3311506257dde6db3f37c1a9ce309709f532ad1cbc8b",
+          "wrist": "42a0be8e414a45ae38e767d8fd0927c168108a859f9ef10dc1413b0c7ba724c3"
+        },
+        "initial_scene_state_sha256": "d9b777b42b3e11986c47f87036cd190c31c697a2e5044a4825ed79d90df6041c",
+        "first_action": [
+          -0.0865330845117569,
+          0.12377843260765076,
+          -0.056183166801929474,
+          0.36919331550598145,
+          -0.6654961109161377,
+          0.8179428577423096
+        ],
+        "action_min": [
+          -0.35808122158050537,
+          -0.3574367165565491,
+          -1.1190577745437622,
+          0.36919331550598145,
+          -1.5335640907287598,
+          -0.011638402938842773
+        ],
+        "action_max": [
+          0.7975134253501892,
+          0.8110825419425964,
+          0.3421075940132141,
+          1.49765944480896,
+          -0.5368963479995728,
+          1.2542136907577515
+        ],
+        "final_cube_xyz": [
+          0.36009684205055237,
+          -0.3745194673538208,
+          0.05598819628357887
+        ],
+        "initial_cube_xyz": [
+          0.36009588837623596,
+          -0.3745215833187103,
+          0.06145733594894409
+        ],
+        "max_cube_lift_m": 0.0,
+        "final_cube_lift_m": -0.005469139665365219,
+        "final_gripper_position_rad": 0.4901825487613678,
+        "outcome": "no_lift"
+      },
+      "video": "outputs/act_pilot_76_20260921/rollouts/seed_4101/rollout_001_failure.mp4",
+      "video_sha256": "6239a5590bca86f7a01bbb4690b4c86085fead3e44fbb8da2aa9fd498a55e79a",
+      "video_metadata": {
+        "width": 1280,
+        "height": 480,
+        "r_frame_rate": "60/1",
+        "nb_frames": "1200"
+      }
+    },
+    {
+      "report": "outputs/act_pilot_76_20260921/rollouts/seed_4102/evaluation.json",
+      "sha256": "df2109c433afbb4fd90c59beca2811676292e89050eec126afdcfbc7687c7e52",
+      "result": {
+        "trial": 0,
+        "seed": 4102,
+        "cube_xy": [
+          0.37154433131217957,
+          -0.3424868881702423
+        ],
+        "success": false,
+        "steps": 1200,
+        "clipped_steps": 0,
+        "clipped_steps_by_joint": {
+          "shoulder_pan": 0,
+          "shoulder_lift": 0,
+          "elbow_flex": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0,
+          "gripper": 0
+        },
+        "max_clip_correction_rad": {
+          "shoulder_pan": 0.0,
+          "shoulder_lift": 0.0,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.0,
+          "gripper": 0.0
+        },
+        "mean_tracking_error_rad": {
+          "shoulder_pan": 0.012301921844482422,
+          "shoulder_lift": 0.014898535795509815,
+          "elbow_flex": 0.00925615057349205,
+          "wrist_flex": 0.014977497048676014,
+          "wrist_roll": 0.009160306304693222,
+          "gripper": 0.008733261376619339
+        },
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "initial_joint_pos": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "initial_observation_sha256": {
+          "front": "8d77bccc3c966ae75faf4e7944bd76ce9050258a62169b3ac9a730d5e9bd3bc2",
+          "wrist": "5ae4955e6d4067ecdaf367713bc3b4cc2a48e08794440e0956c74ddc86efe413"
+        },
+        "initial_scene_state_sha256": "e5514bb961cc341ebbc421c515986c3475b413b6dc941cddf0351e0c782ab647",
+        "first_action": [
+          -0.12052266299724579,
+          0.13797418773174286,
+          -0.08830202370882034,
+          0.41210150718688965,
+          -0.7019345760345459,
+          0.822021484375
+        ],
+        "action_min": [
+          -0.31280970573425293,
+          0.13756608963012695,
+          -0.3245958685874939,
+          0.41210150718688965,
+          -1.8119194507598877,
+          0.8219305872917175
+        ],
+        "action_max": [
+          -0.12049372494220734,
+          0.521501898765564,
+          0.026664122939109802,
+          1.4746794700622559,
+          -0.7009729146957397,
+          1.7277030944824219
+        ],
+        "final_cube_xyz": [
+          0.37154361605644226,
+          -0.34248632192611694,
+          0.05598800256848335
+        ],
+        "initial_cube_xyz": [
+          0.37154433131217957,
+          -0.3424868881702423,
+          0.06145733594894409
+        ],
+        "max_cube_lift_m": 0.0,
+        "final_cube_lift_m": -0.005469333380460739,
+        "final_gripper_position_rad": 1.4985830783843994,
+        "outcome": "no_lift"
+      },
+      "video": "outputs/act_pilot_76_20260921/rollouts/seed_4102/rollout_001_failure.mp4",
+      "video_sha256": "0fb668d195cbb72d7987de9fe4669cb8829868b499ff4fa8b07f3dfff51bd63b",
+      "video_metadata": {
+        "width": 1280,
+        "height": 480,
+        "r_frame_rate": "60/1",
+        "nb_frames": "1200"
+      }
+    }
+  ],
+  "limitations": [
+    "2000 updates at batch8 is about 0.603 frame-sampling passes; convergence not established",
+    "Episode holdout shares ten original leader demonstrations; not source-demo-disjoint validation",
+    "Three rollouts do not estimate general success reliably",
+    "No physical robot or RL; original Mimic 8D IK action representation was not trained",
+    "76 candidates include known fixed-target replay failures; strict cohort rejection is preserved"
+  ],
+  "artifact_sha256": {
+    "plan.json": "cabc2928d25f13d6bc705c8d676462103f9e898fa81f13e871ca327d489f1509",
+    "progress.json": "2fd4707b6436a12af7b4e71b83f394a7c5de41771102f709716c20332dfd68da",
+    "checkpoint_validation.json": "b6324045c67626dc4ab3f841d18c74cb5e11fad540d99a8680d5f0abe05b609e",
+    "offline_valid.json": "b93ccd08d288aed398b617e2233c57794603d4a7ac6ba4c898758f3f7c1b1f15",
+    "evaluation_summary.json": "b7bcc38b951b3be9cbb47cb46bb377ce074225d9ec27fc4240d2a877dcd6246f",
+    "logs/train.log": "414e3791ca9ff1abbdf175b680079d4c88242a5f5267595e710813da9aa01dfd"
+  }
+}
