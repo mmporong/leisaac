@@ -456,3 +456,47 @@ cd "/data/$USER/leisaac"
 `STOP` 파일은 단계 경계·외부 작업 대기에서 확인한다. 진행 중인 시연 한가운데를
 강제로 멈추는 버튼은 아니다. runner에 SIGTERM을 보내면 해당 runner가 생성한
 자식 프로세스 그룹만 정리한다. 별도 시뮬레이터나 외부 변환 프로세스에는 신호를 보내지 않는다.
+
+## 2026-09-21 안정화 관찰 구간 분리
+
+9월 19일 진단에서 strict `shard_019/demo_16`은 원래 시연 구간 끝에 안정 상태가
+29프레임 이어졌다. 같은 목표를 1프레임 더 유지하자 기존 30프레임 기준을 통과했다.
+반면 strict `shard_002/demo_17`은 단독 재생과 1초 추가 관찰에서도 큐브를 들지 못했다.
+7개 trace·2,452프레임에서 독립 계산과 판정기 출력이 일치했다.
+근거는 `outputs/evaluation/verdict_diagnostic_20260919/summary.json`이다.
+이는 판정식을 느슨하게 바꿀 근거가 아니라, 실제 실패와 관찰 시간 부족을 구분할 근거다.
+
+`replay_joint_contract.py --settling-seconds 1`은 마지막 제한 적용 목표각을
+1초 동안 유지하며 같은 성공 함수를 호출한다. 기본값 0은 기존 실행을 유지한다.
+허용 범위는 0~5초이며 `recorded_target` 모드에서만 관찰 구간을 켤 수 있다.
+성공 기준·원본 HDF5·학습 라벨은 바꾸지 않는다.
+
+- 기존 `steps`, `success`, `final_success`, RMSE와 최종 좌표는 원래 시연 구간 결과다.
+- `source_horizon_release`에는 시연 끝의 위치·속도·그리퍼 각도·연속 안정 프레임을 남긴다.
+- `settling`에는 별도 관찰 구간의 시간·첫 성공 시점·최종 성공·프레임별 상태를 남긴다.
+- 원래 성공했거나 관찰 중 성공했더라도 관찰 종료 시 실패하면
+  `unstable_during_observation`으로 분류한다. 중간에 불안정해졌다가 다시 안정되면
+  최종 성공으로 기록하되, 중간 변화는 trace에 보존한다.
+- 관찰 후 처음 안정되면 `settled_during_observation`, 계속 미충족이면
+  `unresolved_after_observation`이다. 미충족을 곧바로 불량 원본 데이터라고 부르지 않는다.
+- 원래 영상과 `_settling.mp4`를 나눠 저장한다. 관찰 구간은 학습 데이터에 덧붙이지 않는다.
+
+연속 재생에서는 관찰 구간 이후 다음 시연을 reset하므로 이전 실행과 물리 컨텍스트가
+같다고 보장할 수 없다. 같은 표본·순서로 다시 실행하더라도 과거 18/20을 소급 수정하지
+않으며, 새 프로토콜의 시연 구간 결과와 추가 관찰 결과를 각각 보고한다.
+학습 runner는 추가 관찰을 사용한 보고서를 **진단 전용**으로 거부한다.
+실제 파지 실패의 해결 및 후보별 재검증 전까지 본학습은 보류한다.
+
+재검증 명령(기존 strict 표본 20개·순서 유지):
+
+```bash
+cd "/data/$USER/leisaac"
+"/data/$USER/conda-envs/leisaac/bin/python" -u scripts/evaluation/replay_joint_contract.py \
+  --selection-manifest outputs/evaluation/mimic_quality_verified_20260919/replay_cohort.json \
+  --mode recorded_target --gripper-effort-mode task --settling-seconds 1 \
+  --video-count 20 --output-dir outputs/evaluation/settling_cohort_20260921 \
+  --headless --device cuda:0
+```
+
+결과는 해당 출력 경로의 `evaluation.json`에 시연마다 갱신된다. `results`가 20개이고
+프로세스가 정상 종료된 것을 확인하기 전에는 전수 재검증 완료라고 보고하지 않는다.

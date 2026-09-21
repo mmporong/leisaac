@@ -243,6 +243,12 @@ def _result_identity(result: dict) -> tuple[str, str, str]:
 
 
 def validate_replay_conditions(report: dict, audit_plan: dict) -> None:
+    protocol = report.get("settling_protocol")
+    if protocol is not None and (not isinstance(protocol, dict)
+            or protocol.get("version") != "final_target_hold_v1"
+            or type(protocol.get("steps")) is not int or protocol["steps"] != 0
+            or protocol.get("requested_seconds") != 0):
+        raise ValueError("settling observation reports are diagnostic only, not training approval")
     expected_limits = audit_plan["joint_limits"]
     if (report.get("success_criteria") != audit_plan.get("success_criteria")
             or report.get("control_dt_s") != audit_plan.get("control_dt_s")

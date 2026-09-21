@@ -80,6 +80,14 @@ class ScreenedPipelineGateTest(unittest.TestCase):
                         {"raw_path": item[0], "raw_sha256": item[1], "raw_demo": item[2]} for item in ids]}
         validate_candidate_contract(contract, ids, LIMITS)
 
+    def test_settling_diagnostics_cannot_approve_training(self):
+        self.report["settling_protocol"] = {"version": "final_target_hold_v1",
+                                            "steps": 60, "requested_seconds": 1.0}
+        with self.assertRaisesRegex(ValueError, "diagnostic only"):
+            self._validate()
+        self.report["settling_protocol"].update(steps=0, requested_seconds=0)
+        self._validate()
+
     def test_replay_failure_missing_duplicate_and_wrong_hash_are_rejected(self):
         cases = []
         failed = copy.deepcopy(self.report)
