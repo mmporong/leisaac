@@ -54,9 +54,22 @@ parser.add_argument(
     default=120,
     help="Step interval for failure-state snapshots. Snapshots are kept only when the rollout fails.",
 )
+parser.add_argument(
+    "--initial-state-hdf5",
+    type=Path,
+    default=None,
+    help="Optional raw MimicGen HDF5; every rollout starts from the stored initial_state of --initial-state-demo.",
+)
+parser.add_argument(
+    "--initial-state-demo",
+    default=None,
+    help="Demo name inside --initial-state-hdf5 (for example demo_9).",
+)
 AppLauncher.add_app_launcher_args(parser)
 args_cli = parser.parse_args()
 args_cli.enable_cameras = True
+if (args_cli.initial_state_hdf5 is None) != (args_cli.initial_state_demo is None):
+    parser.error("--initial-state-hdf5 and --initial-state-demo must be given together")
 
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
@@ -77,6 +90,7 @@ import cv2
 import imageio.v2 as imageio
 import numpy as np
 import torch
+from isaaclab.utils.datasets import HDF5DatasetFileHandler
 from isaaclab_tasks.utils import parse_env_cfg
 from leisaac.utils.env_utils import dynamic_reset_gripper_effort_limit_sim
 from leisaac.tasks.pick_cube_into_box.mdp.release_state import release_criteria_metadata
@@ -290,6 +304,23 @@ def main() -> None:
             random.seed(trial_seed)
             env.seed(trial_seed)
             observations, _ = env.reset()
+            if args_cli.initial_state_hdf5 is not None:
+                handler = HDF5DatasetFileHandler()
+                handler.open(str(args_cli.initial_state_hdf5))
+                try:
+                    episode = handler.load_episode(args_cli.initial_state_demo, env.device)
+                finally:
+                    handler.close()
+                env.reset_to(
+                    episode.get_initial_state(),
+                    torch.tensor([0], device=env.device),
+                    seed=trial_seed,
+                    is_relative=True,
+                )
+                # reset_to restores measured velocity as a target; position control uses zero target velocity.
+                robot.set_joint_velocity_target(torch.zeros_like(robot.data.joint_vel))
+                env.scene.write_data_to_sim()
+                observations = env.obs_buf
             initial_scene_state_sha256 = scene_state_sha256(env.scene.get_state(is_relative=True))
             observations = refresh_reset_images(env, observations, args_cli.reset_render_frames)
             send_request(connection, {"command": "reset"})
@@ -451,6 +482,11 @@ def main() -> None:
             "server_device": args_cli.server_device,
             "n_action_steps": args_cli.n_action_steps,
             "reset_render_frames": args_cli.reset_render_frames,
+            "initial_state_source": (
+                {"hdf5": str(args_cli.initial_state_hdf5.resolve()), "demo": args_cli.initial_state_demo}
+                if args_cli.initial_state_hdf5 is not None
+                else None
+            ),
             "trace_steps": args_cli.trace_steps,
             "gripper_effort_mode": args_cli.gripper_effort_mode,
             "success_criteria": release_criteria_metadata(success_term.params),

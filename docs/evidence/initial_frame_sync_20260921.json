@@ -1,0 +1,5124 @@
+{
+  "contract": "/data/lim/leisaac/outputs/mimic_target_unclipped_76_20260919/lerobot_all/action_contract.json",
+  "demo_count": 76,
+  "first_joint_pos_all_zero": 76,
+  "cameras": {
+    "front": {
+      "frame0_eq_frame1": 76,
+      "frame1_eq_frame2": 0,
+      "even_start_pairs": 17293,
+      "even_start_duplicates": 17293,
+      "odd_start_pairs": 17232,
+      "odd_start_duplicates": 0,
+      "demos_with_all_even_pairs_duplicated": 76,
+      "mae_frame0_vs_previous_demo_last_frame": {
+        "count": 71,
+        "min": 0.12127311862244898,
+        "median": 3.2173748405612246,
+        "max": 6.514655080782313,
+        "below_0_5": 13
+      },
+      "mae_frame0_frame2": {
+        "min": 3.709456048044218,
+        "median": 4.969158561862245,
+        "max": 6.703430590986395
+      }
+    },
+    "wrist": {
+      "frame0_eq_frame1": 76,
+      "frame1_eq_frame2": 0,
+      "even_start_pairs": 17293,
+      "even_start_duplicates": 17293,
+      "odd_start_pairs": 17232,
+      "odd_start_duplicates": 0,
+      "demos_with_all_even_pairs_duplicated": 76,
+      "mae_frame0_vs_previous_demo_last_frame": {
+        "count": 71,
+        "min": 1.044197757227891,
+        "median": 29.058626966411566,
+        "max": 67.43942655187075,
+        "below_0_5": 0
+      },
+      "mae_frame0_frame2": {
+        "min": 41.89984587585034,
+        "median": 54.837581712372454,
+        "max": 76.8202128507653
+      }
+    }
+  },
+  "interpretation_note": "even_start_duplicates == even_start_pairs for every demo means each recorded image is repeated for frames (2k, 2k+1): the camera refreshes every second 60 Hz step. A small mae_frame0_vs_previous_demo_last_frame means frame 0 is the previous attempt's final rendered scene; larger values are expected when a discarded failed attempt sat between the two exported demos.",
+  "demos": [
+    {
+      "demo": "demo_1",
+      "frames": 221,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6898311972618103,
+        0.43874281644821167,
+        -0.22703324258327484,
+        0.11131264269351959,
+        -1.1646207571029663,
+        1.344494104385376
+      ],
+      "joint_pos_target_1": [
+        0.03456195071339607,
+        -0.07632489502429962,
+        0.09152598679065704,
+        -0.015192191116511822,
+        1.153149014498922e-06,
+        0.7418591976165771
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.9080303996598635,
+          "frame0_sha256": "59eaef97d8814c5fd79431c6425554bd1ed9e2b3a5e2e8bda04e36c53ab150a3",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.2279376594387755,
+          "previous_demo": "demo_0"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 50.447232408588434,
+          "frame0_sha256": "5a77353842898a0daec599539911939b64cce359732e62d83a2181fb9cff0820",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.3439692283163267,
+          "previous_demo": "demo_0"
+        }
+      },
+      "aggregate_episode_index": 0,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_000.hdf5"
+    },
+    {
+      "demo": "demo_2",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6911600232124329,
+        0.3090759515762329,
+        -0.5807487964630127,
+        1.0854527950286865,
+        -0.8762679100036621,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        -0.00848920177668333,
+        -0.01670835353434086,
+        0.020036013796925545,
+        -0.003325741970911622,
+        -2.299580614817387e-07,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.56597443664966,
+          "frame0_sha256": "594423f925b66e11f559afae18ea9ee2ad3016e1ee75d3a451941f601734a638",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.132593271683674,
+          "previous_demo": "demo_1"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 67.51945153061224,
+          "frame0_sha256": "31c291402e7b3619d0a7e785d3c4b1938bee43331cfc73bd62f7d3700ddff95f",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 42.524540284863946,
+          "previous_demo": "demo_1"
+        }
+      },
+      "aggregate_episode_index": 1,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_000.hdf5"
+    },
+    {
+      "demo": "demo_17",
+      "frames": 273,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6692720651626587,
+        0.3943747878074646,
+        -0.8254392147064209,
+        1.0249924659729004,
+        -1.2232398986816406,
+        1.7453292608261108
+      ],
+      "joint_pos_target_1": [
+        0.009942378848791122,
+        -0.0006270569865591824,
+        0.000752115563955158,
+        -0.00012508178770076483,
+        -4.875569743489905e-07,
+        1.3486406803131104
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.680929793792517,
+          "frame0_sha256": "5b8673ea6405f9bd14c8cc66849881d2396cbfdd1eec5e2b8d2402be725e98df",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.30331234056122447,
+          "previous_demo": "demo_16"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 55.19808274872449,
+          "frame0_sha256": "7ad816f3262537c902ae1a48af30e6c525f120bb2b5a7e136bf2ee22a75e3847",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.9041640093537415,
+          "previous_demo": "demo_16"
+        }
+      },
+      "aggregate_episode_index": 2,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_000.hdf5"
+    },
+    {
+      "demo": "demo_23",
+      "frames": 273,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.8764411211013794,
+        0.5226567983627319,
+        -0.9701352119445801,
+        1.1835784912109375,
+        -0.8840634822845459,
+        0.9049575924873352
+      ],
+      "joint_pos_target_1": [
+        0.02552051655948162,
+        -0.0017695206915959716,
+        0.0021222063805907965,
+        -0.0003525967476889491,
+        -5.630316195492924e-07,
+        1.3486406803131104
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 6.007194674744898,
+          "frame0_sha256": "a08b03713fac4b12edb1279b73efa8399025b18dc76d74f01cdc6f8f850d7321",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.3492639243197279,
+          "previous_demo": "demo_22"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 53.40281542304422,
+          "frame0_sha256": "14189beb4e95efd645a09e0e27246d224c5b62aae10935e9ff6583bc967cb6e7",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.208339976615646,
+          "previous_demo": "demo_22"
+        }
+      },
+      "aggregate_episode_index": 3,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_000.hdf5"
+    },
+    {
+      "demo": "demo_17",
+      "frames": 692,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6466617584228516,
+        0.48805761337280273,
+        -0.8989077210426331,
+        1.0090363025665283,
+        -0.5578267574310303,
+        0.3838719129562378
+      ],
+      "joint_pos_target_1": [
+        0.01367442961782217,
+        -0.11416357755661011,
+        0.1369006484746933,
+        -0.022723708301782608,
+        3.4216230915262713e-07,
+        0.9008110165596008
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.082330197704081,
+          "frame0_sha256": "3d9ad1f65bb3397c503f008e977e72baa36805b197a653473ae21e8ddc38f59f",
+          "duplicates": {
+            "consecutive_pairs": 691,
+            "duplicate_pairs": 346,
+            "even_start_pairs": 346,
+            "even_start_duplicates": 346,
+            "odd_start_pairs": 345,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.3754052402210886,
+          "previous_demo": "demo_16"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 47.19933168579932,
+          "frame0_sha256": "6259a2b48465234b79b6e961d7f11d2b558293ad945f86db45774cb8a9e163a3",
+          "duplicates": {
+            "consecutive_pairs": 691,
+            "duplicate_pairs": 346,
+            "even_start_pairs": 346,
+            "even_start_duplicates": 346,
+            "odd_start_pairs": 345,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 8.684424160289115,
+          "previous_demo": "demo_16"
+        }
+      },
+      "aggregate_episode_index": 4,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_001.hdf5"
+    },
+    {
+      "demo": "demo_17",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.3982037305831909,
+        0.7557817697525024,
+        -1.051944375038147,
+        1.4719600677490234,
+        -0.9861639738082886,
+        1.0335012674331665
+      ],
+      "joint_pos_target_1": [
+        -0.025750335305929184,
+        0.0015936603303998709,
+        -0.0019106455147266388,
+        0.0003164825320709497,
+        -3.129917558908346e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.933879411139456,
+          "frame0_sha256": "efd51c6505c7e5a95a940bd64826361ee6080292800a3e736ac78076a1e10fe3",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.0048562393707483,
+          "previous_demo": "demo_16"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 56.366722470238095,
+          "frame0_sha256": "897cd7c0de7c92ea1522f87d58fa3e259de2bab5071bbe81d5a73c06fe224cbc",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 28.321156196853742,
+          "previous_demo": "demo_16"
+        }
+      },
+      "aggregate_episode_index": 5,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_002.hdf5"
+    },
+    {
+      "demo": "demo_0",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6364607810974121,
+        0.24950280785560608,
+        -0.5543416142463684,
+        1.3224743604660034,
+        -1.0043903589248657,
+        0.7432413697242737
+      ],
+      "joint_pos_target_1": [
+        -0.024798516184091568,
+        -0.056904587894678116,
+        0.06823787838220596,
+        -0.011326910927891731,
+        -7.460436535211556e-08,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.379849596088436,
+          "frame0_sha256": "0755b59e6c3b092d0fe2c3f54bba1614caf20f8c3c816e2ba5673d27ae27e7b7",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          }
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 53.43822411777211,
+          "frame0_sha256": "be13facc7093fda302c2815631c4ffa5f7d74aa96a6d25f81a1dae200eb76ec6",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          }
+        }
+      },
+      "aggregate_episode_index": 6,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_003.hdf5"
+    },
+    {
+      "demo": "demo_7",
+      "frames": 254,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.8760148882865906,
+        0.5206989645957947,
+        -0.9661791324615479,
+        1.1815881729125977,
+        -0.8842396140098572,
+        0.9049575924873352
+      ],
+      "joint_pos_target_1": [
+        -0.019810039550065994,
+        -0.009240970015525818,
+        0.011081701144576073,
+        -0.0018398375250399113,
+        -2.3337015591096133e-06,
+        1.0335012674331665
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.972729326105442,
+          "frame0_sha256": "b18805e7da51f348159a58dd65b009241dc6dc2f3b3f4084143f0621d9367b9f",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.3371266475340136,
+          "previous_demo": "demo_6"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 53.564187393707485,
+          "frame0_sha256": "fec78cf1ba6a70d52fcbd7c479349be8154bb0a78d1c7e982e65f261d10077ed",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.280725180697279,
+          "previous_demo": "demo_6"
+        }
+      },
+      "aggregate_episode_index": 7,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_003.hdf5"
+    },
+    {
+      "demo": "demo_16",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6692306399345398,
+        0.3983961343765259,
+        -0.831836462020874,
+        1.027350664138794,
+        -1.22301185131073,
+        1.7453292608261108
+      ],
+      "joint_pos_target_1": [
+        -0.024221349507570267,
+        -0.015297411940991879,
+        0.018344176933169365,
+        -0.0030452304054051638,
+        -7.966314683471865e-07,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.008417038690476,
+          "frame0_sha256": "d5b6d3385834951bad3b3d4dfab18f4916ee3c85f7ee9eceb3e0017c09206155",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.29644318664965985,
+          "previous_demo": "demo_15"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 54.70531063988095,
+          "frame0_sha256": "cbe5558ff2d8396837b292ae6ec6443b114e0fb1ad14cd0d9770e466c3b08187",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.7240247661564627,
+          "previous_demo": "demo_15"
+        }
+      },
+      "aggregate_episode_index": 8,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_003.hdf5"
+    },
+    {
+      "demo": "demo_19",
+      "frames": 254,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6912969350814819,
+        0.30782389640808105,
+        -0.5794103145599365,
+        1.0854607820510864,
+        -0.8763898611068726,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        -0.0071216486394405365,
+        -0.03122665174305439,
+        0.037446022033691406,
+        -0.006215767469257116,
+        -1.861785904111457e-06,
+        1.0335012674331665
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.707762011054422,
+          "frame0_sha256": "415555a100e7d419eada66da99196f58cf625426d9b225423a9a94b21e168a39",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.7670798788265306,
+          "previous_demo": "demo_18"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 71.30126620960884,
+          "frame0_sha256": "24300e5048de7ea6c2b1bf9c6dd1bb0cda96baa2bb956980fb6e98e67b41fbb1",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 8.603329613095237,
+          "previous_demo": "demo_18"
+        }
+      },
+      "aggregate_episode_index": 9,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_003.hdf5"
+    },
+    {
+      "demo": "demo_18",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6913245320320129,
+        0.30975663661956787,
+        -0.5831109285354614,
+        1.087162971496582,
+        -0.8762174248695374,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        -0.036908216774463654,
+        -0.034193914383649826,
+        0.04100416973233223,
+        -0.006806324236094952,
+        -2.616099891383783e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.998126594387755,
+          "frame0_sha256": "5dc64d30c3c780b431fd8043b9458f8701d411945c324b1f433f9465b7157af5",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.833997661564626,
+          "previous_demo": "demo_17"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 67.35881696428571,
+          "frame0_sha256": "6aa179238a93f06edea9aef6ce5285ca440799360559be948ff333bccb71b3ff",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 20.518468324829932,
+          "previous_demo": "demo_17"
+        }
+      },
+      "aggregate_episode_index": 10,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_004.hdf5"
+    },
+    {
+      "demo": "demo_19",
+      "frames": 273,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6911949515342712,
+        0.31041258573532104,
+        -0.5836882591247559,
+        1.0868433713912964,
+        -0.8762333393096924,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        0.023339567705988884,
+        0.011238972656428814,
+        -0.013476970605552197,
+        0.0022366251796483994,
+        -1.908932745209313e-06,
+        1.3486406803131104
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.4021710246598635,
+          "frame0_sha256": "4d4131eb2a945b98a8ca75a11d5cf3c5844fbcac49dd7fc63a1ca7e7b583e981",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.194289434523809,
+          "previous_demo": "demo_18"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 67.67181521045919,
+          "frame0_sha256": "74dd6cb3e0160827c217408617a2a06a081ad82356135b5be0eab31f3039c7c1",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 58.883616337159864,
+          "previous_demo": "demo_18"
+        }
+      },
+      "aggregate_episode_index": 11,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_004.hdf5"
+    },
+    {
+      "demo": "demo_0",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6468315720558167,
+        0.5349600911140442,
+        -0.9372591972351074,
+        1.3202992677688599,
+        -1.246719241142273,
+        0.812350869178772
+      ],
+      "joint_pos_target_1": [
+        -0.027764208614826202,
+        -0.05210039019584656,
+        0.06247666850686073,
+        -0.010370292700827122,
+        4.397965085445321e-07,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 6.012183779761905,
+          "frame0_sha256": "f5c43365212b4990a2421404b741a38584b29cd0ef48c8f96be9886bf274a804",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          }
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 64.78923522534014,
+          "frame0_sha256": "154ff5c1db9a6df9da70233948ee91553a907f48535c7eb978a5b3f9d4f0270e",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          }
+        }
+      },
+      "aggregate_episode_index": 12,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_005.hdf5"
+    },
+    {
+      "demo": "demo_8",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6916576027870178,
+        0.31080877780914307,
+        -0.5840998291969299,
+        1.0868592262268066,
+        -0.8760169744491577,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        -0.027401059865951538,
+        -0.02090795710682869,
+        0.025072159245610237,
+        -0.0041619110852479935,
+        -1.8428788735036505e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.540238360969388,
+          "frame0_sha256": "3188b7e5e15ee64e0356ba96df40e1a7ab0d49e0de32fb67baa78fcb7a7f0fb2",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.6324404761904763,
+          "previous_demo": "demo_7"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 67.50560028698979,
+          "frame0_sha256": "b6c86773e8a73885237186c9fca155a935f12807a8e6fe7e9ecc76a33a475358",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 49.944508662840136,
+          "previous_demo": "demo_7"
+        }
+      },
+      "aggregate_episode_index": 13,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_005.hdf5"
+    },
+    {
+      "demo": "demo_10",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.646623969078064,
+        0.5340948104858398,
+        -0.9354984760284424,
+        1.3196672201156616,
+        -1.246826410293579,
+        0.812350869178772
+      ],
+      "joint_pos_target_1": [
+        0.012796087190508842,
+        -0.045336559414863586,
+        0.05436581373214722,
+        -0.009023948572576046,
+        1.0183047152168e-06,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.893222523384353,
+          "frame0_sha256": "20d8046b85239bad4e2922597b1d28c7d641b0beb0b164b21c2cf4ae8e2f8ae9",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.29461628401360546,
+          "previous_demo": "demo_9"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 68.79246386054422,
+          "frame0_sha256": "89c400ca337b7c187c476cbc8281496789554418e16cada7a682f2f6ad9074e8",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.382772640306122,
+          "previous_demo": "demo_9"
+        }
+      },
+      "aggregate_episode_index": 14,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_005.hdf5"
+    },
+    {
+      "demo": "demo_13",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6914677619934082,
+        0.30786651372909546,
+        -0.5815726518630981,
+        1.0872228145599365,
+        -0.8762192726135254,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        -0.028227316215634346,
+        -0.06247895956039429,
+        0.07492224127054214,
+        -0.012436207383871078,
+        1.0577419971014024e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 3.9666440795068025,
+          "frame0_sha256": "98f30a4945fc088d8a97e50ed139f68ef5c40e0e903232d93e74c7312317544a",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.7597324085884354,
+          "previous_demo": "demo_12"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 70.80430218962584,
+          "frame0_sha256": "160b216b5b6972a12c30dac6067d8beb6b14e2fbc6d7f9912b7cdadc900ce762",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 8.482707536139456,
+          "previous_demo": "demo_12"
+        }
+      },
+      "aggregate_episode_index": 15,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_005.hdf5"
+    },
+    {
+      "demo": "demo_22",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6466410160064697,
+        0.5395331978797913,
+        -0.9449435472488403,
+        1.3236737251281738,
+        -1.2470932006835938,
+        0.812350869178772
+      ],
+      "joint_pos_target_1": [
+        -0.01860453374683857,
+        -0.02616427093744278,
+        0.0313752144575119,
+        -0.0052079553715884686,
+        -6.82696907006175e-07,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.7224038052721085,
+          "frame0_sha256": "39a5148ce5b39429b46b356241df644843ef98ccef95ebc6a42d026647b2fd85",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.076783056972789,
+          "previous_demo": "demo_21"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 65.0347443664966,
+          "frame0_sha256": "7682002e984fcd5ad2a85b6c36631ea55e7d757371567c4b0d7c0dedb1269938",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 9.627810108418368,
+          "previous_demo": "demo_21"
+        }
+      },
+      "aggregate_episode_index": 16,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_005.hdf5"
+    },
+    {
+      "demo": "demo_23",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.39859408140182495,
+        0.7580558061599731,
+        -1.0561645030975342,
+        1.4739550352096558,
+        -0.9859635829925537,
+        1.0335012674331665
+      ],
+      "joint_pos_target_1": [
+        -0.012640159577131271,
+        -0.038999348878860474,
+        0.0467662550508976,
+        -0.007762460503727198,
+        2.3550462628918467e-06,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.188895089285714,
+          "frame0_sha256": "f163431205fe60b37f505c72286830fa48a5d6b85b44c022b53942fd1e1499d0",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.9411936649659864,
+          "previous_demo": "demo_22"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 61.74578815901361,
+          "frame0_sha256": "914e00a37e64fda9bcff2f5891c6425926db9e8670f58b1731e4fbbd253647e7",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 67.43942655187075,
+          "previous_demo": "demo_22"
+        }
+      },
+      "aggregate_episode_index": 17,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_005.hdf5"
+    },
+    {
+      "demo": "demo_13",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.39842385053634644,
+        0.7550166845321655,
+        -1.0511101484298706,
+        1.4718631505966187,
+        -0.9861698746681213,
+        1.0335012674331665
+      ],
+      "joint_pos_target_1": [
+        -0.037659402936697006,
+        -0.06485389918088913,
+        0.07777021080255508,
+        -0.012908935546875,
+        4.527872476955963e-08,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 6.147274925595238,
+          "frame0_sha256": "1b5ca951dbfffc481903d35f96bd187d9c4c1dec56427c8326f529f1bb3c9459",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.042962106717687,
+          "previous_demo": "demo_12"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 54.45087292729592,
+          "frame0_sha256": "10f3ba240ea92681c08c57ce07935f3b746902be8820e1643afac0b0af8ca8ee",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 25.264223267431973,
+          "previous_demo": "demo_12"
+        }
+      },
+      "aggregate_episode_index": 18,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_006.hdf5"
+    },
+    {
+      "demo": "demo_19",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.7462651133537292,
+        0.5479907393455505,
+        -0.6289060115814209,
+        0.7337741851806641,
+        -1.0642787218093872,
+        1.0583807229995728
+      ],
+      "joint_pos_target_1": [
+        -0.025608686730265617,
+        -0.051867466419935226,
+        0.06219727545976639,
+        -0.010323897004127502,
+        1.2242156799402437e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.365805697278912,
+          "frame0_sha256": "8959985c883598cfc853ab9527ca43732048559e1b3fca5614ab828e3ef792ba",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.18581924957483,
+          "previous_demo": "demo_18"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 72.82443133503402,
+          "frame0_sha256": "67d1dbfe0ec64180d99b710cef31f0843e1ca07d14b59dfc0de9881f19585d1a",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 42.22450972576531,
+          "previous_demo": "demo_18"
+        }
+      },
+      "aggregate_episode_index": 19,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_006.hdf5"
+    },
+    {
+      "demo": "demo_11",
+      "frames": 254,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6907185912132263,
+        0.30918174982070923,
+        -0.58360755443573,
+        1.088252067565918,
+        -0.876876950263977,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        -0.015857616439461708,
+        -0.026465177536010742,
+        0.03173595294356346,
+        -0.005267852917313576,
+        6.989290568526485e-07,
+        1.0335012674331665
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.366563031462585,
+          "frame0_sha256": "bb346966a49fe6adc350d7dd95d766f6a9311515af618de2599504d6bc4d1a1b",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.9712611607142856,
+          "previous_demo": "demo_10"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 67.48842075892857,
+          "frame0_sha256": "c1da1946f35d7d71e03c36c92c0ac18ea771e7119070e12f468edaea08ddcdb1",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 41.953344228316325,
+          "previous_demo": "demo_10"
+        }
+      },
+      "aggregate_episode_index": 20,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_007.hdf5"
+    },
+    {
+      "demo": "demo_16",
+      "frames": 221,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6913427114486694,
+        0.31247466802597046,
+        -0.5880857706069946,
+        1.0891151428222656,
+        -0.8762871623039246,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        0.035562023520469666,
+        -0.05124983936548233,
+        0.061457131057977676,
+        -0.010201427154242992,
+        1.498347472761452e-07,
+        0.7418591976165771
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.433567176870748,
+          "frame0_sha256": "50de870877a51f1a7ac6f9810f5f24f3575f54e77983acf6f2d55bdb2dd1040d",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.0845689838435373,
+          "previous_demo": "demo_15"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 67.20205543154762,
+          "frame0_sha256": "f1d7e0a8e91d0b407d86053b1854a91efea00293657c270af82f26f9ff8c9e1f",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 51.072298841411566,
+          "previous_demo": "demo_15"
+        }
+      },
+      "aggregate_episode_index": 21,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_008.hdf5"
+    },
+    {
+      "demo": "demo_18",
+      "frames": 221,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6690992116928101,
+        0.3939075767993927,
+        -0.8214576840400696,
+        1.020991325378418,
+        -1.2234411239624023,
+        1.7453292608261108
+      ],
+      "joint_pos_target_1": [
+        0.018256310373544693,
+        -0.019501706585288048,
+        0.023385806009173393,
+        -0.0038819622714072466,
+        6.128931886451028e-07,
+        0.7418591976165771
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.41106637967687,
+          "frame0_sha256": "0189368a39f09a8a65f9d6cef53f29e7187016fe6c432ecd738bf496b9159892",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.373299319727891,
+          "previous_demo": "demo_17"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 53.286146099064624,
+          "frame0_sha256": "139ab4254145fb709bdaa2406544618cbd64272eb9adf8f5498792f8444f5172",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 37.79829001913265,
+          "previous_demo": "demo_17"
+        }
+      },
+      "aggregate_episode_index": 22,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_008.hdf5"
+    },
+    {
+      "demo": "demo_6",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6899614334106445,
+        0.438441663980484,
+        -0.22825196385383606,
+        0.11244682967662811,
+        -1.164648413658142,
+        1.344494104385376
+      ],
+      "joint_pos_target_1": [
+        -0.03249138966202736,
+        -0.07435163855552673,
+        0.08915957063436508,
+        -0.014799491502344608,
+        4.975072442903183e-07,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.477731717687075,
+          "frame0_sha256": "503e85aa6c34d8c51cfa6030ec19bc19a8a0328614f7a20475212f39ca1bafee",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.552927030187075,
+          "previous_demo": "demo_5"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 49.60570126488095,
+          "frame0_sha256": "466e3d60838ae168bb64b3ee23c340cd7cc33b80090d8485f4db2f3412e547b4",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 47.424831260629254,
+          "previous_demo": "demo_5"
+        }
+      },
+      "aggregate_episode_index": 23,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5"
+    },
+    {
+      "demo": "demo_9",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.646733283996582,
+        0.5363695621490479,
+        -0.938865602016449,
+        1.3202992677688599,
+        -1.2465499639511108,
+        0.812350869178772
+      ],
+      "joint_pos_target_1": [
+        -0.032016996294260025,
+        -0.0026445940602570772,
+        0.0031714709475636482,
+        -0.00052677869098261,
+        -1.9885035271727247e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.46890943877551,
+          "frame0_sha256": "5f556a79cf73e00b47327fc7b2d3b83f7894910617919be01c36df2868750ca2",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.2861926020408163,
+          "previous_demo": "demo_8"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 69.51888685161565,
+          "frame0_sha256": "7498587ef5857c2e92c9b5058a70a18dbd85ed13baa2175e8195efda4ca3b057",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.47906037414966,
+          "previous_demo": "demo_8"
+        }
+      },
+      "aggregate_episode_index": 24,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5"
+    },
+    {
+      "demo": "demo_17",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.669192910194397,
+        0.3961063027381897,
+        -0.8271626830101013,
+        1.024634838104248,
+        -1.2229865789413452,
+        1.7453292608261108
+      ],
+      "joint_pos_target_1": [
+        -0.01804463006556034,
+        -0.0323067232966423,
+        0.03874099627137184,
+        -0.006430570036172867,
+        -4.288909849492484e-07,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.1619964392006805,
+          "frame0_sha256": "3961d4b503c1f0fe53b9040b6b987a0510c44620fb816853f48de682f0a38005",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.72883450255102,
+          "previous_demo": "demo_16"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 53.2119672087585,
+          "frame0_sha256": "2f290b19451f444863d44c7453f9509bb4035d2475118033cf4d65d1519ed4d0",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 59.323228900935376,
+          "previous_demo": "demo_16"
+        }
+      },
+      "aggregate_episode_index": 25,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5"
+    },
+    {
+      "demo": "demo_23",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.3986598253250122,
+        0.7551819682121277,
+        -1.0518015623092651,
+        1.4722319841384888,
+        -0.9858991503715515,
+        1.0335012674331665
+      ],
+      "joint_pos_target_1": [
+        -0.03581816330552101,
+        -0.055200375616550446,
+        0.06619459390640259,
+        -0.010988032445311546,
+        -3.565657380022458e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 6.029987776360544,
+          "frame0_sha256": "1cdde7db24dac7975d6cc29fadfd243e744dc427183f42c0a419a4c4382dc3c6",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 6.514655080782313,
+          "previous_demo": "demo_22"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 55.27700494260204,
+          "frame0_sha256": "94a5b19569fe4b68a5af1a4f129491eb65e328baabef7e10e12dfc71d3898285",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 53.54756590136054,
+          "previous_demo": "demo_22"
+        }
+      },
+      "aggregate_episode_index": 26,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5"
+    },
+    {
+      "demo": "demo_6",
+      "frames": 692,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.646928608417511,
+        0.5377880334854126,
+        -0.9407753348350525,
+        1.3214246034622192,
+        -1.247069239616394,
+        0.812350869178772
+      ],
+      "joint_pos_target_1": [
+        -0.01686273142695427,
+        -0.03405454382300377,
+        0.0408373586833477,
+        -0.006779037415981293,
+        -3.59033333552361e-06,
+        0.9008110165596008
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.371273118622449,
+          "frame0_sha256": "e0227b0694096202c38d2e0e186a2f436fb0ce092988a8ddde0a8b91e0551874",
+          "duplicates": {
+            "consecutive_pairs": 691,
+            "duplicate_pairs": 346,
+            "even_start_pairs": 346,
+            "even_start_duplicates": 346,
+            "odd_start_pairs": 345,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.2173748405612246,
+          "previous_demo": "demo_5"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 64.9968643707483,
+          "frame0_sha256": "f46e0eda77f641eaf0d8c2bafdd9cf2d574dac3b73e828fd3959755ced5248f2",
+          "duplicates": {
+            "consecutive_pairs": 691,
+            "duplicate_pairs": 346,
+            "even_start_pairs": 346,
+            "even_start_duplicates": 346,
+            "odd_start_pairs": 345,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 43.8666228210034,
+          "previous_demo": "demo_5"
+        }
+      },
+      "aggregate_episode_index": 27,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_010.hdf5"
+    },
+    {
+      "demo": "demo_16",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6469183564186096,
+        0.4857560992240906,
+        -0.8956470489501953,
+        1.0081297159194946,
+        -0.5579952597618103,
+        0.3838719129562378
+      ],
+      "joint_pos_target_1": [
+        -0.008508007042109966,
+        -0.0523432195186615,
+        0.06276819109916687,
+        -0.010418981313705444,
+        -1.400948349328246e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.48367081207483,
+          "frame0_sha256": "d0661d2c42964f7fb31e17e66124d1878074f2dc887b334d607ba0949323a934",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.7360823235544216,
+          "previous_demo": "demo_15"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 47.094945790816325,
+          "frame0_sha256": "af4c4988453721f317fb830866064cd1ddf40f262b7f2e5325b90425882e62d1",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 63.18138818027211,
+          "previous_demo": "demo_15"
+        }
+      },
+      "aggregate_episode_index": 28,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_010.hdf5"
+    },
+    {
+      "demo": "demo_17",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6467676162719727,
+        0.48949888348579407,
+        -0.9023646712303162,
+        1.0112992525100708,
+        -0.5583323240280151,
+        0.3838719129562378
+      ],
+      "joint_pos_target_1": [
+        0.0045048752799630165,
+        -0.024661824107170105,
+        0.029573308303952217,
+        -0.004908658564090729,
+        2.269377546326723e-06,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.770647321428571,
+          "frame0_sha256": "ac210c5e9f72ca411eea4a5dab6ddd7d297e0af91fe9c1b717706034da9694ac",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.5498046875,
+          "previous_demo": "demo_16"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 50.60043978528912,
+          "frame0_sha256": "456c67db37a2d430cc3d6d0acba19186456b0bf455a8248daf6dc0bd4b3e6070",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 5.517531622023809,
+          "previous_demo": "demo_16"
+        }
+      },
+      "aggregate_episode_index": 29,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_010.hdf5"
+    },
+    {
+      "demo": "demo_0",
+      "frames": 273,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6917417645454407,
+        0.31076598167419434,
+        -0.5841449499130249,
+        1.0871326923370361,
+        -0.8759968280792236,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        0.014238541945815086,
+        0.020657746121287346,
+        -0.02477175183594227,
+        0.00411151722073555,
+        -9.443407975595619e-07,
+        1.3486406803131104
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.075281675170068,
+          "frame0_sha256": "123f45b970c85ac454362cd5ac53fbb5f46e938a41c8a70566a9f2382145489a",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          }
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 67.77773570365646,
+          "frame0_sha256": "b56be7484d74cc11c0f47411ca6abfc3cc2542a8beeaa9190ff8a3ce7b6ecd64",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          }
+        }
+      },
+      "aggregate_episode_index": 30,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_011.hdf5"
+    },
+    {
+      "demo": "demo_7",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6909758448600769,
+        0.30747726559638977,
+        -0.5800451636314392,
+        1.0866894721984863,
+        -0.8763997554779053,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        -0.016243530437350273,
+        -0.011412703432142735,
+        0.013685767538845539,
+        -0.0022719011176377535,
+        -7.63623006605485e-07,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.661352040816326,
+          "frame0_sha256": "f8f82e166704f4725983e2088c6e9077570dc6889378acc38e2e6db0bda5ff18",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.946654443027211,
+          "previous_demo": "demo_6"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 67.51500053146259,
+          "frame0_sha256": "2704691303ea0d19b6af04b1130c53326273f83e36990e2d9b92e8b1eba37d7e",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 59.02182982568027,
+          "previous_demo": "demo_6"
+        }
+      },
+      "aggregate_episode_index": 31,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_011.hdf5"
+    },
+    {
+      "demo": "demo_10",
+      "frames": 692,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.7457291483879089,
+        0.547473669052124,
+        -0.6277146339416504,
+        0.733374834060669,
+        -1.0647964477539062,
+        1.0583807229995728
+      ],
+      "joint_pos_target_1": [
+        -0.011328134685754776,
+        -0.02772914245724678,
+        0.03325207903981209,
+        -0.005519754718989134,
+        -2.864565658455831e-06,
+        0.9008110165596008
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.68132174744898,
+          "frame0_sha256": "bda615d198400feba9feb85ed711e0ef0abfa77ae99dfb76c6ee33e8b497e46b",
+          "duplicates": {
+            "consecutive_pairs": 691,
+            "duplicate_pairs": 346,
+            "even_start_pairs": 346,
+            "even_start_duplicates": 346,
+            "odd_start_pairs": 345,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.8790590454931975,
+          "previous_demo": "demo_9"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 72.93864264455782,
+          "frame0_sha256": "855354abb1ae40382f46b71aa798e96e784d7c1f2e62ce23dd257160d75db7d1",
+          "duplicates": {
+            "consecutive_pairs": 691,
+            "duplicate_pairs": 346,
+            "even_start_pairs": 346,
+            "even_start_duplicates": 346,
+            "odd_start_pairs": 345,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 44.92168898809524,
+          "previous_demo": "demo_9"
+        }
+      },
+      "aggregate_episode_index": 32,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_011.hdf5"
+    },
+    {
+      "demo": "demo_17",
+      "frames": 254,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.689534068107605,
+        0.4392760396003723,
+        -0.22715693712234497,
+        0.11057287454605103,
+        -1.1650028228759766,
+        1.344494104385376
+      ],
+      "joint_pos_target_1": [
+        -0.00929704774171114,
+        -0.0335664376616478,
+        0.040251679718494415,
+        -0.006681372877210379,
+        -8.226939485211915e-07,
+        1.0335012674331665
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.850825095663265,
+          "frame0_sha256": "41367baf62c26cc0d96d9102c2d19f88e4d43198f99b71bec956c9133abb055a",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.655080782312925,
+          "previous_demo": "demo_16"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 49.70384911777211,
+          "frame0_sha256": "0204aa5af1a5e8730353147e25b278b3bd02d3846c2a7e948048eb75974adc1f",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 42.439818505527214,
+          "previous_demo": "demo_16"
+        }
+      },
+      "aggregate_episode_index": 33,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_011.hdf5"
+    },
+    {
+      "demo": "demo_20",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6690858006477356,
+        0.39574718475341797,
+        -0.8261408805847168,
+        1.0242424011230469,
+        -1.2232422828674316,
+        1.7453292608261108
+      ],
+      "joint_pos_target_1": [
+        -0.02228325791656971,
+        -0.06737872213125229,
+        0.08079773932695389,
+        -0.013411241583526134,
+        1.6252892010015785e-06,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.814426551870748,
+          "frame0_sha256": "5baa0390d213b5c6c25ea07f58f9e4429c96c1d287b18469549b49215108b8d3",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.1296237244897958,
+          "previous_demo": "demo_19"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 52.8508450255102,
+          "frame0_sha256": "c40abdc4f914f0456cc3e8a8d8fd74b884355530ac5e9e78481c30dafcf05f07",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 31.379145408163264,
+          "previous_demo": "demo_19"
+        }
+      },
+      "aggregate_episode_index": 34,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_011.hdf5"
+    },
+    {
+      "demo": "demo_0",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.646362841129303,
+        0.5319728851318359,
+        -0.9308339357376099,
+        1.316612958908081,
+        -1.2472457885742188,
+        0.812350869178772
+      ],
+      "joint_pos_target_1": [
+        0.0021095587871968746,
+        -0.04540824145078659,
+        0.054451677948236465,
+        -0.009038151241838932,
+        1.437598939446616e-06,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.08859481292517,
+          "frame0_sha256": "23fd22f957476c1a7acd12d806a93e7300a8d2a1a33e5686dc50f12d8bfaee51",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          }
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 64.89044563137755,
+          "frame0_sha256": "187d6b8dd1020eb72f536fee50ec96fbff1677351dcbd2d178f1be448db78f37",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          }
+        }
+      },
+      "aggregate_episode_index": 35,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_012.hdf5"
+    },
+    {
+      "demo": "demo_3",
+      "frames": 221,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6466355919837952,
+        0.4862464666366577,
+        -0.8967732191085815,
+        1.0084620714187622,
+        -0.5579341053962708,
+        0.3838719129562378
+      ],
+      "joint_pos_target_1": [
+        -0.01194822508841753,
+        -0.06542710959911346,
+        0.0784577950835228,
+        -0.013023290783166885,
+        -1.0776039971460705e-07,
+        0.7418591976165771
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.430265465561225,
+          "frame0_sha256": "0e09adef6ac0f8e53e48a7f27ef0d9c74f1b659338e5efebf441b41ae0a2ea0c",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.197484853316326,
+          "previous_demo": "demo_2"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 46.9111859587585,
+          "frame0_sha256": "f75496563247014f0302fd4b680166ca2f5b85d55c1049c5a4ae3dbe35d6dc44",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 33.638552295918366,
+          "previous_demo": "demo_2"
+        }
+      },
+      "aggregate_episode_index": 36,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_012.hdf5"
+    },
+    {
+      "demo": "demo_6",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6464937925338745,
+        0.48846814036369324,
+        -0.9000085592269897,
+        1.0091452598571777,
+        -0.558378279209137,
+        0.3838719129562378
+      ],
+      "joint_pos_target_1": [
+        -0.03890762850642204,
+        -0.020905954763293266,
+        0.02506966143846512,
+        -0.004161322955042124,
+        -1.7501129150332417e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.98101349914966,
+          "frame0_sha256": "9bdc374b87b7879b65564e18ff60152187a49da1aff4e8c2e6fd0d39b462872f",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.5507878932823129,
+          "previous_demo": "demo_5"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 49.99887728528912,
+          "frame0_sha256": "8bd091a3cf4a5dd1f93f0cfcf86882e7a5ab85f0da5022c2d9c76a7a2408e262",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 5.247269610969388,
+          "previous_demo": "demo_5"
+        }
+      },
+      "aggregate_episode_index": 37,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_012.hdf5"
+    },
+    {
+      "demo": "demo_21",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6692728996276855,
+        0.3965441584587097,
+        -0.8298540115356445,
+        1.027262568473816,
+        -1.2229810953140259,
+        1.7453292608261108
+      ],
+      "joint_pos_target_1": [
+        -0.017216384410858154,
+        -0.012097510509192944,
+        0.014507077634334564,
+        -0.0024082723539322615,
+        -2.0232769202266354e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.656582164115647,
+          "frame0_sha256": "2498d5401b6e291324237a68d7e8bae50efa1b1313e3817c90d6aea20b311007",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.298296662414966,
+          "previous_demo": "demo_20"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 54.90189865008504,
+          "frame0_sha256": "3ef974246d379890cc2cb5187a45c05f95d1d46985dc846558beb324bb600aba",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.9273955676020407,
+          "previous_demo": "demo_20"
+        }
+      },
+      "aggregate_episode_index": 38,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_012.hdf5"
+    },
+    {
+      "demo": "demo_22",
+      "frames": 221,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6897103786468506,
+        0.43616482615470886,
+        -0.22373628616333008,
+        0.11057624220848083,
+        -1.164802074432373,
+        1.344494104385376
+      ],
+      "joint_pos_target_1": [
+        0.02547258511185646,
+        -0.05463738739490509,
+        0.06551917642354965,
+        -0.010875318199396133,
+        -1.9576430076995166e-07,
+        0.7418591976165771
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.78754118835034,
+          "frame0_sha256": "15e4da93b224b3b0ebef161d690ea8357d39a522bd2bc8fe90af38a3a5309c0b",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 5.190137383078231,
+          "previous_demo": "demo_21"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 49.79630367772109,
+          "frame0_sha256": "881727563325dd11451121befa4286effb601d0cb74a76b029b540f38c54d1f6",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 37.24844547193877,
+          "previous_demo": "demo_21"
+        }
+      },
+      "aggregate_episode_index": 39,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_012.hdf5"
+    },
+    {
+      "demo": "demo_2",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6469237804412842,
+        0.5336902737617493,
+        -0.9339844584465027,
+        1.3186662197113037,
+        -1.24661123752594,
+        0.812350869178772
+      ],
+      "joint_pos_target_1": [
+        0.001059965929016471,
+        -0.04277801141142845,
+        0.051297761499881744,
+        -0.008514895103871822,
+        7.367055445683945e-07,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 6.593397906037415,
+          "frame0_sha256": "008bafa9fdc4a830509c3b18e9eccd14a12948ef8647e583908b80b631996917",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.670340401785714,
+          "previous_demo": "demo_1"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 65.04118170705782,
+          "frame0_sha256": "c3bd2c06d104500619a9fedaaae333717cdc3992e305947c7569602f20fd71d5",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 59.34936357355442,
+          "previous_demo": "demo_1"
+        }
+      },
+      "aggregate_episode_index": 40,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_013.hdf5"
+    },
+    {
+      "demo": "demo_6",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6542876362800598,
+        0.5871657133102417,
+        -0.8396227359771729,
+        0.6787806153297424,
+        -1.189652919769287,
+        1.0984642505645752
+      ],
+      "joint_pos_target_1": [
+        -0.028692444786429405,
+        -0.0703694149851799,
+        0.0843839943408966,
+        -0.014006474055349827,
+        2.003845111175906e-06,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.05836787840136,
+          "frame0_sha256": "4d409832bd6645bc60892812887ef512b59c19c2fd38e4dd3c3bb7dcc07524df",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.5249322385204085,
+          "previous_demo": "demo_5"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 41.91780931122449,
+          "frame0_sha256": "d02cd71a3fffa59012d394538c31a8daf87e5501574da5236418c877b5c5011e",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 45.82035900297619,
+          "previous_demo": "demo_5"
+        }
+      },
+      "aggregate_episode_index": 41,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_013.hdf5"
+    },
+    {
+      "demo": "demo_9",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6690316796302795,
+        0.3973369002342224,
+        -0.8311144709587097,
+        1.0273305177688599,
+        -1.2232013940811157,
+        1.7453292608261108
+      ],
+      "joint_pos_target_1": [
+        0.017604615539312363,
+        -0.037692759186029434,
+        0.04519975557923317,
+        -0.007502625696361065,
+        7.863403084229503e-07,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.061277636054422,
+          "frame0_sha256": "c32a3fe2196d200de4e20480be38549861db1e46acc507045c6365e4bc9acbe3",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 5.246851084183674,
+          "previous_demo": "demo_8"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 53.150749362244895,
+          "frame0_sha256": "4709055d3d55c7db227aa3378eefeb639247b5306f1b59419d0522b70c84bc20",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 50.56881111819728,
+          "previous_demo": "demo_8"
+        }
+      },
+      "aggregate_episode_index": 42,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_013.hdf5"
+    },
+    {
+      "demo": "demo_11",
+      "frames": 254,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6690210700035095,
+        0.39804017543792725,
+        -0.8307305574417114,
+        1.0268620252609253,
+        -1.2233631610870361,
+        1.7453292608261108
+      ],
+      "joint_pos_target_1": [
+        0.03351593762636185,
+        -0.02674798294901848,
+        0.032075218856334686,
+        -0.005324158817529678,
+        1.2921766483486863e-06,
+        1.0335012674331665
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.9460366177721085,
+          "frame0_sha256": "4a4322e81c868c174321c76bccc6411f1cfc70a7e7c267a96a294de35b51d05a",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.3069661458333333,
+          "previous_demo": "demo_10"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 54.65596433886054,
+          "frame0_sha256": "0b5556b692dd4cd9f59cb7fc1c9d539ac6089e0bbcb79eebbc1af218ced43a7d",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.9403433248299318,
+          "previous_demo": "demo_10"
+        }
+      },
+      "aggregate_episode_index": 43,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_013.hdf5"
+    },
+    {
+      "demo": "demo_20",
+      "frames": 273,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.668929934501648,
+        0.39516186714172363,
+        -0.8262278437614441,
+        1.0249943733215332,
+        -1.2231590747833252,
+        1.7453292608261108
+      ],
+      "joint_pos_target_1": [
+        0.012405946850776672,
+        0.013539877720177174,
+        -0.0162363164126873,
+        0.0026948333252221346,
+        -9.249098411601153e-07,
+        1.3486406803131104
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 3.7651267538265305,
+          "frame0_sha256": "26a08aa5eaff9c76bfb10a9485213692668eb1da7d427b3e2e9a7c324c11b288",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.291367718962585,
+          "previous_demo": "demo_19"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 55.14688297193877,
+          "frame0_sha256": "5c2304134c3c84b381bc4cdd14d570683d7a85ef716177ef92b468d1da27331f",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.831586150085034,
+          "previous_demo": "demo_19"
+        }
+      },
+      "aggregate_episode_index": 44,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_013.hdf5"
+    },
+    {
+      "demo": "demo_23",
+      "frames": 273,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6688637733459473,
+        0.39677906036376953,
+        -0.8277935981750488,
+        1.0249512195587158,
+        -1.223549246788025,
+        1.7453292608261108
+      ],
+      "joint_pos_target_1": [
+        0.015402471646666527,
+        0.013969600200653076,
+        -0.016751619055867195,
+        0.0027803124394267797,
+        -5.739141215599375e-07,
+        1.3486406803131104
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.092334980867347,
+          "frame0_sha256": "970223df1e058a108df73fec42a05da638c4675c6f9af0797931bdf84497031b",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.2836150085034013,
+          "previous_demo": "demo_22"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 53.531130420918366,
+          "frame0_sha256": "11554f4b78b09709ad42b87fa4a9c55cb91d8a644fd6503c414571b313c8db86",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 38.04770541028912,
+          "previous_demo": "demo_22"
+        }
+      },
+      "aggregate_episode_index": 45,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_013.hdf5"
+    },
+    {
+      "demo": "demo_1",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6545320749282837,
+        0.5877028107643127,
+        -0.8406355381011963,
+        0.6792782545089722,
+        -1.1898308992385864,
+        1.0984642505645752
+      ],
+      "joint_pos_target_1": [
+        -0.028702925890684128,
+        -0.07612715661525726,
+        0.09128861129283905,
+        -0.015152794308960438,
+        1.4704864952364005e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.328835831207483,
+          "frame0_sha256": "566a1cec7ea0e5ced1a3c534a6841453233f7225c8bbfb512bcea10b2e6f49bc",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.6504238414115646,
+          "previous_demo": "demo_0"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 43.694462159863946,
+          "frame0_sha256": "6a4f2cb6cd82b1bb8da0c71a05e36754437b863e57d9d18ed536777af66008d4",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 6.366377019557823,
+          "previous_demo": "demo_0"
+        }
+      },
+      "aggregate_episode_index": 46,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_014.hdf5"
+    },
+    {
+      "demo": "demo_4",
+      "frames": 692,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6904768347740173,
+        0.437941312789917,
+        -0.2270210236310959,
+        0.11210799217224121,
+        -1.1644821166992188,
+        1.344494104385376
+      ],
+      "joint_pos_target_1": [
+        -0.001156274345703423,
+        -0.03921438008546829,
+        0.04702449217438698,
+        -0.007805445697158575,
+        -1.2411481975505012e-06,
+        0.9008110165596008
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.6144106079931975,
+          "frame0_sha256": "d73ed17df38b7b75741332830895d38e2bde8047f10efa72ed11cc1518f3d37a",
+          "duplicates": {
+            "consecutive_pairs": 691,
+            "duplicate_pairs": 346,
+            "even_start_pairs": 346,
+            "even_start_duplicates": 346,
+            "odd_start_pairs": 345,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.22612404336734693,
+          "previous_demo": "demo_3"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 50.96230601615646,
+          "frame0_sha256": "1bd70e42f915e64ab2cb715c7e4731e2b1a32f4613a9d108c4a312b0cca71037",
+          "duplicates": {
+            "consecutive_pairs": 691,
+            "duplicate_pairs": 346,
+            "even_start_pairs": 346,
+            "even_start_duplicates": 346,
+            "odd_start_pairs": 345,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.3263911033163267,
+          "previous_demo": "demo_3"
+        }
+      },
+      "aggregate_episode_index": 47,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_014.hdf5"
+    },
+    {
+      "demo": "demo_8",
+      "frames": 221,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6546141505241394,
+        0.5870047211647034,
+        -0.8385621905326843,
+        0.6779131293296814,
+        -1.1894152164459229,
+        1.0984642505645752
+      ],
+      "joint_pos_target_1": [
+        0.02257636748254299,
+        -0.03485730290412903,
+        0.04180000349879265,
+        -0.0069388956762850285,
+        -1.2661677146752481e-06,
+        0.7418591976165771
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.238473905187075,
+          "frame0_sha256": "f0be8d408edbaa65d7152e949d6fd1172a5ebeb38003693726c7589ee97f104b",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.9191778273809526,
+          "previous_demo": "demo_7"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 41.92333652210884,
+          "frame0_sha256": "d1aed3486b298eadf0a7a9e0e9949e306050adc6b76928bf67477760b308df96",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 50.10258556547619,
+          "previous_demo": "demo_7"
+        }
+      },
+      "aggregate_episode_index": 48,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_014.hdf5"
+    },
+    {
+      "demo": "demo_9",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6899060606956482,
+        0.43823081254959106,
+        -0.22670410573482513,
+        0.11186534911394119,
+        -1.1646476984024048,
+        1.344494104385376
+      ],
+      "joint_pos_target_1": [
+        -0.013820594176650047,
+        -0.04666563495993614,
+        0.05595934018492699,
+        -0.009288310073316097,
+        2.2428125703299884e-06,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.4942934204931975,
+          "frame0_sha256": "ed0e229e9e91a96af9068f3e3168496e8247070234176f0fc582b54400aea1db",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.508005155187075,
+          "previous_demo": "demo_8"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 49.703337585034014,
+          "frame0_sha256": "bc0b678e68e69822c9d7c87c9c211525af7e3feb96d4e71390330c02bd349c6f",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 42.41578311011905,
+          "previous_demo": "demo_8"
+        }
+      },
+      "aggregate_episode_index": 49,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_014.hdf5"
+    },
+    {
+      "demo": "demo_14",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6915956139564514,
+        0.3110881447792053,
+        -0.5859183073043823,
+        1.088687777519226,
+        -0.87638920545578,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        -0.03277597576379776,
+        -0.07238484919071198,
+        0.08680084347724915,
+        -0.014407656155526638,
+        1.8133101775674731e-06,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 3.709456048044218,
+          "frame0_sha256": "f5532590cf4a0ed6b51d00d8a87c403a85935bb8e8870bc84a5f460063cf0688",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.7566299957482994,
+          "previous_demo": "demo_13"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 71.07251142644557,
+          "frame0_sha256": "538ccc6742087c3d19a9e0c0b4c18d34cf75544e11aa29d4195686b5b8f65163",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 8.753095769557824,
+          "previous_demo": "demo_13"
+        }
+      },
+      "aggregate_episode_index": 50,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_014.hdf5"
+    },
+    {
+      "demo": "demo_16",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.7461627721786499,
+        0.5484007596969604,
+        -0.6297821998596191,
+        0.7340905666351318,
+        -1.0646560192108154,
+        1.0583807229995728
+      ],
+      "joint_pos_target_1": [
+        -0.010679292492568493,
+        -0.04568464681506157,
+        0.054783158004283905,
+        -0.00909334048628807,
+        1.4928416476323036e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.831400138180272,
+          "frame0_sha256": "ef6b88b76c355469d2bb7f40906a3f159fad73bbd8129ceb0fe8fbbd249d458e",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.12127311862244898,
+          "previous_demo": "demo_15"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 76.8202128507653,
+          "frame0_sha256": "59e2c53acad019a67c8b72b84a35394a9f0b876f6e7597414b4e2818174a363f",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 1.044197757227891,
+          "previous_demo": "demo_15"
+        }
+      },
+      "aggregate_episode_index": 51,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_014.hdf5"
+    },
+    {
+      "demo": "demo_17",
+      "frames": 254,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6468257308006287,
+        0.4898874759674072,
+        -0.9034327268600464,
+        1.0112131834030151,
+        -0.5576456189155579,
+        0.3838719129562378
+      ],
+      "joint_pos_target_1": [
+        -0.038528505712747574,
+        -0.03250899910926819,
+        0.03898361697793007,
+        -0.006471001543104649,
+        -1.429402686881076e-06,
+        1.0335012674331665
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.975625797193878,
+          "frame0_sha256": "c54f35cffd4cd23cdde9ad0e5d3203d79f82811b5e4e51ba252a09d9bb8ca6b9",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.5316020939625851,
+          "previous_demo": "demo_16"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 50.41685267857143,
+          "frame0_sha256": "292d569d936c98be36bfd932b227bfd6b0fd0743e1597a1dc099ad86d9ad8354",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 5.315961150085034,
+          "previous_demo": "demo_16"
+        }
+      },
+      "aggregate_episode_index": 52,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_014.hdf5"
+    },
+    {
+      "demo": "demo_0",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6910113096237183,
+        0.3114403784275055,
+        -0.5864750146865845,
+        1.0890541076660156,
+        -0.8764181137084961,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        0.004099775105714798,
+        -0.029582452028989792,
+        0.03547411039471626,
+        -0.0058882092125713825,
+        4.775690740643768e-07,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.474662521258503,
+          "frame0_sha256": "1842d78216ac1071a2d199ea8dc7894b41adb5b96b543c49ca516bb2e73cbfbb",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          }
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 67.38560932185374,
+          "frame0_sha256": "8d4e7c9f5aec196894997792894403082378cf526c76bdbd907e5f9ac44a768f",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          }
+        }
+      },
+      "aggregate_episode_index": 53,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_015.hdf5"
+    },
+    {
+      "demo": "demo_1",
+      "frames": 692,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6897075176239014,
+        0.4370422661304474,
+        -0.2256389558315277,
+        0.11160475015640259,
+        -1.164577603340149,
+        1.344494104385376
+      ],
+      "joint_pos_target_1": [
+        -0.008192087523639202,
+        -0.10083846002817154,
+        0.12092194706201553,
+        -0.020071860402822495,
+        -2.00497061086935e-06,
+        0.9008110165596008
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.671350180697279,
+          "frame0_sha256": "1a2e7fc54203f84953ec26b4ea5316c39aa6a307f6b499740657558eff141473",
+          "duplicates": {
+            "consecutive_pairs": 691,
+            "duplicate_pairs": 346,
+            "even_start_pairs": 346,
+            "even_start_duplicates": 346,
+            "odd_start_pairs": 345,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.922233737244898,
+          "previous_demo": "demo_0"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 49.54468936011905,
+          "frame0_sha256": "7538ccf6c743253b8c9488683c1f05a2adad114beff4769429b65f19ce2f207f",
+          "duplicates": {
+            "consecutive_pairs": 691,
+            "duplicate_pairs": 346,
+            "even_start_pairs": 346,
+            "even_start_duplicates": 346,
+            "odd_start_pairs": 345,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 47.5818253082483,
+          "previous_demo": "demo_0"
+        }
+      },
+      "aggregate_episode_index": 54,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_015.hdf5"
+    },
+    {
+      "demo": "demo_2",
+      "frames": 254,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6465235948562622,
+        0.5360523462295532,
+        -0.938139796257019,
+        1.3201109170913696,
+        -1.2468290328979492,
+        0.812350869178772
+      ],
+      "joint_pos_target_1": [
+        -0.0347517766058445,
+        -0.011723790317773819,
+        0.014059026725590229,
+        -0.0023340957704931498,
+        -2.9431298571580555e-06,
+        1.0335012674331665
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.81195525085034,
+          "frame0_sha256": "2a946bc9b0a6e8cf0a3947e44822181bd36c005259761551784a7511b656b9e3",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.739437181122449,
+          "previous_demo": "demo_1"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 65.12128640518708,
+          "frame0_sha256": "ffc9a82cdd4960c158d0e404d01f60f80f24dff38c62279d0cba1a9e0ad3fc4d",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 10.226715295493197,
+          "previous_demo": "demo_1"
+        }
+      },
+      "aggregate_episode_index": 55,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_015.hdf5"
+    },
+    {
+      "demo": "demo_12",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6545496582984924,
+        0.5841002464294434,
+        -0.8320865035057068,
+        0.6741296648979187,
+        -1.189318060874939,
+        1.0984642505645752
+      ],
+      "joint_pos_target_1": [
+        -0.029108205810189247,
+        -0.03357578068971634,
+        0.04026311635971069,
+        -0.006683527026325464,
+        -3.6251276469556615e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.55169137967687,
+          "frame0_sha256": "69fa1752e682d466e44053b652a5dc41479c5bc30e7808e05c8ed312550b5a4c",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.6306335034013606,
+          "previous_demo": "demo_11"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 43.34379650297619,
+          "frame0_sha256": "42c0ea5bbc2c822fb74cea778036db4d883dfa3466ab99d53f20ca918137eb10",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 5.744492718962585,
+          "previous_demo": "demo_11"
+        }
+      },
+      "aggregate_episode_index": 56,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_015.hdf5"
+    },
+    {
+      "demo": "demo_14",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6687819957733154,
+        0.39574217796325684,
+        -0.8261181116104126,
+        1.0241779088974,
+        -1.2236095666885376,
+        1.7453292608261108
+      ],
+      "joint_pos_target_1": [
+        -0.028011949732899666,
+        -0.033000245690345764,
+        0.03957268223166466,
+        -0.006568855606019497,
+        -2.4468067749694455e-07,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.962691326530612,
+          "frame0_sha256": "a9d99bb0843a72fe70966f8ef66014b266ba14bcd590a9b1ed88e767bd6bc525",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.996738148384354,
+          "previous_demo": "demo_13"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 53.17986686862245,
+          "frame0_sha256": "433cc1bd74447028f7154ad8ebe89dc7842df271510ee234dbe9c936a676f486",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 31.76198448129252,
+          "previous_demo": "demo_13"
+        }
+      },
+      "aggregate_episode_index": 57,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_015.hdf5"
+    },
+    {
+      "demo": "demo_23",
+      "frames": 692,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6912375688552856,
+        0.3097817003726959,
+        -0.5835382342338562,
+        1.0874842405319214,
+        -0.876417875289917,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        -0.01038347464054823,
+        0.0004768406506627798,
+        -0.0005716440500691533,
+        9.471391240367666e-05,
+        -1.7660986486589536e-06,
+        0.9008110165596008
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.885117718962585,
+          "frame0_sha256": "29e0448645639ff89f84b1387362cf720a2171c59a27f62307a012d935950c66",
+          "duplicates": {
+            "consecutive_pairs": 691,
+            "duplicate_pairs": 346,
+            "even_start_pairs": 346,
+            "even_start_duplicates": 346,
+            "odd_start_pairs": 345,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.926173203656463,
+          "previous_demo": "demo_22"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 67.61053757440476,
+          "frame0_sha256": "6d6f73f4b74848da4179b6deb07fc4872e73bd5a86b5a98f13d303ca5d05e984",
+          "duplicates": {
+            "consecutive_pairs": 691,
+            "duplicate_pairs": 346,
+            "even_start_pairs": 346,
+            "even_start_duplicates": 346,
+            "odd_start_pairs": 345,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 58.022587159863946,
+          "previous_demo": "demo_22"
+        }
+      },
+      "aggregate_episode_index": 58,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_015.hdf5"
+    },
+    {
+      "demo": "demo_1",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6897118091583252,
+        0.43676960468292236,
+        -0.22460857033729553,
+        0.11076155304908752,
+        -1.1647347211837769,
+        1.344494104385376
+      ],
+      "joint_pos_target_1": [
+        -0.023506227880716324,
+        -0.046302083879709244,
+        0.05552375316619873,
+        -0.009216171689331532,
+        -2.011887318076333e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.790896045918367,
+          "frame0_sha256": "7ab443264639a4777a18d4275a8ad3d7cdeb1d8fc684a00fdaa4829fa6cf9a62",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.171781994047619,
+          "previous_demo": "demo_0"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 49.81038743622449,
+          "frame0_sha256": "1629fa9129e65c0e3a2251a12334891211acf2f13d06350708f558c2ba82cec7",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 14.057989211309524,
+          "previous_demo": "demo_0"
+        }
+      },
+      "aggregate_episode_index": 59,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_016.hdf5"
+    },
+    {
+      "demo": "demo_2",
+      "frames": 273,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6913356184959412,
+        0.30778998136520386,
+        -0.5805853009223938,
+        1.0866191387176514,
+        -0.8764674663543701,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        0.023524578660726547,
+        0.009014694020152092,
+        -0.010809788480401039,
+        0.0017940420657396317,
+        -1.3725015151067055e-06,
+        1.3486406803131104
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.699437978316326,
+          "frame0_sha256": "761c67f70c7a014003999e47315827b6750a13e0446974c38f4d4d7d85d0ffe1",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.3743954613095237,
+          "previous_demo": "demo_1"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 67.6196588010204,
+          "frame0_sha256": "c194147bba848f4ea2de0b8ccf083aee2bc1523333d5deb82cfdc2859d42a9ca",
+          "duplicates": {
+            "consecutive_pairs": 272,
+            "duplicate_pairs": 136,
+            "even_start_pairs": 136,
+            "even_start_duplicates": 136,
+            "odd_start_pairs": 136,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 59.542656515731295,
+          "previous_demo": "demo_1"
+        }
+      },
+      "aggregate_episode_index": 60,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_016.hdf5"
+    },
+    {
+      "demo": "demo_3",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.3978753685951233,
+        0.7535650730133057,
+        -1.04853355884552,
+        1.470123052597046,
+        -0.986482560634613,
+        1.0335012674331665
+      ],
+      "joint_pos_target_1": [
+        -0.030312201008200645,
+        -0.06542503088712692,
+        0.07845517247915268,
+        -0.013022739440202713,
+        4.801767872208984e-08,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.59152450042517,
+          "frame0_sha256": "4ac50ad1f35b66c78da5f5131bb8f04c32633d520371ded315e37f4962532c62",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.275191326530612,
+          "previous_demo": "demo_2"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 54.1579440369898,
+          "frame0_sha256": "4c055d429c2cf62adb0c094f6fd3261b513b7a3f214cc16af8f552d417e83095",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 26.718145461309526,
+          "previous_demo": "demo_2"
+        }
+      },
+      "aggregate_episode_index": 61,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_016.hdf5"
+    },
+    {
+      "demo": "demo_7",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.39902621507644653,
+        0.7580838799476624,
+        -1.0563254356384277,
+        1.474104404449463,
+        -0.9849587678909302,
+        1.0335012674331665
+      ],
+      "joint_pos_target_1": [
+        0.009076991118490696,
+        -0.01069135032594204,
+        0.012820552103221416,
+        -0.002127872547134757,
+        7.869485898481798e-07,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.307205303996598,
+          "frame0_sha256": "72160687d103144d24c15f29b58d05d562020d7c83940e8d50c7d9f56f142d83",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.0331433354591835,
+          "previous_demo": "demo_6"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 56.34588249362245,
+          "frame0_sha256": "6367c41253b02efe28d9a72209a05ce6f64c7e569f9484188cbbb77a5ecbec69",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 28.218265040391156,
+          "previous_demo": "demo_6"
+        }
+      },
+      "aggregate_episode_index": 62,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_016.hdf5"
+    },
+    {
+      "demo": "demo_18",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6915746331214905,
+        0.3078373968601227,
+        -0.5821824073791504,
+        1.0882573127746582,
+        -0.8760506510734558,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        -0.01851172372698784,
+        -0.0202191099524498,
+        0.024246009066700935,
+        -0.004024659749120474,
+        -7.065368095027225e-07,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.445843962585034,
+          "frame0_sha256": "16e0714c3b6dbf492f05f95356b464fba4b45abe8a46db3abe96ee7d79c1abc6",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.223945046768708,
+          "previous_demo": "demo_17"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 72.30856053358843,
+          "frame0_sha256": "b0fac3b0d7b7c9c7ffb94f847782cebfa7f9f91dad6e673cc416c1058cfd0235",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 60.91469361181973,
+          "previous_demo": "demo_17"
+        }
+      },
+      "aggregate_episode_index": 63,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_016.hdf5"
+    },
+    {
+      "demo": "demo_2",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.691394567489624,
+        0.3102605938911438,
+        -0.5844180583953857,
+        1.0880030393600464,
+        -0.8760795593261719,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        -0.024183014407753944,
+        -0.043671801686286926,
+        0.05236976221203804,
+        -0.00869307667016983,
+        -1.763776822372165e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.067396099064626,
+          "frame0_sha256": "e253baf0615b5d695bcd9c3c7fb3be4d61baab54112140b957cbc6c2ee63cff7",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.4493649022108843,
+          "previous_demo": "demo_1"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 67.47280240221089,
+          "frame0_sha256": "baef8c5b13487e844c7f9568fd68c0228c5e63bafde72c58cc6a53be7a1e762e",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 12.856133078231293,
+          "previous_demo": "demo_1"
+        }
+      },
+      "aggregate_episode_index": 64,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_017.hdf5"
+    },
+    {
+      "demo": "demo_10",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.3979784846305847,
+        0.7583746910095215,
+        -1.0566997528076172,
+        1.4740490913391113,
+        -0.9866931438446045,
+        1.0335012674331665
+      ],
+      "joint_pos_target_1": [
+        -0.03712988644838333,
+        -0.08854752779006958,
+        0.1061830222606659,
+        -0.017625369131565094,
+        -2.171032292608288e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 6.703430590986395,
+          "frame0_sha256": "f194995e7d443388993a1590a8567efb41c32538e3322b5c9ea0836e43277977",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.0551525297619047,
+          "previous_demo": "demo_9"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 56.010569462159864,
+          "frame0_sha256": "8ac23615e5fca552fd0a310543ac96e52071684b10f16d076de8b6504c161288",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 30.61027848639456,
+          "previous_demo": "demo_9"
+        }
+      },
+      "aggregate_episode_index": 65,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_017.hdf5"
+    },
+    {
+      "demo": "demo_15",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6544214487075806,
+        0.5885685086250305,
+        -0.8412591814994812,
+        0.6786836385726929,
+        -1.190023422241211,
+        1.0984642505645752
+      ],
+      "joint_pos_target_1": [
+        -0.013109651394188404,
+        -0.04814862832427025,
+        0.057738181203603745,
+        -0.009584173560142517,
+        -9.156820510725083e-07,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.832217261904762,
+          "frame0_sha256": "d80ff4c18f64ebf7f8cee5125c3ad8b08fda5bc5477b0af002960dc842019b2b",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 5.717481133078231,
+          "previous_demo": "demo_14"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 41.89984587585034,
+          "frame0_sha256": "67b83c8a848ada1dfad205e2b7b24773da50d6f6be121d2b33056226b818fbd1",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 16.691984215561224,
+          "previous_demo": "demo_14"
+        }
+      },
+      "aggregate_episode_index": 66,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_017.hdf5"
+    },
+    {
+      "demo": "demo_16",
+      "frames": 221,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6910468339920044,
+        0.3098885118961334,
+        -0.5837063193321228,
+        1.087827444076538,
+        -0.8766546249389648,
+        0.9008110165596008
+      ],
+      "joint_pos_target_1": [
+        0.018743818625807762,
+        -0.0975676104426384,
+        0.1169997900724411,
+        -0.019420860335230827,
+        -2.0181230411253637e-06,
+        0.7418591976165771
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.217966092687075,
+          "frame0_sha256": "41967512c96dd4c2ccfe9316a530cc6cea2378aabded50019f4830f472e98dff",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.14371412627551,
+          "previous_demo": "demo_15"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 66.74388818027211,
+          "frame0_sha256": "5b2a663498b6c502e1f18c947662e8de0ca3837878680c5e0fa48574974e5fd8",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 33.273802880527214,
+          "previous_demo": "demo_15"
+        }
+      },
+      "aggregate_episode_index": 67,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_017.hdf5"
+    },
+    {
+      "demo": "demo_20",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6691262722015381,
+        0.3969915211200714,
+        -0.8286786079406738,
+        1.0257289409637451,
+        -1.2232747077941895,
+        1.7453292608261108
+      ],
+      "joint_pos_target_1": [
+        -0.023111190646886826,
+        -0.052337851375341415,
+        0.06276129186153412,
+        -0.010417410172522068,
+        1.6222609247051878e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.394511320153061,
+          "frame0_sha256": "6947d9a5c04bca8f66ff85f41e0d92ba52a86bae53474954e1818116aa62ba35",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.5914049213435373,
+          "previous_demo": "demo_19"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 52.97708067602041,
+          "frame0_sha256": "84d8f548d87b1a4c4c8f644bd01ef90749b0d91d338b415476ad3c29107b3fad",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 36.29090268920068,
+          "previous_demo": "demo_19"
+        }
+      },
+      "aggregate_episode_index": 68,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_017.hdf5"
+    },
+    {
+      "demo": "demo_1",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.3985757827758789,
+        0.7589064240455627,
+        -1.0578051805496216,
+        1.4748982191085815,
+        -0.986151397228241,
+        1.0335012674331665
+      ],
+      "joint_pos_target_1": [
+        0.0073744626715779305,
+        -0.013080963864922523,
+        0.01568608544766903,
+        -0.0026035208720713854,
+        7.35593744138896e-07,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.652064732142857,
+          "frame0_sha256": "dac347f79a1e033f4198701e85d222935ccaccf49042c6a5fb21fe728d9e0d0f",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.0922751913265305,
+          "previous_demo": "demo_0"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 54.773264774659864,
+          "frame0_sha256": "9896c628dfb630ac1b1f1284802370f580d9ff5d1c89a7a8998a33a8be42e684",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 27.001992984693878,
+          "previous_demo": "demo_0"
+        }
+      },
+      "aggregate_episode_index": 69,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_018.hdf5"
+    },
+    {
+      "demo": "demo_8",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.3983500599861145,
+        0.7538180947303772,
+        -1.049616813659668,
+        1.4715490341186523,
+        -0.9857819676399231,
+        1.0335012674331665
+      ],
+      "joint_pos_target_1": [
+        0.005341259762644768,
+        -0.05440729856491089,
+        0.06524303555488586,
+        -0.010829335078597069,
+        8.262419441962265e-07,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.52223506590136,
+          "frame0_sha256": "6904557e5a7b49fdfaa2106f4aa46b77bef99b4a2ffd6758fb142a5af8143896",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.068691539115646,
+          "previous_demo": "demo_7"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 54.45223480017007,
+          "frame0_sha256": "fd5ab5a710933172f2d9d70e019777bdaf870a0c343088b81610f0df6ccc2790",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 24.86559975552721,
+          "previous_demo": "demo_7"
+        }
+      },
+      "aggregate_episode_index": 70,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_018.hdf5"
+    },
+    {
+      "demo": "demo_9",
+      "frames": 254,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6468322277069092,
+        0.4897914528846741,
+        -0.9031289219856262,
+        1.0115361213684082,
+        -0.5578664541244507,
+        0.3838719129562378
+      ],
+      "joint_pos_target_1": [
+        -0.0364532433450222,
+        -0.02351275458931923,
+        0.028195656836032867,
+        -0.004680153448134661,
+        -1.9139804408041527e-06,
+        1.0335012674331665
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.375504889455782,
+          "frame0_sha256": "6db118f512f1a4ddd45039012d3aa39c3c8f210759f0446c10ce4d0bcc7fcf6c",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 3.4828138286564627,
+          "previous_demo": "demo_8"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 47.26806972789116,
+          "frame0_sha256": "c9770098460eaa799d24c8151ec8921a16961f9fc69fe1d83592f9b278604124",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 8.576238307823129,
+          "previous_demo": "demo_8"
+        }
+      },
+      "aggregate_episode_index": 71,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_018.hdf5"
+    },
+    {
+      "demo": "demo_20",
+      "frames": 328,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6467149257659912,
+        0.5387025475502014,
+        -0.9420315623283386,
+        1.3216187953948975,
+        -1.2469804286956787,
+        0.812350869178772
+      ],
+      "joint_pos_target_1": [
+        0.008990536443889141,
+        -0.026638468727469444,
+        0.0319436676800251,
+        -0.005302128382027149,
+        2.230931613667053e-06,
+        1.0984642505645752
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.299798044217687,
+          "frame0_sha256": "cb5ef5bd2ee194d2f44892656b271439ddf97903d9b00f1d3a0140470fef4354",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 0.2905904549319728,
+          "previous_demo": "demo_19"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 69.07193346088435,
+          "frame0_sha256": "27bbb91ce4de4521fdc7413d4cd0122718db5328e19c7861a66a0031b5007e91",
+          "duplicates": {
+            "consecutive_pairs": 327,
+            "duplicate_pairs": 164,
+            "even_start_pairs": 164,
+            "even_start_duplicates": 164,
+            "odd_start_pairs": 163,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.494897959183674,
+          "previous_demo": "demo_19"
+        }
+      },
+      "aggregate_episode_index": 72,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_018.hdf5"
+    },
+    {
+      "demo": "demo_9",
+      "frames": 221,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6470996141433716,
+        0.48733970522880554,
+        -0.8973973989486694,
+        1.008049488067627,
+        -0.5576598048210144,
+        0.3838719129562378
+      ],
+      "joint_pos_target_1": [
+        0.015406373888254166,
+        -0.058942608535289764,
+        0.07068181782960892,
+        -0.011732441373169422,
+        6.674270593975962e-07,
+        0.7418591976165771
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.899905665391157,
+          "frame0_sha256": "96a8ac6729c566beeb6199ef4804ce342b160edd1b730bc4b2d9783f6175adaa",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 5.041201636904762,
+          "previous_demo": "demo_8"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 47.02139801232993,
+          "frame0_sha256": "fc55200c169aaad6a81d3841978f80ae20822a7263ed22afe3324e9c9ba1f38c",
+          "duplicates": {
+            "consecutive_pairs": 220,
+            "duplicate_pairs": 110,
+            "even_start_pairs": 110,
+            "even_start_duplicates": 110,
+            "odd_start_pairs": 110,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 29.10879039115646,
+          "previous_demo": "demo_8"
+        }
+      },
+      "aggregate_episode_index": 73,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_019.hdf5"
+    },
+    {
+      "demo": "demo_16",
+      "frames": 254,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.3989795744419098,
+        0.7599303126335144,
+        -1.0609248876571655,
+        1.4767060279846191,
+        -0.9857916235923767,
+        1.0335012674331665
+      ],
+      "joint_pos_target_1": [
+        0.0056470236741006374,
+        -0.009514998644590378,
+        0.011410055682063103,
+        -0.0018940535373985767,
+        4.5681525762120145e-07,
+        1.0335012674331665
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 5.299153645833333,
+          "frame0_sha256": "89cc131309723d0b8212ea6234f3197fa5212d51ad8e311b8ca0c8fbe3859b69",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 2.016608205782313,
+          "previous_demo": "demo_15"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 56.84922406462585,
+          "frame0_sha256": "7802d1626a36f0daae68e9736bca2eeed8d57beddc29e6ea81cf3466246a57cf",
+          "duplicates": {
+            "consecutive_pairs": 253,
+            "duplicate_pairs": 127,
+            "even_start_pairs": 127,
+            "even_start_duplicates": 127,
+            "odd_start_pairs": 126,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 29.058626966411566,
+          "previous_demo": "demo_15"
+        }
+      },
+      "aggregate_episode_index": 74,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_019.hdf5"
+    },
+    {
+      "demo": "demo_20",
+      "frames": 676,
+      "first_joint_pos": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "first_joint_pos_all_zero": true,
+      "joint_pos_target_0": [
+        0.6900371313095093,
+        0.43726491928100586,
+        -0.22619061172008514,
+        0.11206600069999695,
+        -1.1642764806747437,
+        1.344494104385376
+      ],
+      "joint_pos_target_1": [
+        -0.014439638704061508,
+        -0.007840747945010662,
+        0.00940265879034996,
+        -0.0015611661365255713,
+        -2.7104524633614346e-06,
+        0.8151152729988098
+      ],
+      "cameras": {
+        "front": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 4.91683274872449,
+          "frame0_sha256": "70701f67280b00722465e629869ea8be425a4ed8a916430a0e204978f5f37515",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 4.1202899128401365,
+          "previous_demo": "demo_19"
+        },
+        "wrist": {
+          "frame0_eq_frame1": true,
+          "frame1_eq_frame2": false,
+          "mae_frame0_frame2": 50.05404974489796,
+          "frame0_sha256": "36b033d9697cd98e7789dc2cd45be404a7944fff73bbcaf7b5f0588b518f8f59",
+          "duplicates": {
+            "consecutive_pairs": 675,
+            "duplicate_pairs": 338,
+            "even_start_pairs": 338,
+            "even_start_duplicates": 338,
+            "odd_start_pairs": 337,
+            "odd_start_duplicates": 0,
+            "first_non_duplicate_even_pair": null
+          },
+          "mae_frame0_vs_previous_demo_last_frame": 44.87635522959184,
+          "previous_demo": "demo_19"
+        }
+      },
+      "aggregate_episode_index": 75,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_019.hdf5"
+    }
+  ]
+}

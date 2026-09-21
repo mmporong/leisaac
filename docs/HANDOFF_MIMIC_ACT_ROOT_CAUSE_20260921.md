@@ -3,6 +3,7 @@
 이 문서를 다음 AI에게 전달하고 **12절의 작업부터 진행**하도록 요청하면 된다.
 기준일은 2026-09-21이며, 학습 결과 기준 커밋은 `5f9697e`다.
 이후 읽기 전용 조사에서 찾은 초기 영상 결함까지 이 문서에 반영했다.
+**12절 1~6항은 같은 날 후속 조사로 수행했고 결과는 13절에 있다.** 다음 작업자는 13절부터 읽는다.
 
 ## 1. 목적과 현재 판단
 
@@ -224,7 +225,8 @@ cd "/data/$USER/conda-envs/leisaac/lib/python3.11/site-packages/isaaclab/source/
 
 최신 초기 영상·민감도 조사는 코드·데이터를 수정하지 않고 수행했다.
 수치와 영상 비교는 도구 출력 및 독립 검토로 재현했으며 이 문서가 최초 저장소 기록이다.
-이 조사만의 실행 가능한 전용 진단 스크립트나 별도 JSON은 아직 없다.
+이 조사만의 실행 가능한 전용 진단 스크립트나 별도 JSON은 이 시점에는 없었다.
+후속 조사에서 만든 스크립트와 근거 JSON은 13절에 있다.
 기존 `docs/evidence/` JSON들이 최신 카메라 검사를 포함한다고 오해하지 않는다.
 
 ## 12. 다음 AI에게 요청할 작업과 완료 기준
@@ -245,3 +247,125 @@ cd "/data/$USER/conda-envs/leisaac/lib/python3.11/site-packages/isaaclab/source/
 **완료 기준:** 추정 원인 목록을 늘리는 것이 아니라, 문제가 발생하는 경로를 재현하고
 한 요소를 바꿨을 때 입력·정책 출력·실제 동작이 어떻게 달라지는지 보여준다.
 오프라인 민감도 개선만으로 집기 성공 개선을 선언하지 않는다.
+
+## 13. 후속 조사 결과 (2026-09-21, 12절 1~6항 수행)
+
+근거 파일은 `docs/evidence/reset_camera_probe_20260921.json`(통합)과
+`docs/evidence/initial_frame_sync_20260921.json`(76개 raw 전수 검사)이다.
+로컬 산출물은 `outputs/initial_frame_diag_20260921/`(1.5 MB, JSON·224×224 PNG·로그, 영상 없음)에 있다.
+학습·재생성·리더 재촬영은 하지 않았고 기존 데이터·모델은 수정하지 않았다.
+
+### 13.1 원인 경로: 첫 두 프레임이 아니라 카메라 갱신 주기 전체의 문제
+
+소스로 확인한 경로는 다음과 같다.
+
+- 카메라 설정 `update_period = 1/30 s`, 물리 스텝 `1/60 s`, `decimation = 1`
+  (`source/leisaac/leisaac/tasks/pick_cube_into_box/pick_cube_into_box_env_cfg.py`,
+  `source/leisaac/leisaac/tasks/template/single_arm_env_cfg.py`).
+- `sensor_base.py`의 `update(dt)`는 `timestamp - last_update >= update_period`일 때만 버퍼를 갱신한다.
+  따라서 **카메라 영상은 제어 스텝 두 번마다 한 번 갱신**되고, 프레임 `(2k, 2k+1)`은 같은 영상이다.
+- `reset()`은 `rerender_on_reset=False`면 렌더 없이 관측을 계산하고, `scene.reset()`이 센서를 outdated로
+  표시하므로 관측은 **annotator에 남아 있던 직전 렌더**를 읽는다. 이것이 frame 0·1의 오래된 영상이다.
+- `PreStepFlatPolicyObservationsRecorder`는 `obs_buf["policy"]`를 그대로 저장하므로 raw HDF5에 그 영상이 기록된다.
+- 생성 스크립트·태스크 설정에는 `rerender_on_reset`·`update_period` override가 없다.
+  재생·평가 스크립트만 `rerender_on_reset=True`와 4회 예열 렌더를 쓴다.
+
+raw 전수 검사(`scripts/evaluation/inspect_initial_frames.py`)로 예측을 확인했다.
+
+| 항목 | 앞 카메라 | 손목 카메라 |
+| --- | --- | --- |
+| frame 0 == frame 1 | 76/76 | 76/76 |
+| frame 1 == frame 2 | 0/76 | 0/76 |
+| 짝수 시작 쌍 (2k, 2k+1) 완전 일치 | 17,293/17,293 | 17,293/17,293 |
+| 홀수 시작 쌍 (2k+1, 2k+2) 완전 일치 | 0/17,232 | 0/17,232 |
+| frame 0 vs 같은 샤드 직전 demo 마지막 프레임 MAE 중앙값 | 3.22 (0.5 미만 13/71) | 29.06 |
+
+직전 demo와의 MAE가 큰 경우는 그 사이에 버려진 실패 시도가 있었기 때문으로 설명되며, 실패 시도는 저장되지 않아 원본을 특정할 수 없다.
+홀수 프레임의 영상은 관절 상태보다 한 스텝(1/60 s) 늦다. 이 구조는 학습과 평가에 똑같이 적용되므로 그 자체의 학습 영향은 측정하지 않았다.
+
+### 13.2 Isaac 프로세스 재현 (`scripts/evaluation/probe_reset_camera_refresh.py`)
+
+`shard_009/demo_9`를 저장된 초기 상태에서 원래 Mimic 행동으로 재생한 뒤 생성기와 같은 `env.reset()`을 호출했다.
+
+- reset 직후 반환된 정책 영상은 **reset 직전 마지막 렌더와 비트 단위로 동일**했다(MAE 0.0, sha256 일치, 두 카메라 모두).
+  같은 시점에 물리 상태 해시는 바뀌었고, 반환된 관측 dict는 레코더가 저장하는 `env.obs_buf` 그 객체였다.
+- 프로세스 안 재생에서도 짝수 쌍 338/338 일치, 홀수 쌍 0/337 일치로 같은 패턴이 재현됐다.
+- `rerender_on_reset=True`로 다시 실행하면 reset 내부의 렌더 1회로는 **앞 카메라가 여전히 비트 동일**했고 손목은 수렴 영상과 MAE 50.1 차이였다.
+  즉 설정 플래그만으로는 고쳐지지 않는다.
+- 물리를 진행하지 않고 `sim.render()`를 반복한 뒤 `camera.reset()`·`camera.update(0, force_recompute=True)`를 호출하면
+  `reset_to` 뒤에는 두 번째 렌더부터, 재생 뒤 plain reset에서는 손목 카메라가 세 번째 렌더부터
+  연속 렌더 간 차이가 0.1~0.3(노이즈 바닥)으로 수렴했고, 물리 상태 해시는 전후가 같았다.
+  즉 최소 3회 렌더가 필요했고, 평가 스크립트의 `refresh_reset_images()`가 이미 이 방식(4회)이다.
+
+### 13.3 저장된 상태로 올바른 영상 복원 가능 (12절 4항)
+
+raw의 `states[k]`(스텝 k 이후 상태)를 `env.reset_to`로 올린 뒤 같은 갱신을 하면 기록 영상과 맞는다.
+기록 프레임 `k`(짝수)는 스텝 `k-1` 이후 렌더이므로 `states[j]`는 프레임 `j+1`, `j+2`와 맞아야 한다.
+
+| 올린 상태 | 비교 프레임 | 손목 MAE | 앞 MAE |
+| --- | --- | --- | --- |
+| states[1] | 1 (오래된 영상) | 69.66 | 4.69 |
+| states[1] | 2 / 3 | 0.29 / 0.29 | 3.15 / 3.15 |
+| states[1] | 4 | 2.97 | 3.67 |
+| states[299] | 299 / 300 / 301 / 302 | 2.35 / 1.18 / 1.18 / 2.00 | 2.91 / 3.06 / 3.06 / 3.12 |
+
+앞 카메라는 생성 프로세스와 이번 프로세스 사이에 약 3의 MAE 바닥(테이블 영역 가장자리·질감 잡음, 부호 평균 -0.19)이 있어 판별력이 낮고, 판정은 손목 카메라와 중복 쌍 개수로 한다.
+따라서 frame 0·1은 삭제하거나 밀지 않고 **`initial_state`를 `reset_to`로 올려 다시 렌더링해 채우는 것이 가능**하다. 실제 데이터 수정은 하지 않았다.
+
+### 13.4 같은 초기 물리 장면에서 정책과 성공 시연 비교 (12절 5·6항)
+
+평가 스크립트에 opt-in 옵션 `--initial-state-hdf5`·`--initial-state-demo`를 추가해 `demo_9`의 저장된 초기 상태에서 정책을 실행했다.
+초기 장면 해시 `375aaad2…`가 프로브와 같고, 관절 0, 큐브 XYZ가 시연과 동일하다. 큐브 위치 1.2 cm 차이 한계는 해소됐다.
+모델·장면·성공 기준·초기 영상 갱신(4회)은 고정하고 `n_action_steps`만 바꿨다. 각 1회 롤아웃, seed 4101, 최대 1,200스텝.
+
+| 항목 | 시연 demo_9 | 청크 30 | 청크 5 | 청크 1 |
+| --- | --- | --- | --- | --- |
+| 결과 | 성공 | no_lift | no_lift | no_lift |
+| 그리퍼 목표 0.5 rad 미만 첫 스텝 | 278 | 138 | 없음(최소 0.78) | 없음(최소 0.76) |
+| 큐브 XY 5 mm 이상 이동 첫 스텝 | 279 | 184 | 없음 | 없음 |
+| 관절 제한 보정 스텝 | - | 0 | 1,125 (그리퍼 열림 방향) | 1,143 (그리퍼 열림 방향) |
+| 명령 RMSE vs target (1/10/30/60 스텝) | - | 0.151/0.156/0.147/0.167 | 0.151/0.182/0.151/0.175 | 0.152/0.182/0.170/0.279 |
+| 명령 RMSE vs target (120/240 스텝) | - | 0.365/0.498 | 0.424/0.592 | 0.483/0.619 |
+
+- 첫 명령은 세 경우 모두 `[-0.069, -0.212, 0.215, -0.10, 0.063, 0.99]` 부근으로 같았고, 시연의 `target[1]`은 거의 0이다.
+  Mimic 시연은 현재 자세에서 5스텝 보간으로 시작하는 반면 정책은 첫 스텝부터 큰 목표를 낸다.
+- 10~60스텝 구간은 방향이 대체로 같다(pan·lift·wrist_flex). 60스텝 이후 차이가 커지며 청크 30은 시연보다 140스텝 먼저 잘못된 자세에서 그리퍼를 닫고 큐브를 밀었다.
+- 재관측을 자주 할수록(청크 5·1) 그리퍼가 열림 한계(1.745 rad) 밖으로 포화한 채 닫히지 않았고 큐브에 닿지도 않았다.
+  짧은 재관측 간격은 도움이 되지 않았다.
+- 초기 큐브 z는 시연과 롤아웃 모두 첫 두 스텝에 0.0615 → 0.0560 m로 가라앉는다. 평가 결과의 `final_cube_lift_m ≈ -0.0055`는 접촉이 아니라 초기 정착이다.
+
+### 13.5 확정과 추정의 구분
+
+확정:
+- 13.1의 메커니즘과 raw 전수 수치, 13.2의 비트 동일 재현, 13.3의 상태 기반 재렌더 정합.
+- 올바른 초기 영상과 동일한 초기 장면을 주어도 현재 정책은 청크 30·5·1 모두 실패한다.
+
+추정(검증 안 됨):
+- 오래된 첫 두 프레임이 롤아웃 실패의 주요 원인이라는 가설. 동일 장면·올바른 영상에서도 실패하므로 단독 원인은 아니다.
+- 30 Hz 카메라 중복이 학습을 해친다는 가설. 학습·평가에 동일하게 적용되므로 효과를 측정하지 않았다.
+- reset 내부의 렌더 1회가 annotator에 반영되지 않는 정확한 이유. 두 번째 렌더부터 수렴한다는 실측만 있다.
+
+한계:
+- demo 1개, 청크 크기별 1회 롤아웃, 모델 1개. 성공률이 아니다.
+- 데이터 재생성·재학습을 하지 않았으므로 초기 영상 수정이 학습에 주는 효과는 미검증이다.
+
+### 13.6 다음 작업 제안 (순서 고정 아님)
+
+1. 생성기에 평가와 같은 reset 후 영상 갱신(렌더 4회 + camera reset/force update, `obs_buf["policy"]` 영상 치환)을 넣거나,
+   기존 raw의 `initial_state`로 frame 0·1을 재렌더링해 채운 파생 데이터셋을 새 디렉터리에 만든다. 원본은 보존한다.
+2. 카메라 `update_period`를 물리 스텝과 맞출지(1/60 또는 0) 결정한다. 바꾸면 학습 데이터와 평가에 동시에 적용해야 한다.
+3. 위 두 항목을 적용한 데이터로 학습하기 전에, 정책 실패의 나머지 원인(60스텝 이후 발산, 조기 파지)을 같은 초기 상태 비교로 계속 좁힌다.
+   비교 도구: `scripts/evaluation/compare_first_approach.py`.
+4. 검증 명령:
+
+```bash
+cd "/data/$USER/leisaac"
+"/data/$USER/conda-envs/leisaac/bin/python" scripts/evaluation/inspect_initial_frames.py \
+  --contract outputs/mimic_target_unclipped_76_20260919/lerobot_all/action_contract.json \
+  --output /tmp/initial_frame_sync_check.json
+"/data/$USER/conda-envs/leisaac/bin/python" scripts/evaluation/probe_reset_camera_refresh.py \
+  --raw-path outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5 --demo demo_9 \
+  --output-dir outputs/<새 디렉터리> --headless
+"$HOME/miniforge3/envs/lerobot/bin/python" -m unittest discover -s scripts/imitation_learning -p 'test_*.py' -q
+```
+

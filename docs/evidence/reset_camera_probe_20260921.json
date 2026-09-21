@@ -1,0 +1,907 @@
+{
+  "scope": "Follow-up to docs/HANDOFF_MIMIC_ACT_ROOT_CAUSE_20260921.md section 12 items 1-6: reproduce the stale reset image path, measure render-only refresh, check re-rendering from stored raw states, compare policy vs. successful demo from an identical initial physics state, and compare action chunk sizes. No training, no dataset regeneration, no modification of existing data or models.",
+  "base_commit": "8b705db",
+  "host": {
+    "gpu": "NVIDIA RTX 5050 Laptop GPU 8GB",
+    "gpu_busy_before_start": false,
+    "isaac_python": "/data/$USER/conda-envs/leisaac/bin/python",
+    "lerobot_python": "$HOME/miniforge3/envs/lerobot/bin/python"
+  },
+  "mechanism_from_source": {
+    "isaaclab_reset": "envs/manager_based_env.py: reset() -> _reset_idx -> write_data_to_sim -> sim.forward -> (sim.render only if cfg.rerender_on_reset) -> record_post_reset -> obs_buf = observation_manager.compute()",
+    "sensor_refresh": "sensors/sensor_base.py: reset() marks _is_outdated; .data -> _update_outdated_buffers reads the annotator's most recent render; update(dt) marks outdated only when timestamp - last_update >= cfg.update_period",
+    "camera_update_period_s": 0.03333333333333333,
+    "physics_step_s": 0.016666666666666666,
+    "decimation": 1,
+    "consequence": "The camera buffer refreshes every second control step (frames 2k and 2k+1 carry the same image), and after reset it holds the previous attempt's final render until two physics steps have passed.",
+    "recorder": "envs/mdp/recorders/recorders.py PreStepFlatPolicyObservationsRecorder stores obs_buf['policy'] verbatim, so the stale image is what the HDF5 obs/front and obs/wrist frames 0 and 1 contain.",
+    "generation_override_search": "scripts/mimic/generate_dataset.py, scripts/mimic/runtime_options.py and the task configs set no rerender_on_reset and no update_period override; replay/evaluation scripts set rerender_on_reset=True plus 4 warm-up renders, the generator does not."
+  },
+  "raw_sync_check": {
+    "evidence": "docs/evidence/initial_frame_sync_20260921.json",
+    "sha256": "ce626cde675eb6f03b3eca3be638993898495fcc6ae410f2e159f11fc0561e90",
+    "script": "scripts/evaluation/inspect_initial_frames.py",
+    "demo_count": 76,
+    "first_joint_pos_all_zero": 76,
+    "cameras": {
+      "front": {
+        "frame0_eq_frame1": 76,
+        "frame1_eq_frame2": 0,
+        "even_start_pairs": 17293,
+        "even_start_duplicates": 17293,
+        "odd_start_pairs": 17232,
+        "odd_start_duplicates": 0,
+        "demos_with_all_even_pairs_duplicated": 76,
+        "mae_frame0_vs_previous_demo_last_frame": {
+          "count": 71,
+          "min": 0.12127311862244898,
+          "median": 3.2173748405612246,
+          "max": 6.514655080782313,
+          "below_0_5": 13
+        },
+        "mae_frame0_frame2": {
+          "min": 3.709456048044218,
+          "median": 4.969158561862245,
+          "max": 6.703430590986395
+        }
+      },
+      "wrist": {
+        "frame0_eq_frame1": 76,
+        "frame1_eq_frame2": 0,
+        "even_start_pairs": 17293,
+        "even_start_duplicates": 17293,
+        "odd_start_pairs": 17232,
+        "odd_start_duplicates": 0,
+        "demos_with_all_even_pairs_duplicated": 76,
+        "mae_frame0_vs_previous_demo_last_frame": {
+          "count": 71,
+          "min": 1.044197757227891,
+          "median": 29.058626966411566,
+          "max": 67.43942655187075,
+          "below_0_5": 0
+        },
+        "mae_frame0_frame2": {
+          "min": 41.89984587585034,
+          "median": 54.837581712372454,
+          "max": 76.8202128507653
+        }
+      }
+    }
+  },
+  "isaac_probe": {
+    "script": "scripts/evaluation/probe_reset_camera_refresh.py",
+    "raw": "outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5",
+    "demo": "demo_9",
+    "default": {
+      "probe_json_sha256": "76334e88d183ff18aaaed3da9ccf560f6c906c562a77d0106fee0a8c86ce36e2",
+      "rerender_on_reset": false,
+      "camera_update_period_s": {
+        "front": 0.03333333333333333,
+        "wrist": 0.03333333333333333
+      },
+      "sim_dt_s": 0.016666666666666666,
+      "decimation": 1,
+      "plain_reset_after_replay": {
+        "obs_buf_is_returned_observation": true,
+        "physical_hash_changed": true,
+        "reset_image_identical_to_last_render_before_reset": {
+          "front": true,
+          "wrist": true
+        },
+        "reset_image_mae_vs_last_render_before_reset": {
+          "front": 0.0,
+          "wrist": 0.0
+        },
+        "reset_image_mae_vs_refreshed": {
+          "front": 3.4240872130102042,
+          "wrist": 51.29951238307823
+        },
+        "refresh_history": [
+          {
+            "render_calls": 1
+          },
+          {
+            "render_calls": 2,
+            "mae_vs_previous_render": {
+              "front": 0.316319887329932,
+              "wrist": 50.19106744260204
+            }
+          },
+          {
+            "render_calls": 3,
+            "mae_vs_previous_render": {
+              "front": 0.190163956207483,
+              "wrist": 0.24885735544217688
+            }
+          },
+          {
+            "render_calls": 4,
+            "mae_vs_previous_render": {
+              "front": 0.15308779761904762,
+              "wrist": 0.10002125850340136
+            }
+          }
+        ]
+      },
+      "reset_to_initial_state": {
+        "physical_hash": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "stale_image_mae_vs_raw_frame0": {
+          "front": 4.642817283163265,
+          "wrist": 70.32705543154762
+        },
+        "stale_image_mae_vs_raw_frame2": {
+          "front": 4.114782631802721,
+          "wrist": 3.677229485544218
+        },
+        "refreshed_mae_vs_raw_frame0": {
+          "front": 4.663783482142857,
+          "wrist": 70.32269743835035
+        },
+        "refreshed_mae_vs_raw_frame2": {
+          "front": 3.630181760204082,
+          "wrist": 3.6792756164965987
+        },
+        "refresh_history": [
+          {
+            "render_calls": 1
+          },
+          {
+            "render_calls": 2,
+            "mae_vs_previous_render": {
+              "front": 0.09932371386054421,
+              "wrist": 0.021484375
+            }
+          },
+          {
+            "render_calls": 3,
+            "mae_vs_previous_render": {
+              "front": 0.09931707057823129,
+              "wrist": 0.021876328656462586
+            }
+          },
+          {
+            "render_calls": 4,
+            "mae_vs_previous_render": {
+              "front": 0.08492107780612244,
+              "wrist": 0.018461681547619048
+            }
+          }
+        ]
+      },
+      "replay": {
+        "steps": 676,
+        "frame1_equals_frame0": true,
+        "frame2_equals_frame1": false,
+        "frame3_equals_frame2": true,
+        "even_start_pairs": 338,
+        "even_start_duplicates": 338,
+        "odd_start_pairs": 337,
+        "odd_start_duplicates": 0,
+        "frame2_mae_vs_raw_frame2": {
+          "front": 3.1298230229591835,
+          "wrist": 0.29569913903061223
+        },
+        "frame2_mae_vs_refreshed_initial": {
+          "front": 0.9715136054421769,
+          "wrist": 3.572631005527211
+        }
+      },
+      "rerender_from_raw_states": [
+        {
+          "state_index": 1,
+          "joint_pos_error_vs_raw_states": 0.0,
+          "mae_vs_recorded_frame": {
+            "1": {
+              "front": 4.6905824829931975,
+              "wrist": 69.65567867772108
+            },
+            "2": {
+              "front": 3.153605973639456,
+              "wrist": 0.2921516262755102
+            },
+            "3": {
+              "front": 3.153605973639456,
+              "wrist": 0.2921516262755102
+            },
+            "4": {
+              "front": 3.6655173788265305,
+              "wrist": 2.9663185586734695
+            }
+          }
+        },
+        {
+          "state_index": 299,
+          "joint_pos_error_vs_raw_states": 0.0,
+          "mae_vs_recorded_frame": {
+            "299": {
+              "front": 2.9099370216836733,
+              "wrist": 2.3529243728741496
+            },
+            "300": {
+              "front": 3.058600393282313,
+              "wrist": 1.1754092261904763
+            },
+            "301": {
+              "front": 3.058600393282313,
+              "wrist": 1.1754092261904763
+            },
+            "302": {
+              "front": 3.116031568877551,
+              "wrist": 2.0027038159013606
+            }
+          }
+        },
+        {
+          "state_index": 300,
+          "joint_pos_error_vs_raw_states": 0.0,
+          "mae_vs_recorded_frame": {
+            "300": {
+              "front": 3.032512223639456,
+              "wrist": 1.4172712053571428
+            },
+            "301": {
+              "front": 3.032512223639456,
+              "wrist": 1.4172712053571428
+            },
+            "302": {
+              "front": 3.0924678465136055,
+              "wrist": 1.8296263818027212
+            },
+            "303": {
+              "front": 3.0924678465136055,
+              "wrist": 1.8296263818027212
+            }
+          }
+        }
+      ]
+    },
+    "rerender_on_reset_true": {
+      "probe_json_sha256": "93c767af00fdcd7e804d6ced734e49a59a7cc7949a332534b55ca4286490ddbc",
+      "rerender_on_reset": true,
+      "camera_update_period_s": {
+        "front": 0.03333333333333333,
+        "wrist": 0.03333333333333333
+      },
+      "sim_dt_s": 0.016666666666666666,
+      "decimation": 1,
+      "plain_reset_after_replay": {
+        "obs_buf_is_returned_observation": true,
+        "physical_hash_changed": true,
+        "reset_image_identical_to_last_render_before_reset": {
+          "front": true,
+          "wrist": false
+        },
+        "reset_image_mae_vs_last_render_before_reset": {
+          "front": 0.0,
+          "wrist": 9.107667676445578
+        },
+        "reset_image_mae_vs_refreshed": {
+          "front": 3.444967049319728,
+          "wrist": 50.14882945365646
+        },
+        "refresh_history": [
+          {
+            "render_calls": 1
+          },
+          {
+            "render_calls": 2,
+            "mae_vs_previous_render": {
+              "front": 0.18786538052721088,
+              "wrist": 0.2854286245748299
+            }
+          },
+          {
+            "render_calls": 3,
+            "mae_vs_previous_render": {
+              "front": 0.13647294855442177,
+              "wrist": 0.11628401360544217
+            }
+          },
+          {
+            "render_calls": 4,
+            "mae_vs_previous_render": {
+              "front": 0.1129623724489796,
+              "wrist": 0.06795413477891156
+            }
+          }
+        ]
+      },
+      "reset_to_initial_state": {
+        "physical_hash": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "stale_image_mae_vs_raw_frame0": {
+          "front": 4.642438616071429,
+          "wrist": 70.32260443239795
+        },
+        "stale_image_mae_vs_raw_frame2": {
+          "front": 4.1184165072278915,
+          "wrist": 3.674014136904762
+        },
+        "refreshed_mae_vs_raw_frame0": {
+          "front": 4.662893282312925,
+          "wrist": 70.32259778911565
+        },
+        "refreshed_mae_vs_raw_frame2": {
+          "front": 3.632028592687075,
+          "wrist": 3.67980043579932
+        },
+        "refresh_history": [
+          {
+            "render_calls": 1
+          },
+          {
+            "render_calls": 2,
+            "mae_vs_previous_render": {
+              "front": 0.0981079931972789,
+              "wrist": 0.021145567602040817
+            }
+          },
+          {
+            "render_calls": 3,
+            "mae_vs_previous_render": {
+              "front": 0.08577141794217687,
+              "wrist": 0.017983365221088437
+            }
+          },
+          {
+            "render_calls": 4,
+            "mae_vs_previous_render": {
+              "front": 0.07621173469387756,
+              "wrist": 0.01783721301020408
+            }
+          }
+        ]
+      },
+      "replay": {
+        "steps": 676,
+        "frame1_equals_frame0": true,
+        "frame2_equals_frame1": false,
+        "frame3_equals_frame2": true,
+        "even_start_pairs": 338,
+        "even_start_duplicates": 338,
+        "odd_start_pairs": 337,
+        "odd_start_duplicates": 0,
+        "frame2_mae_vs_raw_frame2": {
+          "front": 3.1241695897108843,
+          "wrist": 0.2948022959183674
+        },
+        "frame2_mae_vs_refreshed_initial": {
+          "front": 0.9905997555272109,
+          "wrist": 3.571541507227891
+        }
+      },
+      "rerender_from_raw_states": [
+        {
+          "state_index": 1,
+          "joint_pos_error_vs_raw_states": 0.0,
+          "mae_vs_recorded_frame": {
+            "1": {
+              "front": 4.6877524447278915,
+              "wrist": 69.66052827380952
+            },
+            "2": {
+              "front": 3.160262542517007,
+              "wrist": 0.3042689732142857
+            },
+            "3": {
+              "front": 3.160262542517007,
+              "wrist": 0.3042689732142857
+            },
+            "4": {
+              "front": 3.6697026466836733,
+              "wrist": 2.9614158163265305
+            }
+          }
+        },
+        {
+          "state_index": 299,
+          "joint_pos_error_vs_raw_states": 0.0,
+          "mae_vs_recorded_frame": {
+            "299": {
+              "front": 2.8995336415816326,
+              "wrist": 2.2495083971088436
+            },
+            "300": {
+              "front": 3.046695631377551,
+              "wrist": 1.0374880420918366
+            },
+            "301": {
+              "front": 3.046695631377551,
+              "wrist": 1.0374880420918366
+            },
+            "302": {
+              "front": 3.105893920068027,
+              "wrist": 1.8358710671768708
+            }
+          }
+        },
+        {
+          "state_index": 300,
+          "joint_pos_error_vs_raw_states": 0.0,
+          "mae_vs_recorded_frame": {
+            "300": {
+              "front": 3.0318146789965987,
+              "wrist": 1.3392325680272108
+            },
+            "301": {
+              "front": 3.0318146789965987,
+              "wrist": 1.3392325680272108
+            },
+            "302": {
+              "front": 3.093470982142857,
+              "wrist": 1.7304222470238095
+            },
+            "303": {
+              "front": 3.093470982142857,
+              "wrist": 1.7304222470238095
+            }
+          }
+        }
+      ]
+    },
+    "noise_floor_note": "Front-camera comparisons between this probe process and the original generation process sit at ~3 MAE (edge/texture noise in the table region, signed mean -0.19, 6% of pixels differ by >10); wrist ~0.3. Comparisons inside one process converge to 0.1-0.3 after two renders."
+  },
+  "policy_vs_demo_same_initial_state": {
+    "evaluator": "scripts/evaluation/lerobot_act_so101.py --initial-state-hdf5/--initial-state-demo (new opt-in)",
+    "comparison_script": "scripts/evaluation/compare_first_approach.py",
+    "model": "outputs/act_resume_10000_20260921/model/checkpoints/010000/pretrained_model",
+    "seed": 4101,
+    "reset_render_frames": 4,
+    "policy_image_size": 224,
+    "trace_steps": 420,
+    "video_count": 0,
+    "demo_reference": {
+      "gripper_first_target_below_0_5_step": 278,
+      "first_lift_over_2cm_step": 401,
+      "frames": 676
+    },
+    "cube_settling_note": "Cube z drops 0.0615 -> 0.0587 -> 0.0560 m during the first two steps in both the demo states and every rollout; final_cube_lift_m of about -0.0055 is initial settling, not contact.",
+    "baseline_without_initial_state_seed4101": {
+      "cube_xy_offset_m": 0.011973,
+      "command_rmse_all_rad_by_window": {
+        "1": 0.17292345276124704,
+        "10": 0.17704094586337973,
+        "30": 0.21856131073401702,
+        "60": 0.23227525881413
+      }
+    },
+    "rollouts": {
+      "n_action_steps_30": {
+        "evaluation_json_sha256": "b181cbbbe5b45be57c5d167ab03398dc8a7e36aca0728de89d86e73b4c61b458",
+        "initial_scene_state_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "initial_cube_xyz": [
+          0.3709997832775116,
+          -0.3794676661491394,
+          0.06145733594894409
+        ],
+        "success": false,
+        "outcome": "no_lift",
+        "steps": 1200,
+        "max_cube_lift_m": 0.0,
+        "clipped_steps": 0,
+        "clipped_steps_by_joint": {
+          "shoulder_pan": 0,
+          "shoulder_lift": 0,
+          "elbow_flex": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0,
+          "gripper": 0
+        },
+        "max_clip_correction_rad": {
+          "shoulder_pan": 0.0,
+          "shoulder_lift": 0.0,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.0,
+          "gripper": 0.0
+        },
+        "first_action": [
+          -0.06896741688251495,
+          -0.2120457887649536,
+          0.21505838632583618,
+          -0.10185515880584717,
+          0.06338649988174438,
+          0.9973655939102173
+        ],
+        "action_min": [
+          -0.23868446052074432,
+          -0.22474908828735352,
+          -0.4028162956237793,
+          -0.10185515880584717,
+          -1.848400354385376,
+          0.15570738911628723
+        ],
+        "action_max": [
+          0.1362089067697525,
+          0.5473064184188843,
+          0.22021892666816711,
+          1.5738475322723389,
+          0.06338649988174438,
+          1.7228846549987793
+        ],
+        "final_gripper_position_rad": 0.4994111657142639,
+        "vs_demo_9": {
+          "initial_state_match": {
+            "policy_state_before_step1": {
+              "shoulder_pan": 0.0,
+              "shoulder_lift": 0.0,
+              "elbow_flex": 0.0,
+              "wrist_flex": 0.0,
+              "wrist_roll": 0.0,
+              "gripper": 0.0
+            },
+            "demo_joint_pos_frame0": {
+              "shoulder_pan": 0.0,
+              "shoulder_lift": 0.0,
+              "elbow_flex": 0.0,
+              "wrist_flex": 0.0,
+              "wrist_roll": 0.0,
+              "gripper": 0.0
+            },
+            "policy_initial_cube_xyz": [
+              0.371,
+              -0.379468,
+              0.058732
+            ],
+            "demo_initial_cube_xyz": [
+              0.371,
+              -0.379468,
+              0.061457
+            ],
+            "max_joint_abs_diff_rad": 0.0
+          },
+          "gripper": {
+            "demo_first_target_below_threshold_step": 278,
+            "policy_first_command_below_threshold_step": 138,
+            "policy_min_gripper_command_rad": 0.15570738911628723,
+            "policy_min_gripper_command_step": 180,
+            "demo_min_gripper_target_rad": 0.11987358331680298
+          },
+          "cube": {
+            "demo_first_lift_step": 401,
+            "demo_max_lift_m": 0.11531360447406769,
+            "policy_max_lift_in_trace_m": 0.0,
+            "policy_max_xy_drift_in_trace_m": 0.014413055805815991,
+            "policy_first_xy_drift_over_5mm_step": 184,
+            "demo_first_xy_drift_over_5mm_frame": 279
+          },
+          "command_rmse_all_rad_by_window": {
+            "1": 0.15144359752214992,
+            "10": 0.1558989490194443,
+            "30": 0.1473693904436961,
+            "60": 0.16719927914482768,
+            "120": 0.3646269242173578,
+            "240": 0.4978964151669431
+          },
+          "state_rmse_all_rad_by_window": {
+            "1": 0.046333631420039156,
+            "10": 0.10815550234433663,
+            "30": 0.12360012219713522,
+            "60": 0.15102292390893196,
+            "120": 0.3511703361081793,
+            "240": 0.49068143480439
+          },
+          "command_rmse_by_joint_window_60": {
+            "shoulder_pan": 0.082062,
+            "shoulder_lift": 0.110558,
+            "elbow_flex": 0.242036,
+            "wrist_flex": 0.101704,
+            "wrist_roll": 0.250512,
+            "gripper": 0.130747
+          },
+          "command_rmse_by_joint_window_240": {
+            "shoulder_pan": 0.152789,
+            "shoulder_lift": 0.252534,
+            "elbow_flex": 0.308474,
+            "wrist_flex": 0.153889,
+            "wrist_roll": 0.999973,
+            "gripper": 0.530568
+          }
+        }
+      },
+      "n_action_steps_5": {
+        "evaluation_json_sha256": "ae259f0f05627a07bd466833870048ae5f244ff561e1c39cac3266f2d699bb65",
+        "initial_scene_state_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "initial_cube_xyz": [
+          0.3709997832775116,
+          -0.3794676661491394,
+          0.06145733594894409
+        ],
+        "success": false,
+        "outcome": "no_lift",
+        "steps": 1200,
+        "max_cube_lift_m": 0.0,
+        "clipped_steps": 1125,
+        "clipped_steps_by_joint": {
+          "shoulder_pan": 0,
+          "shoulder_lift": 0,
+          "elbow_flex": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0,
+          "gripper": 1125
+        },
+        "max_clip_correction_rad": {
+          "shoulder_pan": 0.0,
+          "shoulder_lift": 0.0,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.0,
+          "gripper": 0.02261519432067871
+        },
+        "first_action": [
+          -0.0691717118024826,
+          -0.2124527096748352,
+          0.2147238552570343,
+          -0.10147452354431152,
+          0.06353932619094849,
+          0.9950528144836426
+        ],
+        "action_min": [
+          -0.29241466522216797,
+          -0.25185394287109375,
+          -0.5979546904563904,
+          -0.10147452354431152,
+          -1.861843466758728,
+          0.777952253818512
+        ],
+        "action_max": [
+          0.053543820977211,
+          0.5339987277984619,
+          0.24156275391578674,
+          1.6114025115966797,
+          0.06353932619094849,
+          1.7679450511932373
+        ],
+        "final_gripper_position_rad": 1.7451750040054321,
+        "vs_demo_9": {
+          "initial_state_match": {
+            "policy_state_before_step1": {
+              "shoulder_pan": 0.0,
+              "shoulder_lift": 0.0,
+              "elbow_flex": 0.0,
+              "wrist_flex": 0.0,
+              "wrist_roll": 0.0,
+              "gripper": 0.0
+            },
+            "demo_joint_pos_frame0": {
+              "shoulder_pan": 0.0,
+              "shoulder_lift": 0.0,
+              "elbow_flex": 0.0,
+              "wrist_flex": 0.0,
+              "wrist_roll": 0.0,
+              "gripper": 0.0
+            },
+            "policy_initial_cube_xyz": [
+              0.371,
+              -0.379468,
+              0.058732
+            ],
+            "demo_initial_cube_xyz": [
+              0.371,
+              -0.379468,
+              0.061457
+            ],
+            "max_joint_abs_diff_rad": 0.0
+          },
+          "gripper": {
+            "demo_first_target_below_threshold_step": 278,
+            "policy_first_command_below_threshold_step": null,
+            "policy_min_gripper_command_rad": 0.777952253818512,
+            "policy_min_gripper_command_step": 56,
+            "demo_min_gripper_target_rad": 0.11987358331680298
+          },
+          "cube": {
+            "demo_first_lift_step": 401,
+            "demo_max_lift_m": 0.11531360447406769,
+            "policy_max_lift_in_trace_m": 0.0,
+            "policy_max_xy_drift_in_trace_m": 8.052144101921497e-06,
+            "policy_first_xy_drift_over_5mm_step": null,
+            "demo_first_xy_drift_over_5mm_frame": 279
+          },
+          "command_rmse_all_rad_by_window": {
+            "1": 0.15097449799493742,
+            "10": 0.18199985636007707,
+            "30": 0.1509834063940368,
+            "60": 0.17468475305195125,
+            "120": 0.42403814744183754,
+            "240": 0.5919771082425497
+          },
+          "state_rmse_all_rad_by_window": {
+            "1": 0.04631635580728923,
+            "10": 0.13986551638962091,
+            "30": 0.13738159113214796,
+            "60": 0.1602181195469586,
+            "120": 0.41131333478668675,
+            "240": 0.5835144630185846
+          },
+          "command_rmse_by_joint_window_60": {
+            "shoulder_pan": 0.078328,
+            "shoulder_lift": 0.142032,
+            "elbow_flex": 0.177308,
+            "wrist_flex": 0.09513,
+            "wrist_roll": 0.33374,
+            "gripper": 0.070073
+          },
+          "command_rmse_by_joint_window_240": {
+            "shoulder_pan": 0.137108,
+            "shoulder_lift": 0.181079,
+            "elbow_flex": 0.203974,
+            "wrist_flex": 0.145351,
+            "wrist_roll": 1.162511,
+            "gripper": 0.798041
+          }
+        }
+      },
+      "n_action_steps_1": {
+        "evaluation_json_sha256": "7c6216f2e84016f99fd252e2295d61037d9b4444ce7251d4f5d5b80c3c0b6c1a",
+        "initial_scene_state_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "initial_cube_xyz": [
+          0.3709997832775116,
+          -0.3794676661491394,
+          0.06145733594894409
+        ],
+        "success": false,
+        "outcome": "no_lift",
+        "steps": 1200,
+        "max_cube_lift_m": 0.0,
+        "clipped_steps": 1143,
+        "clipped_steps_by_joint": {
+          "shoulder_pan": 0,
+          "shoulder_lift": 0,
+          "elbow_flex": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0,
+          "gripper": 1143
+        },
+        "max_clip_correction_rad": {
+          "shoulder_pan": 0.0,
+          "shoulder_lift": 0.0,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.0,
+          "gripper": 0.03140544891357422
+        },
+        "first_action": [
+          -0.06892414391040802,
+          -0.21292036771774292,
+          0.21571588516235352,
+          -0.10156285762786865,
+          0.06390994787216187,
+          0.9969931840896606
+        ],
+        "action_min": [
+          -0.35772186517715454,
+          -0.2933778762817383,
+          -0.6221686601638794,
+          -0.10317587852478027,
+          -1.8800277709960938,
+          0.7558916807174683
+        ],
+        "action_max": [
+          0.03842315077781677,
+          0.5055347084999084,
+          0.308859646320343,
+          1.5921745300292969,
+          0.06390994787216187,
+          1.7767353057861328
+        ],
+        "final_gripper_position_rad": 1.745174527168274,
+        "vs_demo_9": {
+          "initial_state_match": {
+            "policy_state_before_step1": {
+              "shoulder_pan": 0.0,
+              "shoulder_lift": 0.0,
+              "elbow_flex": 0.0,
+              "wrist_flex": 0.0,
+              "wrist_roll": 0.0,
+              "gripper": 0.0
+            },
+            "demo_joint_pos_frame0": {
+              "shoulder_pan": 0.0,
+              "shoulder_lift": 0.0,
+              "elbow_flex": 0.0,
+              "wrist_flex": 0.0,
+              "wrist_roll": 0.0,
+              "gripper": 0.0
+            },
+            "policy_initial_cube_xyz": [
+              0.371,
+              -0.379468,
+              0.058732
+            ],
+            "demo_initial_cube_xyz": [
+              0.371,
+              -0.379468,
+              0.061457
+            ],
+            "max_joint_abs_diff_rad": 0.0
+          },
+          "gripper": {
+            "demo_first_target_below_threshold_step": 278,
+            "policy_first_command_below_threshold_step": null,
+            "policy_min_gripper_command_rad": 0.7558916807174683,
+            "policy_min_gripper_command_step": 44,
+            "demo_min_gripper_target_rad": 0.11987358331680298
+          },
+          "cube": {
+            "demo_first_lift_step": 401,
+            "demo_max_lift_m": 0.11531360447406769,
+            "policy_max_lift_in_trace_m": 0.0,
+            "policy_max_xy_drift_in_trace_m": 8.052144101921497e-06,
+            "policy_first_xy_drift_over_5mm_step": null,
+            "demo_first_xy_drift_over_5mm_frame": 279
+          },
+          "command_rmse_all_rad_by_window": {
+            "1": 0.1517265994847996,
+            "10": 0.18212209616043623,
+            "30": 0.1699394301851047,
+            "60": 0.2787608333448306,
+            "120": 0.4831734573504403,
+            "240": 0.6190535323839994
+          },
+          "state_rmse_all_rad_by_window": {
+            "1": 0.046470666599849185,
+            "10": 0.14589303711147342,
+            "30": 0.15156393647949148,
+            "60": 0.25560388667732603,
+            "120": 0.46840746574303704,
+            "240": 0.6089926137393894
+          },
+          "command_rmse_by_joint_window_60": {
+            "shoulder_pan": 0.116873,
+            "shoulder_lift": 0.151807,
+            "elbow_flex": 0.190382,
+            "wrist_flex": 0.125591,
+            "wrist_roll": 0.518677,
+            "gripper": 0.329389
+          },
+          "command_rmse_by_joint_window_240": {
+            "shoulder_pan": 0.146244,
+            "shoulder_lift": 0.169763,
+            "elbow_flex": 0.261967,
+            "wrist_flex": 0.19791,
+            "wrist_roll": 1.196862,
+            "gripper": 0.841952
+          }
+        }
+      }
+    }
+  },
+  "confirmed": [
+    "76/76 candidates: frames 0 and 1 identical, frame 2 different, every even-start pair (17,293) identical and no odd-start pair (17,232) identical, in both cameras.",
+    "In-process replay of shard_009/demo_9 reproduces the same parity pattern (338/338 even, 0/337 odd).",
+    "After a plain env.reset() the returned policy images are bit-identical (MAE 0.0, equal sha256) to the last render before the reset while the physical state hash changed; obs_buf is the object the recorder stores.",
+    "rerender_on_reset=True alone leaves the front image bit-identical to the pre-reset render and the wrist image ~50 MAE from the converged scene; explicit sim.render() calls plus camera reset/update(force_recompute) converge to the 0.1-0.3 noise floor without changing the physical state hash (from the 2nd render after reset_to, from the 3rd render for the wrist camera after a plain reset that followed a full replay).",
+    "env.reset_to on stored raw per-step states plus the refresh re-renders the recorded frames: states[1] matches raw frames 2/3 (wrist MAE 0.29) and not frame 1 (69.7); states[299] matches frames 300/301 better than 299 or 302.",
+    "From the identical demo_9 initial state (same scene hash 375aaad2...), the 10,000-step policy fails for chunk sizes 30, 5 and 1: chunk 30 closes the gripper at step 138 (demo: 278) and pushes the cube from step 184 without lifting; chunks 5 and 1 never close the gripper and saturate it open beyond the joint limit for 1,125 and 1,143 of 1,200 steps."
+  ],
+  "inferred_not_proven": [
+    "That the stale first two frames are a major cause of the rollout failures. The same-scene rollouts still fail with correct initial images, so the first-frame defect cannot be the only cause.",
+    "That the 30 Hz camera duplication harms learning; it is consistent between training and evaluation, so its effect is unmeasured.",
+    "Why the reset-internal single render is ignored by the annotator; only the empirical convergence after two renders is measured."
+  ],
+  "limitations": [
+    "One demo (shard_009/demo_9), one seed per chunk size, one model; not a success rate.",
+    "Front-camera cross-process comparisons have a ~3 MAE floor, so front alignment claims rest on the wrist camera and on parity counts.",
+    "No dataset was regenerated and no model retrained; the effect of fixing the reset image on training is untested."
+  ],
+  "validation": {
+    "unittest": {
+      "command": "python -m unittest discover -s scripts/imitation_learning -p 'test_*.py' -q",
+      "python": "$HOME/miniforge3/envs/lerobot/bin/python",
+      "ran": 149,
+      "result": "OK"
+    },
+    "py_compile": "PASS",
+    "script_sha256": {
+      "scripts/evaluation/inspect_initial_frames.py": "a3aaaff53c4f1d0f0abfef38f1db9f535edf9a15ca8e656354f778d5b7f13605",
+      "scripts/evaluation/probe_reset_camera_refresh.py": "ae309022ca8d17f8b06ca6b2630d809d5a20a2bf25744f10869000f39c92bf3c",
+      "scripts/evaluation/compare_first_approach.py": "34c53829d5cbb16a0b94dddfd15a7bc05b33d7eb4b176bd62c946a5a2d3e45a6",
+      "scripts/evaluation/lerobot_act_so101.py": "3261575370dbb5360fe77eefcccecd6cb5e4c9d7446bb5d6ef93fbbd756e73f6",
+      "scripts/imitation_learning/test_initial_frame_sync.py": "a665619521183c18a197fc0fd4f7fc394669d7882efc19ea35759292ef838e3d"
+    }
+  },
+  "local_outputs": {
+    "root": "outputs/initial_frame_diag_20260921",
+    "size": "1.5 MB (JSON, 224x224 PNG, logs); no videos"
+  }
+}
