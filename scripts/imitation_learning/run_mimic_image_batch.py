@@ -67,7 +67,9 @@ def validate_shard(path: Path, expected: int, image_size: int) -> int:
 
 def validate_generation_manifest(path: Path, expected: dict) -> None:
     manifest = json.loads(path.read_text())
-    if any(manifest.get(key) != value for key, value in expected.items()):
+    # Manifests written before the reset refresh option existed carry no key; they mean 0 (legacy frames).
+    defaults = {"reset_render_frames": 0}
+    if any(manifest.get(key, defaults.get(key)) != value for key, value in expected.items()):
         raise ValueError(f"generation manifest does not match the planned shard: {path}")
     failures = manifest.get("failed_demos")
     attempts = manifest.get("attempts")
@@ -221,7 +223,13 @@ def main() -> None:
     parser.add_argument("--render-height", type=int, default=480)
     parser.add_argument("--min-free-gib", type=float, default=8.0)
     parser.add_argument("--max-attempts-per-success", type=int, default=10)
+    parser.add_argument(
+        "--reset-render-frames", type=int, default=0,
+        help="Re-render after every reset so recorded frame 0 shows the reset scene; 0 keeps legacy stale frames.",
+    )
     args = parser.parse_args()
+    if args.reset_render_frames < 0:
+        raise ValueError("reset-render-frames cannot be negative")
     if not 84 <= args.image_size <= 256 or not math.isfinite(args.min_free_gib) or args.min_free_gib < 1:
         raise ValueError("image-size must be 84..256 and min-free-gib finite and at least 1")
     if (args.render_width, args.render_height) != (640, 480):
@@ -269,6 +277,7 @@ def main() -> None:
         "selection_manifest": str(selection_manifest) if selection_manifest else None,
         "selection_manifest_sha256": sha256(selection_manifest) if selection_manifest else None,
         "successful_only": True, "max_attempts_per_success": args.max_attempts_per_success,
+        "reset_render_frames": args.reset_render_frames,
         "isaac_python": str(isaac_python) if isaac_python else None, "lerobot_python": sys.executable,
         "code_sha256": {
             name: sha256(REPO / name) for name in (
@@ -340,6 +349,7 @@ def main() -> None:
                         "--observation-image-size", str(args.image_size), "--successful-only",
                         "--max-attempts", str(spec["episodes"] * args.max_attempts_per_success),
                         "--min-free-gib", str(args.min_free_gib),
+                        "--reset-render-frames", str(args.reset_render_frames),
                         "--progress-file", str(root / "generator_progress.json"),
                         "--headless", "--device", "cuda:0", "--enable_cameras",
                     ], root / "logs" / f"{name}_generate.log")
@@ -355,6 +365,7 @@ def main() -> None:
                         "observation_image_size": args.image_size, "successful_only": True,
                         "max_attempts": spec["episodes"] * args.max_attempts_per_success,
                         "min_free_gib": args.min_free_gib,
+                        "reset_render_frames": args.reset_render_frames,
                     })
                     raw_episode_count = spec["episodes"]
                 else:

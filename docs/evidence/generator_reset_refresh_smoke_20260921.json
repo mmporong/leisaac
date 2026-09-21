@@ -1,0 +1,113 @@
+{
+  "scope": "Generator fix for the stale reset image: opt-in --reset-render-frames renders after every reset without stepping physics and recomputes obs_buf before the pre-step recorder stores frame 0. Verified by a 2-success smoke generation; no full regeneration, no training.",
+  "smoke": {
+    "command": "generate_dataset.py --task LeIsaac-SO101-PickCubeIntoBox-Mimic-v0 --num_envs 1 --input_file datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5 --generation_num_trials 2 --datagen-seed 7101 --render-width 640 --render-height 480 --observation-image-size 224 --successful-only --max-attempts 12 --min-free-gib 4 --reset-render-frames 4 --headless --device cuda:0 --enable_cameras",
+    "output": "outputs/initial_frame_diag_20260921/smoke_reset_refresh/smoke.hdf5 (66 MB, local)",
+    "manifest_sha256": "88ec8bc8806b31b1eaa0a92cc069a3bd9336566b34eb75c8da1daede687073bc",
+    "manifest": {
+      "completed": true,
+      "successful_demos": 2,
+      "failed_demos": 5,
+      "attempts": 7,
+      "stop_reason": "target_successes_reached",
+      "reset_render_frames": 4,
+      "observation_image_size": 224,
+      "datagen_seed": 7101
+    },
+    "frame_check_sha256": "fd92e2bc3a42ee7735a959058912625f3fedefd38fce9af441c33865193ec277",
+    "demos": [
+      {
+        "demo": "demo_0",
+        "frames": 1088,
+        "first_joint_pos_all_zero": true,
+        "cameras": {
+          "front": {
+            "frame0_eq_frame1": true,
+            "frame1_eq_frame2": false,
+            "mae_frame0_frame2": 1.0389960671768708,
+            "mae_frame0_vs_previous_demo_last_frame": null,
+            "even_start_duplicates": 544,
+            "even_start_pairs": 544,
+            "odd_start_duplicates": 0
+          },
+          "wrist": {
+            "frame0_eq_frame1": true,
+            "frame1_eq_frame2": false,
+            "mae_frame0_frame2": 3.393474968112245,
+            "mae_frame0_vs_previous_demo_last_frame": null,
+            "even_start_duplicates": 544,
+            "even_start_pairs": 544,
+            "odd_start_duplicates": 0
+          }
+        }
+      },
+      {
+        "demo": "demo_1",
+        "frames": 783,
+        "first_joint_pos_all_zero": true,
+        "cameras": {
+          "front": {
+            "frame0_eq_frame1": true,
+            "frame1_eq_frame2": false,
+            "mae_frame0_frame2": 0.9539554102891157,
+            "mae_frame0_vs_previous_demo_last_frame": 5.518136160714286,
+            "even_start_duplicates": 391,
+            "even_start_pairs": 391,
+            "odd_start_duplicates": 0
+          },
+          "wrist": {
+            "frame0_eq_frame1": true,
+            "frame1_eq_frame2": false,
+            "mae_frame0_frame2": 3.6753693664965987,
+            "mae_frame0_vs_previous_demo_last_frame": 51.86016555059524,
+            "even_start_duplicates": 391,
+            "even_start_pairs": 391,
+            "odd_start_duplicates": 0
+          }
+        }
+      }
+    ]
+  },
+  "reference_legacy_500_candidates_76": {
+    "mae_frame0_frame2": {
+      "front": {
+        "min": 3.709456048044218,
+        "median": 4.969158561862245,
+        "max": 6.703430590986395
+      },
+      "wrist": {
+        "min": 41.89984587585034,
+        "median": 54.837581712372454,
+        "max": 76.8202128507653
+      }
+    }
+  },
+  "result": "With the refresh, recorded frame 0 shows the reset scene: wrist MAE(frame0, frame2) 3.39 and 3.68 versus 41.9-76.8 (median 54.8) in the legacy 76 candidates; front 1.04 and 0.95 versus 3.7-6.7 (median 4.97). frame0==frame1 and the (2k,2k+1) duplicate pattern persist because the camera update_period (1/30 s) was intentionally left unchanged.",
+  "not_done": [
+    "Full 500-demo regeneration (needs ~11 GB raw; /data has ~11 GB free at the time of writing, so it does not fit without cleanup)",
+    "Camera update_period decision",
+    "Any training"
+  ],
+  "validation": {
+    "unittest": {
+      "ran": 156,
+      "result": "OK"
+    },
+    "py_compile": "PASS",
+    "independent_review": "code-reviewer agent: no correctness defect in the refresh logic; one medium (legacy manifest key) and three low findings, all fixed above"
+  },
+  "code_sha256_at_smoke": {
+    "scripts/mimic/runtime_options.py": "a992fa3c9ddf1907913425029e109276cd90401dc67bab22716ad5293f680327",
+    "scripts/mimic/generate_dataset.py": "60cdff5799f7bd0d3432640f927220e12937166628f968928a5e205b08895c37",
+    "scripts/imitation_learning/run_mimic_image_batch.py": "47bcc81193766844a1acb74b6c59dd53e9f17535aa9519ae918083f3235ae48f",
+    "scripts/imitation_learning/test_mimic_runtime_options.py": "af965d8860d429970f21f5c36dca242c9943fd0568b67c346b69f9f205c63c9d"
+  },
+  "post_smoke_changes": "Review fixes applied after the smoke run without changing the render/update/compute sequence: physical-state digest is now checked before obs_buf is replaced, refresh rejects num_envs != 1, hashlib import moved to module top, validate_generation_manifest treats a missing reset_render_frames key as 0 so pre-existing raw shards stay reusable, and the loop test pins reset->render->step ordering. Tests additionally pin render-before-camera-update order and reject reset_render_frames with --initial-state-file.",
+  "code_sha256_final": {
+    "scripts/mimic/runtime_options.py": "42a6780eba3903624e6caf9b3c4372b2ea1c389df716accdc57afd8156038e50",
+    "scripts/mimic/generate_dataset.py": "60cdff5799f7bd0d3432640f927220e12937166628f968928a5e205b08895c37",
+    "scripts/imitation_learning/run_mimic_image_batch.py": "2937f52f552f7f6cbebca1495d31726b304c356fe3a43194e7ccfed3233b0b1a",
+    "scripts/imitation_learning/test_mimic_runtime_options.py": "a727f29a0967139d07bd5332f6002b695afd0fc1c0af42eef4b71919804f46e9",
+    "scripts/imitation_learning/test_mimic_image_batch.py": "70371ec4d0fe8d1b6c54412b6161117c062f6d6ed5013ca959f104c27b17854c"
+  }
+}

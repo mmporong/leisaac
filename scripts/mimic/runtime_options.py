@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import math
 import os
@@ -28,8 +29,11 @@ def validate_runtime_options(
     min_free_gib: float,
     progress_file: Path | None,
     initial_state_file: Path | None,
+    reset_render_frames: int = 0,
 ) -> bool:
     """Validate optional controls and return whether the bounded loop is needed."""
+    if reset_render_frames < 0:
+        raise ValueError("--reset-render-frames cannot be negative")
     if (render_width is None) != (render_height is None):
         raise ValueError("--render-width and --render-height must be provided together")
     if render_width is not None and (render_width, render_height) != (640, 480):
@@ -41,7 +45,9 @@ def validate_runtime_options(
     if not math.isfinite(min_free_gib) or min_free_gib < 0:
         raise ValueError("--min-free-gib must be finite and non-negative")
 
-    guarded = max_attempts is not None or min_free_gib > 0 or progress_file is not None
+    guarded = (
+        max_attempts is not None or min_free_gib > 0 or progress_file is not None or reset_render_frames > 0
+    )
     if guarded and initial_state_file is not None:
         raise ValueError("bounded runtime guards cannot be combined with --initial-state-file")
     return guarded
@@ -150,6 +156,44 @@ def _counts(generation_runtime: Any) -> dict[str, int]:
     }
 
 
+def _physical_state_digest(env: Any) -> str:
+    digest = hashlib.sha256()
+    state = env.scene.get_state(is_relative=True)
+    for group, entities in sorted(state.items()):
+        for entity, fields in sorted(entities.items()):
+            for field, value in sorted(fields.items()):
+                array = np.ascontiguousarray(value.detach().cpu().numpy(), dtype="<f4")
+                digest.update(f"{group}/{entity}/{field}:{array.shape}".encode())
+                digest.update(array.tobytes())
+    return digest.hexdigest()
+
+
+def refresh_reset_observations(env: Any, render_frames: int) -> None:
+    """Re-render the reset scene without stepping physics and recompute ``env.obs_buf``.
+
+    After ``env.reset`` Isaac Lab returns camera observations from the renderer's previous
+    output (the last frame of the previous attempt). The pre-step recorder stores
+    ``env.obs_buf`` verbatim, so without this refresh recorded frame 0 shows a stale scene.
+    Mirrors ``refresh_reset_images`` in scripts/evaluation/lerobot_act_so101.py.
+    """
+    if render_frames < 0:
+        raise ValueError("render_frames cannot be negative")
+    if render_frames == 0:
+        return
+    if env.num_envs != 1:
+        raise ValueError("reset refresh resets every camera timer; it supports exactly one environment")
+    before = _physical_state_digest(env)
+    for _ in range(render_frames):
+        env.sim.render()
+    for camera_name in CAMERA_NAMES:
+        camera = env.scene[camera_name]
+        camera.reset()
+        camera.update(0.0, force_recompute=True)
+    if _physical_state_digest(env) != before:
+        raise RuntimeError("physical state changed during render-only reset refresh")
+    env.obs_buf = env.observation_manager.compute()
+
+
 def bounded_normal_env_loop(
     env: Any,
     env_reset_queue: asyncio.Queue,
@@ -164,6 +208,7 @@ def bounded_normal_env_loop(
     output_path: Path,
     progress_file: Path | None = None,
     disk_usage: Callable[[Path], Any] = shutil.disk_usage,
+    reset_render_frames: int = 0,
 ) -> str:
     """Run one upstream async generator without prefetching beyond a stop condition."""
     if env.num_envs != 1:
@@ -215,6 +260,7 @@ def bounded_normal_env_loop(
                             return reason
                         env_id_tensor[0] = env_reset_queue.get_nowait()
                         env.reset(env_ids=env_id_tensor)
+                        refresh_reset_observations(env, reset_render_frames)
                         env_reset_queue.task_done()
 
                 reason = stop_reason()

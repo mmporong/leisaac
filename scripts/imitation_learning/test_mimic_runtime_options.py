@@ -22,8 +22,36 @@ from runtime_options import (  # noqa: E402
     bounded_normal_env_loop,
     configure_successful_only,
     configure_visual_options,
+    refresh_reset_observations,
     validate_runtime_options,
 )
+
+
+class FakeCamera:
+    def __init__(self, env) -> None:
+        self.env = env
+        self.reset_calls = 0
+        self.update_calls = []
+
+    def reset(self) -> None:
+        self.reset_calls += 1
+
+    def update(self, dt, force_recompute=False) -> None:
+        # record how many renders had happened when the buffer was forced, to pin render -> update order
+        self.update_calls.append((dt, force_recompute, self.env.render_calls))
+
+
+class FakeScene:
+    def __init__(self, env) -> None:
+        self.cameras = {"front": FakeCamera(env), "wrist": FakeCamera(env)}
+        self.state_value = torch.zeros(1, 3)
+        self.drift_on_render = False
+
+    def __getitem__(self, name):
+        return self.cameras[name]
+
+    def get_state(self, is_relative: bool):
+        return {"rigid_object": {"cube": {"root_pose": self.state_value.clone()}}}
 
 
 class FakeEnv:
@@ -34,12 +62,30 @@ class FakeEnv:
         self.reset_calls = 0
         self.steps = []
         self.closed = False
+        self.render_calls = 0
+        self.scene = FakeScene(self)
+        self.sim = SimpleNamespace(render=self._render)
+        self.obs_buf = {"policy": {"front": torch.zeros(1)}}
+        self.compute_calls = 0
+        self.observation_manager = SimpleNamespace(compute=self._compute)
+        self.refresh_log = []
+
+    def _render(self) -> None:
+        self.render_calls += 1
+        if self.scene.drift_on_render:
+            self.scene.state_value += 1.0
+
+    def _compute(self):
+        self.compute_calls += 1
+        return {"policy": {"front": torch.full((1,), float(self.compute_calls))}}
 
     def reset(self, *, env_ids) -> None:
         self.reset_calls += 1
+        self.refresh_log.append(("reset", self.render_calls))
 
     def step(self, actions) -> None:
         self.steps.append(actions.clone())
+        self.refresh_log.append(("step", self.render_calls))
 
     def close(self) -> None:
         self.closed = True
@@ -317,6 +363,94 @@ class MimicRuntimeOptionsTest(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "stopped before"):
             self._run_loop(stopped)
+
+
+class ResetRefreshTest(unittest.TestCase):
+    def test_zero_frames_is_a_no_op(self) -> None:
+        env = FakeEnv()
+        original = env.obs_buf
+        refresh_reset_observations(env, 0)
+        self.assertEqual(env.render_calls, 0)
+        self.assertIs(env.obs_buf, original)
+        self.assertEqual(env.compute_calls, 0)
+
+    def test_refresh_renders_forces_camera_update_and_recomputes_obs(self) -> None:
+        env = FakeEnv()
+        refresh_reset_observations(env, 4)
+        self.assertEqual(env.render_calls, 4)
+        for camera in env.scene.cameras.values():
+            self.assertEqual(camera.reset_calls, 1)
+            self.assertEqual(camera.update_calls, [(0.0, True, 4)])
+        self.assertEqual(env.compute_calls, 1)
+        self.assertEqual(float(env.obs_buf["policy"]["front"][0]), 1.0)
+
+    def test_refresh_rejects_physical_state_change(self) -> None:
+        env = FakeEnv()
+        env.scene.drift_on_render = True
+        original = env.obs_buf
+        with self.assertRaises(RuntimeError):
+            refresh_reset_observations(env, 1)
+        self.assertIs(env.obs_buf, original)
+        self.assertEqual(env.compute_calls, 0)
+        with self.assertRaises(ValueError):
+            refresh_reset_observations(env, -1)
+        multi = FakeEnv()
+        multi.num_envs = 2
+        with self.assertRaises(ValueError):
+            refresh_reset_observations(multi, 1)
+
+    def test_reset_render_frames_makes_runtime_guarded(self) -> None:
+        base = dict(
+            render_width=None, render_height=None, observation_image_size=None,
+            max_attempts=None, min_free_gib=0.0, progress_file=None, initial_state_file=None,
+        )
+        self.assertFalse(validate_runtime_options(**base))
+        self.assertTrue(validate_runtime_options(**base, reset_render_frames=4))
+        with self.assertRaises(ValueError):
+            validate_runtime_options(**base, reset_render_frames=-1)
+        # the recovery loop has no refresh hook, so the flag must not be silently ignored there
+        with self.assertRaises(ValueError):
+            validate_runtime_options(**(base | {"initial_state_file": Path("snapshot.pt")}), reset_render_frames=4)
+
+
+class BoundedLoopResetRefreshTest(unittest.TestCase):
+    setUp = MimicRuntimeOptionsTest.setUp
+    tearDown = MimicRuntimeOptionsTest.tearDown
+    _run_loop = MimicRuntimeOptionsTest._run_loop
+
+    def test_loop_refreshes_after_every_reset_when_requested(self) -> None:
+        async def generator(resets, actions, runtime):
+            for _ in range(2):
+                await resets.put(0)
+                await resets.join()
+                await actions.put((0, torch.tensor([1.0])))
+                await actions.join()
+                runtime.num_failures += 1
+                runtime.num_attempts += 1
+
+        reason, env, runtime, _resets, _task = self._run_loop(
+            generator, target_successes=1, max_attempts=2, reset_render_frames=3,
+        )
+        self.assertEqual(reason, "max_attempts_reached")
+        self.assertEqual(env.reset_calls, 2)
+        self.assertEqual(env.render_calls, 6)
+        self.assertEqual(env.compute_calls, 2)
+        # every reset is followed by exactly 3 renders before the next step is applied
+        self.assertEqual(env.refresh_log, [("reset", 0), ("step", 3), ("reset", 3), ("step", 6)])
+
+    def test_loop_default_keeps_legacy_no_refresh(self) -> None:
+        async def generator(resets, actions, runtime):
+            await resets.put(0)
+            await resets.join()
+            await actions.put((0, torch.tensor([1.0])))
+            await actions.join()
+            runtime.num_success += 1
+            runtime.num_attempts += 1
+
+        _reason, env, _runtime, _resets, _task = self._run_loop(generator)
+        self.assertEqual(env.reset_calls, 1)
+        self.assertEqual(env.render_calls, 0)
+        self.assertEqual(env.compute_calls, 0)
 
 
 if __name__ == "__main__":

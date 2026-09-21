@@ -27,6 +27,21 @@ class MimicImageBatchTest(unittest.TestCase):
                 path.write_text(json.dumps(manifest | override))
                 with self.assertRaises(ValueError):
                     validate_generation_manifest(path, expected)
+
+    def test_generation_manifest_treats_missing_reset_render_frames_as_legacy_zero(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "manifest.json"
+            base = {"completed": True, "datagen_seed": 6100, "successful_demos": 25, "max_attempts": 250}
+            legacy = {**base, "failed_demos": 30, "attempts": 55}
+            path.write_text(json.dumps(legacy))
+            validate_generation_manifest(path, {**base, "reset_render_frames": 0})
+            with self.assertRaises(ValueError):
+                validate_generation_manifest(path, {**base, "reset_render_frames": 4})
+            path.write_text(json.dumps({**legacy, "reset_render_frames": 4}))
+            validate_generation_manifest(path, {**base, "reset_render_frames": 4})
+            with self.assertRaises(ValueError):
+                validate_generation_manifest(path, {**base, "reset_render_frames": 0})
+
     def test_disk_threshold_rejects_nonfinite_values(self):
         for value in (float("nan"), float("inf"), -1, 0):
             with self.assertRaises(ValueError):

@@ -95,6 +95,15 @@ parser.add_argument(
     help="Stop with the partial HDF5 intact when output storage falls below this threshold.",
 )
 parser.add_argument(
+    "--reset-render-frames",
+    type=int,
+    default=0,
+    help=(
+        "Render this many frames after every reset (without stepping physics) and recompute the"
+        " observations so recorded frame 0 shows the reset scene; 0 reproduces legacy stale frames."
+    ),
+)
+parser.add_argument(
     "--progress-file",
     type=Path,
     default=None,
@@ -153,6 +162,7 @@ from runtime_options import (
     bounded_normal_env_loop,
     configure_successful_only,
     configure_visual_options,
+    refresh_reset_observations,
     require_safe_task,
     validate_runtime_options,
 )
@@ -170,6 +180,7 @@ def main():
         min_free_gib=args_cli.min_free_gib,
         progress_file=args_cli.progress_file,
         initial_state_file=args_cli.initial_state_file,
+        reset_render_frames=args_cli.reset_render_frames,
     )
     if guarded_runtime:
         num_envs = 1
@@ -257,6 +268,8 @@ def main():
 
     # reset before starting
     env.reset()
+    if guarded_runtime:
+        refresh_reset_observations(env, args_cli.reset_render_frames)
 
     # Setup and run async data generation
     async_components = setup_async_generation(
@@ -300,6 +313,7 @@ def main():
                     min_free_gib=args_cli.min_free_gib,
                     output_path=output_path,
                     progress_file=args_cli.progress_file,
+                    reset_render_frames=args_cli.reset_render_frames,
                 )
             else:
                 env_loop(
@@ -360,6 +374,7 @@ def main():
             for camera in ("front", "wrist")
         }
         manifest["observation_image_size"] = args_cli.observation_image_size
+        manifest["reset_render_frames"] = args_cli.reset_render_frames
         manifest["successful_only"] = args_cli.successful_only
         manifest["max_attempts"] = args_cli.max_attempts
         manifest["min_free_gib"] = args_cli.min_free_gib

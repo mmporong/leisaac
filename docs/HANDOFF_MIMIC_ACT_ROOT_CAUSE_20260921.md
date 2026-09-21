@@ -369,3 +369,24 @@ cd "/data/$USER/leisaac"
 "$HOME/miniforge3/envs/lerobot/bin/python" -m unittest discover -s scripts/imitation_learning -p 'test_*.py' -q
 ```
 
+### 13.7 생성기 수정과 스모크 검증 (13.6의 1항 수행)
+
+`scripts/mimic/generate_dataset.py`에 opt-in `--reset-render-frames N`을 추가했다(기본 0 = 기존 동작).
+N>0이면 매 reset 뒤 물리를 진행하지 않고 N회 렌더 → `camera.reset()`·`update(0, force_recompute=True)` →
+`env.obs_buf = observation_manager.compute()` 순으로 갱신하고, 전후 물리 상태 해시가 다르면 예외를 낸다
+(`runtime_options.refresh_reset_observations`). 이 옵션은 bounded 루프를 강제하며 매니페스트에 `reset_render_frames`로 기록된다.
+`run_mimic_image_batch.py`에도 같은 이름의 전달 인자(기본 0)를 넣었다. 재생성할 때는 `--reset-render-frames 4`를 명시해야 한다.
+
+스모크(seed 7101, 성공 2개/시도 7회, 근거 `docs/evidence/generator_reset_refresh_smoke_20260921.json`):
+
+| 항목 | 기존 76개 후보 | 스모크 demo_0 / demo_1 |
+| --- | --- | --- |
+| 손목 MAE(frame 0, frame 2) | 41.9~76.8 (중앙값 54.8) | 3.39 / 3.68 |
+| 앞 MAE(frame 0, frame 2) | 3.7~6.7 (중앙값 4.97) | 1.04 / 0.95 |
+| frame 0 == frame 1 | 76/76 | 2/2 (카메라 주기 1/30 s 유지, 의도된 결과) |
+| 짝수 쌍 중복 | 전부 | 전부 (같은 이유) |
+
+즉 frame 0이 reset 장면을 담게 됐다. 30 Hz 중복은 별도 결정 사항이라 그대로 두었다.
+단위 테스트 155개 통과. 500개 재생성과 학습은 하지 않았다.
+재생성에는 raw 약 11 GB가 필요한데 `/data` 여유가 약 11 GB라 정리 없이는 들어가지 않는다.
+
