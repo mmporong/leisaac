@@ -1,0 +1,324 @@
+{
+  "validation": {
+    "regression_tests": {"command": "python -m unittest discover -s scripts/imitation_learning -p test_*.py", "passed": 146, "exit_code": 0},
+    "py_compile": "PASS",
+    "git_diff_check": "PASS",
+    "sequential_pair_process_exit_codes": {"shard002": 0, "shard009": 0},
+    "paired_initial_state_hashes_equal": true,
+    "recorded_target_applied_vs_raw_max_error_rad": {"shard002": 0.0, "shard009": 0.0},
+    "shard002": {
+      "first_joint_deviation_above_1e_6_rad_step_both_modes": 287,
+      "first_mimic_target_adjustment_above_1e_6_rad_step": 288,
+      "max_mimic_target_adjustment_rad": 0.0032338500022888184,
+      "recorded_target_first_effort_change_step": 500
+    },
+    "videos": {
+      "sha256": {
+        "shard002_recorded_target/demo_17.mp4": "8560b76de7398a45b417a56de12c313e9c4327f39ef403042c66a3f9ec7cc1ef",
+        "shard002_mimic_action/demo_17.mp4": "f814272c1116269a3270baee3cb983234cb46a6b8581d0bb6f818381105494bd",
+        "shard009_mimic_action/demo_9.mp4": "1f3a4bd9e68dd39b3059c697f42f23ae9cfaa0a70376308439d3d5b7546d8bad",
+        "shard009_recorded_target/demo_9.mp4": "ddc8636c11e2202dd7226b8d43117140bca58d21649b95ed3c83c27d10eef75b"
+      },
+      "width": 1280, "height": 480,
+      "frames_and_trace_rows": {"shard002_recorded_target": 675, "shard002_mimic_action": 676, "shard009_recorded_target": 675, "shard009_mimic_action": 676}
+    }
+  },
+  "limitations": [
+    "Two selected cases, not a policy success rate or full 76-candidate validation",
+    "Initial hash equality does not prove equality of hidden solver/contact state",
+    "Origin of initial tiny deviation and prior sequential failure of shard009 remain unresolved",
+    "Videos and detailed traces remain local ignored outputs; summaries do not replace raw artifacts",
+    "Experiment hashes precede torque documentation/resource-open-only fixes; simulator not rerun after those fixes",
+    "No new policy training, RL, or physical robot execution"
+  ],
+  "scope": "Two selected known replay failures; independent fresh simulator per mode; not a policy evaluation",
+  "common_horizon_steps": 675,
+  "torque_semantics": "actuator_reported_torque_nm is clipped implicit-actuator PD estimate, not measured torque/contact force",
+  "post_experiment_changes": "Only torque documentation and resource-open try/finally boundary changed after all four runs",
+  "experiments": [
+    {
+      "report": "outputs/evaluation/control_diagnosis_20260921/shard002_mimic_action/evaluation.json",
+      "report_sha256": "48485ea1d15b7f821a196c7e7d06a733a1df08b940da384e4005b07901bf8368",
+      "trace_sha256": "cefd86ef777e4972a8043a8b5f7b8f590308b72cd20e1a55a09ce746cacfec99",
+      "implementation_sha256": {
+        "replay_joint_contract.py": "84524a80a3ae886b30218bbe5fca755037fdbf6f4d769b848b7bee7804e35807",
+        "replay_settling.py": "d75654f397647dedf283bc4d0fa420fe83dbc49081bb4a4a18b2971d5bdd78a9"
+      },
+      "result": {
+        "episode": "demo_17",
+        "dataset": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_002.hdf5",
+        "raw_sha256": "dc3e3510cc11f7a7e913bb77bc385dfda7a97bfc5cbd3b153664680731ddd543",
+        "mode": "mimic_action",
+        "steps": 676,
+        "source_frame_count": 676,
+        "source_success": true,
+        "omitted_final_transition": false,
+        "common_horizon": 675,
+        "success_by_common_horizon": true,
+        "success": true,
+        "first_success_step": 643,
+        "final_success": true,
+        "initial_physical_sha256": "b64e8c876f251956ed5ea292411c5e3b4f11ce50eeea318d88648dda58d59b76",
+        "initial_joint_max_error_rad": 0.0,
+        "joint_rmse_rad": 0.0036167553366886016,
+        "common_horizon_joint_rmse_rad": 0.003619433422949951,
+        "common_horizon_max_cube_lift_m": 0.11381638050079346,
+        "joint_rmse_by_joint_rad": {
+          "shoulder_pan": 0.0001728503899221421,
+          "shoulder_lift": 0.00024348466056275557,
+          "elbow_flex": 0.00046788118048922606,
+          "wrist_flex": 0.000363323304674054,
+          "wrist_roll": 0.00039646454830177434,
+          "gripper": 0.008825432125099137
+        },
+        "clipped_steps": 0,
+        "max_cube_lift_m": 0.11381638050079346,
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "final_cube_xyz": [
+          0.5784621834754944,
+          -0.3758328855037689,
+          0.06456965208053589
+        ],
+        "source_horizon_release": {
+          "success": true,
+          "relative_cube_xyz": [
+            -0.0015377998352050781,
+            -0.0258328914642334,
+            0.019069653004407883
+          ],
+          "linear_speed_m_s": 0.004109819419682026,
+          "angular_speed_rad_s": 0.06315919756889343,
+          "gripper_rad": 0.38371458649635315,
+          "stable_steps": 63
+        },
+        "control_trace": "demo_17_control.jsonl",
+        "settling": {
+          "classification": "not_observed",
+          "steps": 0,
+          "duration_s": 0.0,
+          "first_success_step": null,
+          "final_success": null,
+          "source_horizon_final_success": true,
+          "trace": [],
+          "video": null
+        }
+      }
+    },
+    {
+      "report": "outputs/evaluation/control_diagnosis_20260921/shard002_recorded_target/evaluation.json",
+      "report_sha256": "22e83ffdffcda1bcacf0a67f470cc31d950016ae7f5ad64e7dd2ecbe945c1c49",
+      "trace_sha256": "774aa8be2b39954ddcb12d66ca58ff467cd10836484e60434a442355d2d9a1c7",
+      "implementation_sha256": {
+        "replay_joint_contract.py": "84524a80a3ae886b30218bbe5fca755037fdbf6f4d769b848b7bee7804e35807",
+        "replay_settling.py": "d75654f397647dedf283bc4d0fa420fe83dbc49081bb4a4a18b2971d5bdd78a9"
+      },
+      "result": {
+        "episode": "demo_17",
+        "dataset": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_002.hdf5",
+        "raw_sha256": "dc3e3510cc11f7a7e913bb77bc385dfda7a97bfc5cbd3b153664680731ddd543",
+        "mode": "recorded_target",
+        "steps": 675,
+        "source_frame_count": 676,
+        "source_success": true,
+        "omitted_final_transition": true,
+        "common_horizon": 675,
+        "success_by_common_horizon": false,
+        "success": false,
+        "first_success_step": null,
+        "final_success": false,
+        "initial_physical_sha256": "b64e8c876f251956ed5ea292411c5e3b4f11ce50eeea318d88648dda58d59b76",
+        "initial_joint_max_error_rad": 0.0,
+        "joint_rmse_rad": 0.02809033417432848,
+        "common_horizon_joint_rmse_rad": 0.02809033417432848,
+        "common_horizon_max_cube_lift_m": 0.0,
+        "joint_rmse_by_joint_rad": {
+          "shoulder_pan": 0.0010178431046799707,
+          "shoulder_lift": 0.0014300459702774725,
+          "elbow_flex": 0.0030345050131417167,
+          "wrist_flex": 0.005442968409077102,
+          "wrist_roll": 0.0032414210785139614,
+          "gripper": 0.06842499011110331
+        },
+        "clipped_steps": 0,
+        "max_cube_lift_m": 0.0,
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.768000066280365
+        ],
+        "final_cube_xyz": [
+          0.37311607599258423,
+          -0.4111412465572357,
+          0.055988285690546036
+        ],
+        "source_horizon_release": {
+          "success": false,
+          "relative_cube_xyz": [
+            -0.20688390731811523,
+            -0.061141252517700195,
+            0.01048828661441803
+          ],
+          "linear_speed_m_s": 0.0007284985040314496,
+          "angular_speed_rad_s": 0.011312849819660187,
+          "gripper_rad": 0.38373100757598877,
+          "stable_steps": 0
+        },
+        "control_trace": "demo_17_control.jsonl",
+        "settling": {
+          "classification": "not_observed",
+          "steps": 0,
+          "duration_s": 0.0,
+          "first_success_step": null,
+          "final_success": null,
+          "source_horizon_final_success": false,
+          "trace": [],
+          "video": null
+        }
+      }
+    },
+    {
+      "report": "outputs/evaluation/control_diagnosis_20260921/shard009_mimic_action/evaluation.json",
+      "report_sha256": "a4beffe946dd0333bc683818c1110c0ba1632e9ad19050a05890abc10567aedb",
+      "trace_sha256": "e74dbef9342d4347d49ac5e4ad4d5936854c5acce121508d595a1f55cb77b927",
+      "implementation_sha256": {
+        "replay_joint_contract.py": "84524a80a3ae886b30218bbe5fca755037fdbf6f4d769b848b7bee7804e35807",
+        "replay_settling.py": "d75654f397647dedf283bc4d0fa420fe83dbc49081bb4a4a18b2971d5bdd78a9"
+      },
+      "result": {
+        "episode": "demo_9",
+        "dataset": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5",
+        "raw_sha256": "1e885d7070bab5bd16f18c57e71f28754c20a3609251c58d28d25c442df1cf35",
+        "mode": "mimic_action",
+        "steps": 676,
+        "source_frame_count": 676,
+        "source_success": true,
+        "omitted_final_transition": false,
+        "common_horizon": 675,
+        "success_by_common_horizon": true,
+        "success": true,
+        "first_success_step": 644,
+        "final_success": true,
+        "initial_physical_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "initial_joint_max_error_rad": 0.0,
+        "joint_rmse_rad": 0.0015094774033593274,
+        "common_horizon_joint_rmse_rad": 0.0015105951199863657,
+        "common_horizon_max_cube_lift_m": 0.11446964740753174,
+        "joint_rmse_by_joint_rad": {
+          "shoulder_pan": 0.00011486612458800476,
+          "shoulder_lift": 0.00016451982882466134,
+          "elbow_flex": 0.0002884299020559422,
+          "wrist_flex": 0.00023261274190678288,
+          "wrist_roll": 0.0001771176906188025,
+          "gripper": 0.003669087081881897
+        },
+        "clipped_steps": 0,
+        "max_cube_lift_m": 0.11446964740753174,
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "final_cube_xyz": [
+          0.5949411392211914,
+          -0.3633916676044464,
+          0.06457030773162842
+        ],
+        "source_horizon_release": {
+          "success": true,
+          "relative_cube_xyz": [
+            0.014941155910491943,
+            -0.013391673564910889,
+            0.019070308655500412
+          ],
+          "linear_speed_m_s": 0.0024267605040222406,
+          "angular_speed_rad_s": 0.05338330194354057,
+          "gripper_rad": 0.383714884519577,
+          "stable_steps": 62
+        },
+        "control_trace": "demo_9_control.jsonl",
+        "settling": {
+          "classification": "not_observed",
+          "steps": 0,
+          "duration_s": 0.0,
+          "first_success_step": null,
+          "final_success": null,
+          "source_horizon_final_success": true,
+          "trace": [],
+          "video": null
+        }
+      }
+    },
+    {
+      "report": "outputs/evaluation/control_diagnosis_20260921/shard009_recorded_target/evaluation.json",
+      "report_sha256": "a993b63c1021d2d201c1021137fb7bcf957e43337f6a90a98204dfccf10ca9d8",
+      "trace_sha256": "e90a279626bc69cd2ef956cf03fab575441dfa906f56a09ed6e157ac2bf27a93",
+      "implementation_sha256": {
+        "replay_joint_contract.py": "84524a80a3ae886b30218bbe5fca755037fdbf6f4d769b848b7bee7804e35807",
+        "replay_settling.py": "d75654f397647dedf283bc4d0fa420fe83dbc49081bb4a4a18b2971d5bdd78a9"
+      },
+      "result": {
+        "episode": "demo_9",
+        "dataset": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5",
+        "raw_sha256": "1e885d7070bab5bd16f18c57e71f28754c20a3609251c58d28d25c442df1cf35",
+        "mode": "recorded_target",
+        "steps": 675,
+        "source_frame_count": 676,
+        "source_success": true,
+        "omitted_final_transition": true,
+        "common_horizon": 675,
+        "success_by_common_horizon": true,
+        "success": true,
+        "first_success_step": 642,
+        "final_success": true,
+        "initial_physical_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "initial_joint_max_error_rad": 0.0,
+        "joint_rmse_rad": 0.001724906281766715,
+        "common_horizon_joint_rmse_rad": 0.001724906281766715,
+        "common_horizon_max_cube_lift_m": 0.11544939875602722,
+        "joint_rmse_by_joint_rad": {
+          "shoulder_pan": 0.00015661691041845004,
+          "shoulder_lift": 0.00015250529849335494,
+          "elbow_flex": 0.00023933772882208233,
+          "wrist_flex": 0.00046888014341375545,
+          "wrist_roll": 0.00030356763710994946,
+          "gripper": 0.004175492655357706
+        },
+        "clipped_steps": 0,
+        "max_cube_lift_m": 0.11544939875602722,
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "final_cube_xyz": [
+          0.6003308296203613,
+          -0.34797316789627075,
+          0.06457649171352386
+        ],
+        "source_horizon_release": {
+          "success": true,
+          "relative_cube_xyz": [
+            0.020330846309661865,
+            0.0020268261432647705,
+            0.01907649263739586
+          ],
+          "linear_speed_m_s": 0.0007127574644982815,
+          "angular_speed_rad_s": 0.026744434610009193,
+          "gripper_rad": 0.3837306499481201,
+          "stable_steps": 63
+        },
+        "control_trace": "demo_9_control.jsonl",
+        "settling": {
+          "classification": "not_observed",
+          "steps": 0,
+          "duration_s": 0.0,
+          "first_success_step": null,
+          "final_success": null,
+          "source_horizon_final_success": true,
+          "trace": [],
+          "video": null
+        }
+      }
+    }
+  ]
+}

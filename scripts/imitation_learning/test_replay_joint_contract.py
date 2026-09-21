@@ -6,8 +6,34 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 import numpy as np
+import torch
+
+
+class ControlSnapshotTest(unittest.TestCase):
+    def test_snapshot_records_state_without_mutating_buffers(self):
+        source = Path(__file__).resolve().parents[1] / "evaluation/replay_joint_contract.py"
+        nodes = [node for node in ast.parse(source.read_text()).body
+                 if isinstance(node, ast.FunctionDef) and node.name == "control_snapshot"]
+        namespace = {"torch": torch}
+        exec(compile(ast.Module(body=nodes, type_ignores=[]), str(source), "exec"), namespace)
+        values = torch.arange(6, dtype=torch.float32).reshape(1, 6)
+        robot = SimpleNamespace(body_names=["base", "gripper"], data=SimpleNamespace(
+            joint_pos=values, joint_vel=values, joint_pos_target=values,
+            joint_effort_limits=values, applied_torque=values,
+            body_link_pos_w=torch.zeros(1, 2, 3)))
+        cube = SimpleNamespace(data=SimpleNamespace(root_pos_w=torch.tensor([[.1, 0., 0.]]),
+            body_link_pos_w=torch.tensor([[[.1, 0., 0.]]]), default_mass=torch.tensor([[.01]])))
+        class Scene(dict):
+            rigid_objects = {"cube": cube}
+        env = SimpleNamespace(scene=Scene(robot=robot))
+        result = namespace["control_snapshot"](env)
+        self.assertEqual(result["last_robot_link_name"], "gripper")
+        self.assertAlmostEqual(result["objects"]["cube"]["distance_to_last_robot_link_m"], .1)
+        result["joint_position_rad"][0] = 999
+        self.assertEqual(float(robot.data.joint_pos[0, 0]), 0)
 
 
 class CommandAlignmentTest(unittest.TestCase):

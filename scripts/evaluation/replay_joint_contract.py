@@ -13,6 +13,8 @@ parser.add_argument("--episodes", type=int, nargs="+", default=None)
 parser.add_argument("--mode", choices=("next_observed", "recorded_target", "mimic_action"), required=True)
 parser.add_argument("--output-dir", type=Path, required=True)
 parser.add_argument("--video-count", type=int, default=1)
+parser.add_argument("--trace-control", action="store_true",
+                    help="Save per-step joint commands, effort and object-distance diagnostics as JSONL.")
 parser.add_argument("--settling-seconds", type=float, default=0.0,
                     help="Separate final-command observation, 0 to 5 seconds; default preserves legacy replay.")
 parser.add_argument("--gripper-effort-mode", choices=("task", "fixed"), default="task")
@@ -91,6 +93,31 @@ def release_snapshot(env, success):
             "stable_steps": int(env._stable_release_window.count[0])}
 
 
+def control_snapshot(env):
+    """Read-only diagnostics; distances do not measure contact forces.
+
+    actuator_reported_torque_nm is ArticulationData.applied_torque: for this
+    implicit actuator it is a clipped PD-model estimate, not measured torque.
+    """
+    robot = env.scene["robot"]
+    point = robot.data.body_link_pos_w[0, -1]
+    objects = {}
+    for name, obj in env.scene.rigid_objects.items():
+        objects[name] = {
+            "position_m": obj.data.root_pos_w[0].cpu().tolist(),
+            "distance_to_last_robot_link_m": float(torch.linalg.vector_norm(
+                obj.data.body_link_pos_w[0, 0] - point)),
+            "default_mass_kg": float(obj.data.default_mass[0, 0]),
+        }
+    return {"joint_position_rad": robot.data.joint_pos[0].cpu().tolist(),
+            "joint_velocity_rad_s": robot.data.joint_vel[0].cpu().tolist(),
+            "joint_target_rad": robot.data.joint_pos_target[0].cpu().tolist(),
+            "joint_effort_limits_nm": robot.data.joint_effort_limits[0].cpu().tolist(),
+            "actuator_reported_torque_nm": robot.data.applied_torque[0].cpu().tolist(),
+            "last_robot_link_name": robot.body_names[-1],
+            "last_robot_link_position_m": point.cpu().tolist(), "objects": objects}
+
+
 def main():
     output = args_cli.output_dir.resolve()
     if args_cli.video_count < 0:
@@ -160,8 +187,12 @@ def main():
                             effort_min, effort_max = float("inf"), 0.0
                             video_name = (f"shard_{source['manifest_shard_index']:03d}_{source['raw_sha256'][:12]}_{name}.mp4"
                                           if source["manifest_shard_index"] is not None else f"{name}.mp4")
-                            writer = imageio.get_writer(output / video_name, fps=60, codec="libx264", quality=7) if trial < args_cli.video_count else None
+                            trace_name = f"{Path(video_name).stem}_control.jsonl"
+                            writer = None
+                            trace_file = None
                             try:
+                                writer = imageio.get_writer(output / video_name, fps=60, codec="libx264", quality=7) if trial < args_cli.video_count else None
+                                trace_file = (output / trace_name).open("x", encoding="utf-8") if args_cli.trace_control else None
                                 for step, command in enumerate(commands):
                                     action = torch.tensor(command, device=env.device).unsqueeze(0)
                                     if args_cli.mode != "mimic_action":
@@ -172,7 +203,14 @@ def main():
                                         dynamic_reset_gripper_effort_limit_sim(env, "so101leader")
                                     effort = float(robot.data.joint_effort_limits[0, -1])
                                     effort_min, effort_max = min(effort_min, effort), max(effort_max, effort)
+                                    before = control_snapshot(env) if trace_file else None
                                     observations, _, _, _, _ = env.step(action)
+                                    if trace_file:
+                                        trace_file.write(json.dumps({"step": step + 1,
+                                            "command": action[0].cpu().tolist(),
+                                            "command_mode": args_cli.mode, "before": before,
+                                            "after": control_snapshot(env),
+                                            "reference_joint_position_rad": reference[step].tolist()}) + "\n")
                                     actual = robot.data.joint_pos[0].cpu().numpy()
                                     trajectory_error.append((actual - reference[step]).tolist())
                                     max_lift = max(max_lift, float(env.scene["cube"].data.root_pos_w[0, 2] - initial_cube[2]))
@@ -186,6 +224,8 @@ def main():
                                         images = [observations["policy"][camera][0].cpu().numpy() for camera in ("front", "wrist")]
                                         writer.append_data(np.concatenate(images, axis=1))
                             finally:
+                                if trace_file:
+                                    trace_file.close()
                                 if writer:
                                     writer.close()
                             error = np.asarray(trajectory_error)
@@ -208,6 +248,7 @@ def main():
                                       "gripper_effort_limit_range": [effort_min, effort_max],
                                       "final_cube_xyz": env.scene["cube"].data.root_pos_w[0].cpu().tolist()}
                             result["source_horizon_release"] = release_snapshot(env, result["final_success"])
+                            result["control_trace"] = trace_name if args_cli.trace_control else None
                             settling_trace = []
                             settling_video = f"{Path(video_name).stem}_settling.mp4"
                             tail_writer = (imageio.get_writer(output / settling_video, fps=60,
