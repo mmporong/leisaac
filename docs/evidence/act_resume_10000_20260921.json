@@ -1,0 +1,788 @@
+{
+  "status": "complete",
+  "training_exit_code": 0,
+  "evaluation_exit_code": 0,
+  "resume_provenance": {
+    "kind": "diagnostic_continuation",
+    "parent_experiment": "outputs/act_pilot_76_20260921",
+    "resume_checkpoint": "outputs/act_pilot_76_20260921/model/checkpoints/002000/pretrained_model",
+    "resume": true,
+    "start_step": 2000,
+    "total_steps": 10000,
+    "additional_steps": 8000,
+    "batch_size": 8,
+    "split_root": "outputs/act_pilot_76_20260921_split",
+    "eval_seeds": [
+      4100,
+      4101,
+      4102
+    ],
+    "horizon": 1200,
+    "action_source": "recorded_target",
+    "initial_state_check": {
+      "train_zero_initial_episodes": 61,
+      "valid_zero_initial_episodes": 15,
+      "evaluation_initial_joints": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "checkpoint_selection": "predeclared final 10000 step; compare same seeds without changing success criteria",
+    "min_free_gib": 8,
+    "physical_robot": false,
+    "production_gate_modified": false,
+    "limits": [
+      "Matching initial joints does not prove identical camera/object distributions",
+      "Same-seed comparison is diagnostic, not a new held-out generalization test",
+      "New run saves only final checkpoint; source 2000 checkpoint remains intact"
+    ],
+    "source_checkpoint_sha256": {
+      "training_state/training_step.json": "e9ab4e3ad3681dc578cc3285be15797a8db1184d1d611307010afd2dbe268412",
+      "training_state/optimizer_state.safetensors": "334c7922a0d06e324e6616ebf56b9c416c49e48519bb6e223d6374968762566e",
+      "training_state/rng_state.safetensors": "e4639567f88f1c3b884f1b14a7319110e6be2b89eb170de03b737c1e66626643",
+      "training_state/optimizer_param_groups.json": "503051101142a675e30b3bd9ba552810f5517b5bcbd2d29e6e227ce29e736fa0",
+      "pretrained_model/policy_preprocessor.json": "ee6907e4c71e651c43ebc51c38928253bd23ca84c9a4d1e82bb1bbb590e58f6a",
+      "pretrained_model/policy_preprocessor_step_3_normalizer_processor.safetensors": "5e52fed2ed3cd0920fb40368fd8e2185a44089eae01b5e1ced79c22c6bd7b3d4",
+      "pretrained_model/policy_postprocessor.json": "648b415125a183dfd6cbc47c1dc04ab3f2d912654ef22a12ca5e8b93d7d85cdd",
+      "pretrained_model/policy_postprocessor_step_0_unnormalizer_processor.safetensors": "2b009551152cca4186ee769c0b651da3c5a3838200df46442af24b5a57a8c06b",
+      "pretrained_model/train_config.json": "062e697f5ff24373e780c08d78b8ea6124298aa23e477dd3d7307cb97e6c912c",
+      "pretrained_model/config.json": "35d52abcec802b7761532729268ef4b5adf377f23bdb5c79f4ad07ee85dc3092",
+      "pretrained_model/model.safetensors": "c34e411da1a3a9b5ad0b19cb0a10b2e4af24559de658c0a088b2016bea90007d"
+    },
+    "split_provenance_sha256": "456ba05c5fa56d2c7867055e68ed9b50d823b5babaf6760e933433e2e1c381af",
+    "lerobot_commit": "3f686da66a874ecd1bf6ca84a2b423b763e2fbbe",
+    "lerobot_status": "?? .omc/\n?? src/lerobot/.omc/\n?? src/lerobot/datasets/.omc/\n?? src/lerobot/policies/smolvla/.omc/\n?? src/lerobot/robots/so_follower/.omc/",
+    "lerobot_source_sha256": {
+      "scripts/lerobot_train.py": "059bda054bbb188d4a40d0a32941aa4d9ac59252a37d67a258e685a0a6d063ec",
+      "configs/train.py": "117d9829af0db49a681876861ac6fb014bf1927b03655c3428d0ec1db968af79"
+    },
+    "training_command": [
+      "/home/lim/miniforge3/envs/lerobot/bin/python",
+      "-u",
+      "-m",
+      "lerobot.scripts.lerobot_train",
+      "--config_path=/data/lim/leisaac/outputs/act_pilot_76_20260921/model/checkpoints/002000/pretrained_model/train_config.json",
+      "--resume=true",
+      "--steps=10000",
+      "--save_freq=10000",
+      "--output_dir=/data/lim/leisaac/outputs/act_resume_10000_20260921/model",
+      "--wandb.enable=false",
+      "--policy.push_to_hub=false"
+    ]
+  },
+  "checkpoint_validation": {
+    "checked": [
+      "policy_preprocessor/action.mean",
+      "policy_preprocessor/action.std",
+      "policy_preprocessor/observation.state.mean",
+      "policy_preprocessor/observation.state.std",
+      "policy_postprocessor/action.mean",
+      "policy_postprocessor/action.std"
+    ],
+    "model_sha256": "a82ab0e5ddc2c7d11e2a6e16955885dae6cd562b2958542f90931fda79330f51",
+    "steps": 10000,
+    "train_only_state_action_stats": true,
+    "visual_stats": "fixed ImageNet"
+  },
+  "offline_comparison": {
+    "step2000": {
+      "checkpoint": "/data/lim/leisaac/outputs/act_pilot_76_20260921/model/checkpoints/002000/pretrained_model",
+      "dataset_root": "/data/lim/leisaac/outputs/act_pilot_76_20260921_split/valid",
+      "episodes": 15,
+      "first_frames": {
+        "mae": 0.20202431082725525,
+        "per_joint_rmse": [
+          0.03828005492687225,
+          0.12707854807376862,
+          0.039515171200037,
+          0.293456107378006,
+          0.6086362600326538,
+          0.20371706783771515
+        ],
+        "rmse": 0.2936071455478668,
+        "samples": 15
+      },
+      "frames": 7998,
+      "uniform_frames": {
+        "mae": 0.0592665821313858,
+        "per_joint_rmse": [
+          0.05243127420544624,
+          0.07669375091791153,
+          0.08798389881849289,
+          0.0935235321521759,
+          0.11431045085191727,
+          0.09145664423704147
+        ],
+        "rmse": 0.08808139711618423,
+        "samples": 500
+      }
+    },
+    "step10000": {
+      "checkpoint": "/data/lim/leisaac/outputs/act_resume_10000_20260921/model/checkpoints/010000/pretrained_model",
+      "dataset_root": "/data/lim/leisaac/outputs/act_pilot_76_20260921_split/valid",
+      "episodes": 15,
+      "first_frames": {
+        "mae": 0.12264522165060043,
+        "per_joint_rmse": [
+          0.06189936771988869,
+          0.17000223696231842,
+          0.1801104098558426,
+          0.11155261099338531,
+          0.04062669351696968,
+          0.21728579699993134
+        ],
+        "rmse": 0.1451893448829651,
+        "samples": 15
+      },
+      "frames": 7998,
+      "uniform_frames": {
+        "mae": 0.035138972103595734,
+        "per_joint_rmse": [
+          0.031117107719182968,
+          0.050597209483385086,
+          0.06477318704128265,
+          0.04397520050406456,
+          0.056077584624290466,
+          0.04694607853889465
+        ],
+        "rmse": 0.05001060292124748,
+        "samples": 500
+      }
+    }
+  },
+  "train_cube_bbox_m": {
+    "count": 61,
+    "min": [
+      0.2790919244289398,
+      -0.4366019368171692,
+      0.06145733594894409
+    ],
+    "max": [
+      0.4207139015197754,
+      -0.3610756993293762,
+      0.06145733594894409
+    ]
+  },
+  "rollouts": [
+    {
+      "seed": 4100,
+      "report": "outputs/act_resume_10000_20260921/rollouts/seed_4100/evaluation.json",
+      "report_sha256": "9e7e237a806818025a892c5ef36d970e983357a8dd3fb5097d7073433b411e4b",
+      "previous_report_sha256": "f793ff58dc8c068a3901507b8e4a8a3141bd231b6174c294a924e9c74476af74",
+      "result": {
+        "trial": 0,
+        "seed": 4100,
+        "cube_xy": [
+          0.27524444460868835,
+          -0.36720994114875793
+        ],
+        "success": false,
+        "steps": 1200,
+        "clipped_steps": 0,
+        "clipped_steps_by_joint": {
+          "shoulder_pan": 0,
+          "shoulder_lift": 0,
+          "elbow_flex": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0,
+          "gripper": 0
+        },
+        "max_clip_correction_rad": {
+          "shoulder_pan": 0.0,
+          "shoulder_lift": 0.0,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.0,
+          "gripper": 0.0
+        },
+        "mean_tracking_error_rad": {
+          "shoulder_pan": 0.008840227499604225,
+          "shoulder_lift": 0.02439357154071331,
+          "elbow_flex": 0.013090163469314575,
+          "wrist_flex": 0.005966648925095797,
+          "wrist_roll": 0.008044777438044548,
+          "gripper": 0.011773795820772648
+        },
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "initial_joint_pos": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "initial_observation_sha256": {
+          "front": "3083602c29c680648e414e87c66065d52766315c6e69a028fc267a93f583d472",
+          "wrist": "9c7cd07dada2b51e8ccef183e23c9d85794b32a9c3724efd3bb5f9dc32d1e21e"
+        },
+        "initial_scene_state_sha256": "7dd37f8afe8ccad07eac4152e6f790a49d03e74c590c50cab75078fbb65045d9",
+        "first_action": [
+          -0.0955863744020462,
+          -0.24985241889953613,
+          0.254325270652771,
+          -0.07612490653991699,
+          0.060257017612457275,
+          0.9497367143630981
+        ],
+        "action_min": [
+          -0.39473414421081543,
+          -0.26348400115966797,
+          -0.5718703269958496,
+          -0.07612490653991699,
+          -1.9620174169540405,
+          0.33955317735671997
+        ],
+        "action_max": [
+          0.00874076783657074,
+          0.6955567002296448,
+          0.256879985332489,
+          1.545449137687683,
+          0.060257017612457275,
+          1.5863986015319824
+        ],
+        "final_cube_xyz": [
+          0.27004632353782654,
+          -0.3464880883693695,
+          0.05598825961351395
+        ],
+        "initial_cube_xyz": [
+          0.27524444460868835,
+          -0.36720994114875793,
+          0.06145733594894409
+        ],
+        "max_cube_lift_m": 0.0,
+        "final_cube_lift_m": -0.005469076335430145,
+        "final_gripper_position_rad": 1.2808178663253784,
+        "outcome": "no_lift"
+      },
+      "previous_result": {
+        "trial": 0,
+        "seed": 4100,
+        "cube_xy": [
+          0.27524444460868835,
+          -0.36720994114875793
+        ],
+        "success": false,
+        "steps": 1200,
+        "clipped_steps": 0,
+        "clipped_steps_by_joint": {
+          "shoulder_pan": 0,
+          "shoulder_lift": 0,
+          "elbow_flex": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0,
+          "gripper": 0
+        },
+        "max_clip_correction_rad": {
+          "shoulder_pan": 0.0,
+          "shoulder_lift": 0.0,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.0,
+          "gripper": 0.0
+        },
+        "mean_tracking_error_rad": {
+          "shoulder_pan": 0.0035377144813537598,
+          "shoulder_lift": 0.019822029396891594,
+          "elbow_flex": 0.010196410119533539,
+          "wrist_flex": 0.004736317787319422,
+          "wrist_roll": 0.0052744136191904545,
+          "gripper": 0.0049132779240608215
+        },
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "initial_joint_pos": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "initial_observation_sha256": {
+          "front": "bd9ba582959284b897cc68fe5882221ef79af6867d039bb01fba17a00a425975",
+          "wrist": "3e23c4287809e1a54404afaa7fce80fa83e11f7ddc27d45b1511ed9150e6a886"
+        },
+        "initial_scene_state_sha256": "7dd37f8afe8ccad07eac4152e6f790a49d03e74c590c50cab75078fbb65045d9",
+        "first_action": [
+          -0.12037985026836395,
+          0.1575646698474884,
+          -0.030388742685317993,
+          0.30900996923446655,
+          -0.705312967300415,
+          0.8540156483650208
+        ],
+        "action_min": [
+          -0.3882693648338318,
+          0.1573156714439392,
+          -0.08198897540569305,
+          0.30900996923446655,
+          -2.0619826316833496,
+          0.6446194648742676
+        ],
+        "action_max": [
+          -0.12037985026836395,
+          0.30112630128860474,
+          0.1766696274280548,
+          1.2316991090774536,
+          -0.7044386267662048,
+          1.280043125152588
+        ],
+        "final_cube_xyz": [
+          0.27524369955062866,
+          -0.36720889806747437,
+          0.055987901985645294
+        ],
+        "initial_cube_xyz": [
+          0.27524444460868835,
+          -0.36720994114875793,
+          0.06145733594894409
+        ],
+        "max_cube_lift_m": 0.0,
+        "final_cube_lift_m": -0.005469433963298798,
+        "final_gripper_position_rad": 0.6459532380104065,
+        "outcome": "no_lift"
+      },
+      "initial_physical_hash_equal": true,
+      "initial_pixel_mae_0_255": {
+        "front": 0.10485756802721088,
+        "wrist": 0.026805644132653062
+      },
+      "inside_train_xy_bbox": false,
+      "video": "outputs/act_resume_10000_20260921/rollouts/seed_4100/rollout_001_failure.mp4",
+      "video_sha256": "65cd8899de8aaf0efbd53e341f49483b83b0ac820248d163c713a9a63b7d1ea5",
+      "video_metadata": {
+        "width": 1280,
+        "height": 480,
+        "r_frame_rate": "60/1",
+        "nb_frames": "1200"
+      }
+    },
+    {
+      "seed": 4101,
+      "report": "outputs/act_resume_10000_20260921/rollouts/seed_4101/evaluation.json",
+      "report_sha256": "76e23bf778fcaeeaeedba854475b08ac1f03109c69ad2a2462a6e702ff3368a5",
+      "previous_report_sha256": "3c9b9f46bfc5bba5fbb4a5558c8ecdf0f29549b1af2400266556593ba4ebc579",
+      "result": {
+        "trial": 0,
+        "seed": 4101,
+        "cube_xy": [
+          0.36009588837623596,
+          -0.3745215833187103
+        ],
+        "success": false,
+        "steps": 1200,
+        "clipped_steps": 0,
+        "clipped_steps_by_joint": {
+          "shoulder_pan": 0,
+          "shoulder_lift": 0,
+          "elbow_flex": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0,
+          "gripper": 0
+        },
+        "max_clip_correction_rad": {
+          "shoulder_pan": 0.0,
+          "shoulder_lift": 0.0,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.0,
+          "gripper": 0.0
+        },
+        "mean_tracking_error_rad": {
+          "shoulder_pan": 0.009226535446941853,
+          "shoulder_lift": 0.03386063873767853,
+          "elbow_flex": 0.023242183029651642,
+          "wrist_flex": 0.012795314192771912,
+          "wrist_roll": 0.012460671365261078,
+          "gripper": 0.03458620607852936
+        },
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.768000066280365
+        ],
+        "initial_joint_pos": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "initial_observation_sha256": {
+          "front": "18ec2a8f9ebb6afe9828e21573cc2fd0935f3f5785c5ff01e03ef0d0976a0e35",
+          "wrist": "1ba3d4524ec65eddace2eb9229eabd3743997b7e2fda657b7e53fcd201e14314"
+        },
+        "initial_scene_state_sha256": "d9b777b42b3e11986c47f87036cd190c31c697a2e5044a4825ed79d90df6041c",
+        "first_action": [
+          -0.08577291667461395,
+          -0.2642294764518738,
+          0.27804291248321533,
+          -0.07720649242401123,
+          0.06828075647354126,
+          0.9634464979171753
+        ],
+        "action_min": [
+          -0.37149369716644287,
+          -0.2850388288497925,
+          -1.0254247188568115,
+          -0.07720649242401123,
+          -1.6072555780410767,
+          0.04155653715133667
+        ],
+        "action_max": [
+          0.6983832120895386,
+          0.6043869256973267,
+          0.495324969291687,
+          1.5609910488128662,
+          0.06828075647354126,
+          1.5292187929153442
+        ],
+        "final_cube_xyz": [
+          0.36009684205055237,
+          -0.3745194673538208,
+          0.05598819628357887
+        ],
+        "initial_cube_xyz": [
+          0.36009588837623596,
+          -0.3745215833187103,
+          0.06145733594894409
+        ],
+        "max_cube_lift_m": 0.0,
+        "final_cube_lift_m": -0.005469139665365219,
+        "final_gripper_position_rad": 0.7375326156616211,
+        "outcome": "no_lift"
+      },
+      "previous_result": {
+        "trial": 0,
+        "seed": 4101,
+        "cube_xy": [
+          0.36009588837623596,
+          -0.3745215833187103
+        ],
+        "success": false,
+        "steps": 1200,
+        "clipped_steps": 0,
+        "clipped_steps_by_joint": {
+          "shoulder_pan": 0,
+          "shoulder_lift": 0,
+          "elbow_flex": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0,
+          "gripper": 0
+        },
+        "max_clip_correction_rad": {
+          "shoulder_pan": 0.0,
+          "shoulder_lift": 0.0,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.0,
+          "gripper": 0.0
+        },
+        "mean_tracking_error_rad": {
+          "shoulder_pan": 0.006479238159954548,
+          "shoulder_lift": 0.043365079909563065,
+          "elbow_flex": 0.026182593777775764,
+          "wrist_flex": 0.006344315595924854,
+          "wrist_roll": 0.006572744809091091,
+          "gripper": 0.005947942845523357
+        },
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.768000066280365
+        ],
+        "initial_joint_pos": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "initial_observation_sha256": {
+          "front": "9681079e3f2c501160fa3311506257dde6db3f37c1a9ce309709f532ad1cbc8b",
+          "wrist": "42a0be8e414a45ae38e767d8fd0927c168108a859f9ef10dc1413b0c7ba724c3"
+        },
+        "initial_scene_state_sha256": "d9b777b42b3e11986c47f87036cd190c31c697a2e5044a4825ed79d90df6041c",
+        "first_action": [
+          -0.0865330845117569,
+          0.12377843260765076,
+          -0.056183166801929474,
+          0.36919331550598145,
+          -0.6654961109161377,
+          0.8179428577423096
+        ],
+        "action_min": [
+          -0.35808122158050537,
+          -0.3574367165565491,
+          -1.1190577745437622,
+          0.36919331550598145,
+          -1.5335640907287598,
+          -0.011638402938842773
+        ],
+        "action_max": [
+          0.7975134253501892,
+          0.8110825419425964,
+          0.3421075940132141,
+          1.49765944480896,
+          -0.5368963479995728,
+          1.2542136907577515
+        ],
+        "final_cube_xyz": [
+          0.36009684205055237,
+          -0.3745194673538208,
+          0.05598819628357887
+        ],
+        "initial_cube_xyz": [
+          0.36009588837623596,
+          -0.3745215833187103,
+          0.06145733594894409
+        ],
+        "max_cube_lift_m": 0.0,
+        "final_cube_lift_m": -0.005469139665365219,
+        "final_gripper_position_rad": 0.4901825487613678,
+        "outcome": "no_lift"
+      },
+      "initial_physical_hash_equal": true,
+      "initial_pixel_mae_0_255": {
+        "front": 0.06894398384353742,
+        "wrist": 0.017352253401360544
+      },
+      "inside_train_xy_bbox": true,
+      "video": "outputs/act_resume_10000_20260921/rollouts/seed_4101/rollout_001_failure.mp4",
+      "video_sha256": "05cd6b3ac2d02b1efce9a68c76ca5513a317b055bfa77c5ec51e7cead4ab89ce",
+      "video_metadata": {
+        "width": 1280,
+        "height": 480,
+        "r_frame_rate": "60/1",
+        "nb_frames": "1200"
+      }
+    },
+    {
+      "seed": 4102,
+      "report": "outputs/act_resume_10000_20260921/rollouts/seed_4102/evaluation.json",
+      "report_sha256": "a84558f6cc33ad63af5d4b3ffd4b960effbadf0b50b0f8310ad0b896b59b98b5",
+      "previous_report_sha256": "df2109c433afbb4fd90c59beca2811676292e89050eec126afdcfbc7687c7e52",
+      "result": {
+        "trial": 0,
+        "seed": 4102,
+        "cube_xy": [
+          0.37154433131217957,
+          -0.3424868881702423
+        ],
+        "success": false,
+        "steps": 1200,
+        "clipped_steps": 290,
+        "clipped_steps_by_joint": {
+          "shoulder_pan": 0,
+          "shoulder_lift": 0,
+          "elbow_flex": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0,
+          "gripper": 290
+        },
+        "max_clip_correction_rad": {
+          "shoulder_pan": 0.0,
+          "shoulder_lift": 0.0,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.0,
+          "gripper": 0.015540003776550293
+        },
+        "mean_tracking_error_rad": {
+          "shoulder_pan": 0.008462154306471348,
+          "shoulder_lift": 0.00855873804539442,
+          "elbow_flex": 0.007084499578922987,
+          "wrist_flex": 0.013388603925704956,
+          "wrist_roll": 0.009500237181782722,
+          "gripper": 0.015699835494160652
+        },
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "initial_joint_pos": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "initial_observation_sha256": {
+          "front": "c003e98738c46f9768aff1197f3d550f09067fb3e66063491432b777d4ad676d",
+          "wrist": "348b20e55b4b7d4b996bf585f86127510ac56eb41f269cf6e9c8162154c0c8ed"
+        },
+        "initial_scene_state_sha256": "e5514bb961cc341ebbc421c515986c3475b413b6dc941cddf0351e0c782ab647",
+        "first_action": [
+          -0.09154225885868073,
+          -0.2506803870201111,
+          0.23819535970687866,
+          -0.06960797309875488,
+          0.05306953191757202,
+          0.9074153304100037
+        ],
+        "action_min": [
+          -0.37190085649490356,
+          -0.26888149976730347,
+          -0.4927683174610138,
+          -0.06960797309875488,
+          -1.822862148284912,
+          0.8057745099067688
+        ],
+        "action_max": [
+          0.0345180481672287,
+          0.5961977243423462,
+          0.24298223853111267,
+          1.5608307123184204,
+          0.05306953191757202,
+          1.7608698606491089
+        ],
+        "final_cube_xyz": [
+          0.37154361605644226,
+          -0.34248632192611694,
+          0.05598800256848335
+        ],
+        "initial_cube_xyz": [
+          0.37154433131217957,
+          -0.3424868881702423,
+          0.06145733594894409
+        ],
+        "max_cube_lift_m": 0.0,
+        "final_cube_lift_m": -0.005469333380460739,
+        "final_gripper_position_rad": 1.6179450750350952,
+        "outcome": "no_lift"
+      },
+      "previous_result": {
+        "trial": 0,
+        "seed": 4102,
+        "cube_xy": [
+          0.37154433131217957,
+          -0.3424868881702423
+        ],
+        "success": false,
+        "steps": 1200,
+        "clipped_steps": 0,
+        "clipped_steps_by_joint": {
+          "shoulder_pan": 0,
+          "shoulder_lift": 0,
+          "elbow_flex": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0,
+          "gripper": 0
+        },
+        "max_clip_correction_rad": {
+          "shoulder_pan": 0.0,
+          "shoulder_lift": 0.0,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.0,
+          "gripper": 0.0
+        },
+        "mean_tracking_error_rad": {
+          "shoulder_pan": 0.012301921844482422,
+          "shoulder_lift": 0.014898535795509815,
+          "elbow_flex": 0.00925615057349205,
+          "wrist_flex": 0.014977497048676014,
+          "wrist_roll": 0.009160306304693222,
+          "gripper": 0.008733261376619339
+        },
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "initial_joint_pos": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "initial_observation_sha256": {
+          "front": "8d77bccc3c966ae75faf4e7944bd76ce9050258a62169b3ac9a730d5e9bd3bc2",
+          "wrist": "5ae4955e6d4067ecdaf367713bc3b4cc2a48e08794440e0956c74ddc86efe413"
+        },
+        "initial_scene_state_sha256": "e5514bb961cc341ebbc421c515986c3475b413b6dc941cddf0351e0c782ab647",
+        "first_action": [
+          -0.12052266299724579,
+          0.13797418773174286,
+          -0.08830202370882034,
+          0.41210150718688965,
+          -0.7019345760345459,
+          0.822021484375
+        ],
+        "action_min": [
+          -0.31280970573425293,
+          0.13756608963012695,
+          -0.3245958685874939,
+          0.41210150718688965,
+          -1.8119194507598877,
+          0.8219305872917175
+        ],
+        "action_max": [
+          -0.12049372494220734,
+          0.521501898765564,
+          0.026664122939109802,
+          1.4746794700622559,
+          -0.7009729146957397,
+          1.7277030944824219
+        ],
+        "final_cube_xyz": [
+          0.37154361605644226,
+          -0.34248632192611694,
+          0.05598800256848335
+        ],
+        "initial_cube_xyz": [
+          0.37154433131217957,
+          -0.3424868881702423,
+          0.06145733594894409
+        ],
+        "max_cube_lift_m": 0.0,
+        "final_cube_lift_m": -0.005469333380460739,
+        "final_gripper_position_rad": 1.4985830783843994,
+        "outcome": "no_lift"
+      },
+      "initial_physical_hash_equal": true,
+      "initial_pixel_mae_0_255": {
+        "front": 0.13114503613945577,
+        "wrist": 0.032837744472789115
+      },
+      "inside_train_xy_bbox": false,
+      "video": "outputs/act_resume_10000_20260921/rollouts/seed_4102/rollout_001_failure.mp4",
+      "video_sha256": "6818574145d44bd538f8c5b6fbcfcc3232c475e76f6c1ab84f2596e9c58716ac",
+      "video_metadata": {
+        "width": 1280,
+        "height": 480,
+        "r_frame_rate": "60/1",
+        "nb_frames": "1200"
+      }
+    }
+  ],
+  "source_code_modified": false,
+  "physical_robot_tested": false,
+  "limitations": [
+    "Diagnostic comparison of the same three seeds, not independent generalization estimate",
+    "Two evaluation cube positions fall outside the training-only initial-position bounding box",
+    "Initial physical hashes match but rendered pixels are not bit-identical",
+    "Offline error reduction has not translated into cube lift; no claim of convergence or data insufficiency"
+  ],
+  "artifact_sha256": {
+    "resume_provenance.json": "6f1017e243c53a9226b1bbd5ae400bd4154c9fb58b1cd5f287dd97ab438d0d04",
+    "checkpoint_validation.json": "68f6fc080d94dd0b9426d7204d1af252b7842fad678c3aa7828d93d860a22d9a",
+    "offline_valid.json": "a91f9b067f433a2aa7b67b98b30e6e7f03db2af3ec9351a136daec504f0c0dca",
+    "evaluation_summary.json": "2a1f551ed7c4c325642fb095269bb21b7bf3bae3e01fab461b2f51668f793e07",
+    "progress.json": "a0ab77a34160665e7c7116889ff569b25363915e5397ef04f211e14a5e79fb87",
+    "logs/train.log": "f4ad00c74898ec4f7b12a1ca2278222b43b9ba41201eaad8d79ea077f82db997"
+  }
+}
