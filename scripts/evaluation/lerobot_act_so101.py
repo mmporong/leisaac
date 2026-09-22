@@ -41,6 +41,8 @@ parser.add_argument("--dump-policy-images-range", type=int, nargs=2, default=Non
                     help="Inclusive completed-step indices, aligned with trace.step (one-based).")
 parser.add_argument("--gripper-effort-mode", choices=("task", "fixed"), default="task",
                     help="Match Mimic task effort updates; fixed reproduces the legacy evaluator.")
+parser.add_argument("--diagnostic-action-source", choices=("policy", "teacher_arm", "teacher_gripper", "teacher_all"),
+                    default="policy", help="Non-policy modes replace selected commands using the initial-state demo; diagnostic only.")
 parser.add_argument(
     "--lift-threshold-m",
     type=float,
@@ -75,6 +77,8 @@ args_cli = parser.parse_args()
 args_cli.enable_cameras = True
 if (args_cli.initial_state_hdf5 is None) != (args_cli.initial_state_demo is None):
     parser.error("--initial-state-hdf5 and --initial-state-demo must be given together")
+if args_cli.diagnostic_action_source != "policy" and args_cli.initial_state_hdf5 is None:
+    parser.error("diagnostic action substitution requires an initial-state HDF5 and demo")
 try:
     dump_bounds = validate_dump_options(args_cli.dump_policy_images_every, args_cli.dump_policy_images_range,
                                         args_cli.horizon, args_cli.trace_steps)
@@ -107,6 +111,7 @@ from isaaclab_tasks.utils import parse_env_cfg
 from leisaac.utils.env_utils import dynamic_reset_gripper_effort_limit_sim
 from leisaac.tasks.pick_cube_into_box.mdp.release_state import release_criteria_metadata
 from leisaac.tasks.pick_cube_into_box.mdp.terminations import cube_released_in_box
+from action_intervention import load_teacher_commands, substitute_action
 
 import leisaac  # noqa: F401
 
@@ -263,6 +268,10 @@ def main() -> None:
     output_dir = args_cli.output_dir.expanduser().resolve()
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(f"output directory is not empty: {output_dir}")
+    teacher_commands, teacher_metadata = None, None
+    if args_cli.diagnostic_action_source != "policy":
+        teacher_commands, teacher_metadata = load_teacher_commands(
+            args_cli.initial_state_hdf5, args_cli.initial_state_demo, args_cli.horizon)
     output_dir.mkdir(parents=True, exist_ok=True)
     server_command = [
         str(args_cli.server_python.expanduser().resolve()),
@@ -359,6 +368,7 @@ def main() -> None:
             trace = []
             policy_image_manifest = []
             success = False
+            first_lift_step = None
             trial_state_snapshots = []
             try:
                 for step in range(args_cli.horizon):
@@ -392,6 +402,11 @@ def main() -> None:
                         dtype=torch.float32,
                         device=env.device,
                     ).view(1, 6)
+                    policy_action = action.clone() if teacher_commands is not None else None
+                    if teacher_commands is not None:
+                        teacher_action = torch.as_tensor(teacher_commands[step], dtype=action.dtype,
+                                                         device=action.device).view(1, 6)
+                        action = substitute_action(action, teacher_action, args_cli.diagnostic_action_source)
                     if first_action is None:
                         first_action = action[0].detach().cpu().tolist()
                         action_min = action[0].detach().clone()
@@ -415,14 +430,19 @@ def main() -> None:
                     cube_z = float(env.scene["cube"].data.root_pos_w[0, 2].item())
                     max_cube_lift_m = max(max_cube_lift_m, cube_z - initial_cube_xyz[2])
                     completed_step = step + 1
+                    if first_lift_step is None and cube_z - initial_cube_xyz[2] >= args_cli.lift_threshold_m:
+                        first_lift_step = completed_step
                     if step < args_cli.trace_steps:
                         trace.append({
                             "step": completed_step,
                             "state_before": state_before.cpu().tolist(),
                             "requested_action": action[0].detach().cpu().tolist(),
+                            "policy_action": (policy_action if policy_action is not None else action)[0].detach().cpu().tolist(),
                             "applied_action": clipped[0].detach().cpu().tolist(),
                             "state_after": observations["policy"]["joint_pos"][0].detach().cpu().tolist(),
                             "cube_xyz": env.scene["cube"].data.root_pos_w[0, :3].detach().cpu().tolist(),
+                            **({"teacher_action": teacher_action[0].detach().cpu().tolist()}
+                               if teacher_commands is not None else {}),
                         })
                     if (
                         args_cli.failure_state_file is not None
@@ -457,6 +477,7 @@ def main() -> None:
                 "seed": trial_seed,
                 "cube_xy": cube_xy,
                 "success": success,
+                "first_success_step": step + 1 if success else None,
                 "steps": step + 1,
                 "clipped_steps": clipped_steps,
                 "clipped_steps_by_joint": dict(zip(robot.joint_names, clipped_joint_steps.cpu().tolist())),
@@ -472,6 +493,7 @@ def main() -> None:
                 "final_cube_xyz": final_cube_xyz,
                 "initial_cube_xyz": initial_cube_xyz,
                 "max_cube_lift_m": max_cube_lift_m,
+                "first_lift_step": first_lift_step,
                 "final_cube_lift_m": final_cube_lift_m,
                 "final_gripper_position_rad": float(observations["policy"]["joint_pos"][0, -1].item()),
                 "outcome": outcome,
@@ -513,6 +535,9 @@ def main() -> None:
             "dump_policy_images_every": args_cli.dump_policy_images_every,
             "dump_policy_images_range": list(dump_bounds) if dump_bounds is not None else None,
             "gripper_effort_mode": args_cli.gripper_effort_mode,
+            "diagnostic_action_source": args_cli.diagnostic_action_source,
+            "autonomous_policy_evaluation": args_cli.diagnostic_action_source == "policy",
+            "teacher_command_source": teacher_metadata,
             "success_criteria": release_criteria_metadata(success_term.params),
             "control_dt_s": float(env.step_dt),
             "joint_names": robot.joint_names,

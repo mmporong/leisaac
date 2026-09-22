@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-09-22T08:40:24.455674+00:00",
+  "status": "cpu_preflight_pass_gpu_execution_not_started",
+  "preflight": {
+    "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5",
+    "raw_sha256": "1e885d7070bab5bd16f18c57e71f28754c20a3609251c58d28d25c442df1cf35",
+    "demo": "demo_9",
+    "model": "/data/lim/leisaac/outputs/act_reset_fixed_76_20260921/model/checkpoints/010000/pretrained_model",
+    "model_sha256": "ebed7e5415bf1f5501e7b834bfcb5f97c84593335fda145822f3c71fe4aeebab",
+    "reference_path": "/data/lim/leisaac/outputs/evaluation/control_diagnosis_20260921/shard009_recorded_target/evaluation.json",
+    "reference_sha256": "a993b63c1021d2d201c1021137fb7bcf957e43337f6a90a98204dfccf10ca9d8",
+    "scene_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+    "success_criteria": {
+      "version": "stable_release_v2",
+      "hold_time_s": 0.5,
+      "max_linear_speed_m_s": 0.03,
+      "max_angular_speed_rad_s": 0.5,
+      "half_extent_xy_m": 0.045,
+      "min_height_m": 0.012,
+      "max_height_m": 0.075,
+      "open_threshold_rad": 0.26
+    },
+    "control_dt_s": 0.016666666666666666,
+    "joint_names": [
+      "shoulder_pan",
+      "shoulder_lift",
+      "elbow_flex",
+      "wrist_flex",
+      "wrist_roll",
+      "gripper"
+    ],
+    "lower": [
+      -1.9198598861694336,
+      -1.7453298568725586,
+      -1.7453298568725586,
+      -1.65805983543396,
+      -2.792530059814453,
+      -0.17453300952911377
+    ],
+    "upper": [
+      1.9198598861694336,
+      1.7453298568725586,
+      1.5707998275756836,
+      1.65805983543396,
+      2.792530059814453,
+      1.7453298568725586
+    ],
+    "effort": [
+      0.06666666269302368,
+      0.06666666269302368
+    ]
+  },
+  "unit_tests_passed": 197,
+  "gpu_compute_processes_at_check": "957888, /data/lim/conda-envs/leisaac/bin/python, 2984 MiB",
+  "outputs_created": false,
+  "free_data_bytes": 16076169216,
+  "implementation_sha256": {
+    "scripts/evaluation/lerobot_act_so101.py": "12a85a6d3d6f368866b87e7b8d692e98276adf451887147bbf9fd8d44187ef97",
+    "scripts/evaluation/action_intervention.py": "8379610b5ecb896852b51a1949719c0d72e9ded6af278f8ced83a7e517ea2fe2",
+    "scripts/evaluation/run_action_intervention.py": "8c6f2841265d6d109057125c8acee77115f107740c9cfe85c69c4218bbf6a4cd"
+  },
+  "limits": [
+    "No new intervention rollout or learned policy success result exists in this snapshot",
+    "Other GPU processes were not stopped",
+    "Existing plan_r5 closed-loop gate remains unresolved"
+  ]
+}

@@ -3,7 +3,8 @@
 > 2026-09-22 **2.0·1.1 완료, 1.2 영상 수집 완료, 과거 실행과의 명령 재현은 실패**했다.
 > 정책 PNG 202장을 확보했지만 close 잔존도 14/30으로 최소 15개보다 적어 **1.1.7 판정은 미결**이다.
 > 같은 날 승인받은 중간 체크포인트 정리로 7.22 GiB를 회수했고 `/data` 여유는 약 15.1 GiB다.
-> 아래 7절은 실행 전 기록이다. 이어서 작업할 때는 **12절**과 [원인 인계 14절](HANDOFF_MIMIC_ACT_ROOT_CAUSE_20260921.md#14-남은-원인-cpu-조사-2026-09-22)을 먼저 읽는다.
+> 아래 7절은 실행 전 기록이다. **13절에 팔·그리퍼 명령 분리 진단과 Diffusion 대안 준비를 추가했다.**
+> 이어서 작업할 때는 12·13절과 [원인 인계 14절](HANDOFF_MIMIC_ACT_ROOT_CAUSE_20260921.md#14-남은-원인-cpu-조사-2026-09-22)을 먼저 읽는다.
 
 이 문서는 2026-09-21 세션의 결과를 다른 세션으로 옮기기 위한 정리다.
 기준 커밋은 이 문서를 포함한 커밋이며, 직전 결과 커밋은 `58d9ac9`다.
@@ -242,3 +243,61 @@ CUDA_VISIBLE_DEVICES='' "$HOME/miniforge3/envs/lerobot/bin/python" \
 ```
 
 현재 데이터에 대한 예상 결과는 **strict 재현 실패, exit 1, close 잔존 14개**다. 프로그램 장애나 성공 결과로 바꿔 해석하지 않는다.
+
+## 13. 팔·그리퍼 명령 분리와 대안 모델 준비
+
+### 13.1 이미 성공한 물리 제어 대조군
+
+`outputs/evaluation/control_diagnosis_20260921/shard009_recorded_target/evaluation.json`을 재확인했다.
+현재 진단과 같은 `shard_009/demo_9`, 초기 물리 상태 `375aaad2…`, velocity target 0, task effort, stable_release_v2 조건에서
+시연의 `joint_pos_target[t+1]` 재생은 **642스텝에 안정 놓기를 달성**했다. 최대 큐브 상승은 약 0.11545m, clipping은 0회다.
+따라서 이 장면에서 올바른 명령을 물리적으로 실행하는 것 자체가 불가능하지는 않다. 이 성공은 ACT 자율 성공이 아니다.
+
+### 13.2 새 진단 구현과 실행 전제
+
+[사전 등록](plans/remaining_causes_20260921/action_intervention_20260922.md)에 따라 같은 evaluator에서 네 조건을 비교한다.
+
+| 조건 | 팔 5축 | 그리퍼 | 의미 |
+| --- | --- | --- | --- |
+| policy | ACT | ACT | 기준선 |
+| teacher_gripper | ACT | 시연 | 그리퍼 명령을 교체 |
+| teacher_arm | 시연 | ACT | 팔 명령을 교체 |
+| teacher_all | 시연 | 시연 | 새 교체 경로의 양성 대조 |
+
+각 seed(4101, 4102)에서 teacher_all의 안정 놓기 성공과 명령 감사를 먼저 통과해야 나머지 조건이 실행된다.
+전체 675스텝 또는 성공 시 종료한 prefix의 원래 정책 명령·교체 후 명령·제한 적용 명령을 기록한다.
+교체 채널은 raw target[t+1]와, 비교체 채널은 ACT 명령과 최대 차이 0인지 검사한다. 원본·모델·구현 파일 해시도 실행 전후 확인한다.
+두 반복의 결과가 다르면 채널 원인을 확정하지 않는다. 초기 RGB의 launch 간 차이는 혼란변수로 남는다.
+
+관련 구현:
+
+- `scripts/evaluation/action_intervention.py`: 명령 정렬·채널 교체.
+- `scripts/evaluation/lerobot_act_so101.py`: 기본 policy 경로 유지, opt-in 진단 옵션·trace 확장.
+- `scripts/evaluation/run_action_intervention.py`: 양성 대조 gate, 순차 실행, 전구간 감사, 영상·로그·매니페스트 기록.
+
+CPU 사전 검사와 전체 **197개 단위 테스트** 및 별도 코드 리뷰는 통과했다.
+이 시점에는 다른 프로젝트의 `simulate_restaurant_mobile.py`가 GPU를 점유해 **새 진단 시뮬레이션을 시작하지 않았다.**
+다른 프로세스를 종료하지 않았고, 자동 대기·예약 실행 프로세스도 만들지 않았다.
+이 기록은 실행 준비 완료이지 새 집기 성공 결과가 아니다. [실행 준비 근거](evidence/action_intervention_readiness_20260922.json)를 참조한다.
+
+GPU가 유휴 상태일 때 다음 명령으로 실행한다. `CUDA_VISIBLE_DEVICES=''`를 붙이면 하위 Isaac의 GPU까지 가려지므로 붙이지 않는다.
+
+```bash
+cd "/data/$USER/leisaac"
+"$HOME/miniforge3/envs/lerobot/bin/python" scripts/evaluation/run_action_intervention.py
+```
+
+기본 산출물은 `outputs/action_intervention_20260922/`다. 기존 디렉터리가 있으면 덮어쓰지 않고 중단한다.
+중단된 실행을 새 경로에서 다시 할 때는 이전 실패·부분 결과도 보존하고 함께 보고한다.
+
+### 13.3 ACT는 최종 선택으로 고정하지 않음
+
+사용자가 ACT 외 학습 방법도 비교할 것을 제안했다. 우선 대안은 **Diffusion Policy**다.
+현재 LeRobot 환경에 Diffusion Policy와 diffusers가 설치돼 있고, 수정 76개 LeRobot 데이터·학습/검증 분할을 재사용할 수 있다.
+Mimic 증강 데이터가 ACT만을 위한 데이터인 것은 아니다.
+
+다만 현재 학습 runner·서버·오프라인 평가·checkpoint 검증의 ACT 고정 가정을 정책별로 분리해야 한다.
+Diffusion은 state/action MIN_MAX 정규화, 관측/행동 시간창, 확률적 추론을 별도로 다뤄야 한다.
+구현 존재와 데이터 호환 가능성을 확인한 것이며 **GPU 학습 가능 배치 크기·자율 성능·ACT 대비 우위는 아직 검증하지 않았다.**
+공식 근거는 [Diffusion Policy](https://diffusion-policy.cs.columbia.edu/)와
+[LeRobot 학습 예제](https://github.com/huggingface/lerobot/blob/main/examples/tutorial/diffusion/diffusion_training_example.py)다.
