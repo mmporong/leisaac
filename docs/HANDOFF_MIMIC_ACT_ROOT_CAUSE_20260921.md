@@ -427,3 +427,95 @@ N>0이면 매 reset 뒤 물리를 진행하지 않고 N회 렌더 → `camera.re
 (2) 61개 학습 에피소드가 원본 시연 10개에서 파생된 점을 고려해 시연 단위 다양성 부족을 별도 실험으로 분리,
 (3) 카메라 갱신 주기 결정. 학습 데이터 재생성은 여전히 (1)~(3)보다 뒤에 둔다.
 
+## 14. 남은 원인 CPU 조사 (2026-09-22)
+
+계획: [plan_r5.md](plans/remaining_causes_20260921/plan_r5.md).
+이번 실행 범위는 2.0 → 1.1과 1.1.7의 상태 거리 검사다. Isaac·추가 학습·실물 실행·용량 정리는 하지 않았다.
+
+### 14.1 소스 귀속과 선별 게이트: 2.0 완료
+
+근거: [source_gate_decomposition_20260921.json](evidence/source_gate_decomposition_20260921.json).
+세부 행과 원본 보존 기록은 `outputs/source_attribution_20260921_verified/`에 있다.
+
+- raw 500개에서 원본 시연 10개가 모두 확인됐다. 시연 길이와 최초 닫힘 인덱스의 귀속 결과가 500개 전부 일치한다.
+- 게이트별 개수는 500 → 점프 기준 403 → 안정 놓기까지 294 → 관절 한계까지 76이다.
+- 품질 기준 통과 후 관절 한계 때문에 탈락한 수는 **전체 218개**, 그중 완전히 빠진 3계열(`src:demo_0/2/3`)이 **110개**다. 두 수를 혼용하지 않는다.
+- 허용오차 0.05 후보 풀은 188개·9계열·119,680 LeRobot 프레임이다. 새 데이터셋을 만들거나 게이트를 완화한 것이 아니라 기존 raw에서 후보 수만 계산했다.
+- close 구간의 클리핑 대상 프레임은 기존 6계열 0/3,360, 추가 3계열 0/2,280이다.
+- `src:demo_6`의 37개는 모두 첫 유효 목표부터 닫혀 있고 안정 놓기는 0/37이다. 닫힘 신호 학습 판정에서 제외한다.
+- diagnostics와 raw 20개 shard의 SHA-256, strict 76개와 기존 action contract의 정확한 목록을 대조했다.
+
+### 14.2 닫힘 신호와 폐루프 실패는 구분해야 한다
+
+근거: [grasp_close_signal_20260921.json](evidence/grasp_close_signal_20260921.json).
+모델 2개 × 입력 경로 2개 × 검사 집합 2개의 8개 결과는 `outputs/grasp_signal_probe_20260921/`에 보존했다.
+
+프로브는 시연의 관측을 매 프레임 모델에 넣어 미래 30개 행동을 예측한다. 실제 로봇이나 시뮬레이터가 그 행동을 수행하는 검사가 아니다.
+판정에는 close 구간 적중률, 닫힘 시점 오차, pre-close 오경보율, 귀무모형 3종을 함께 쓴다.
+각 모델의 기존 10k 체크포인트와 해당 학습 통계를 사용하며 모델 가중치는 바꾸지 않는다.
+
+검증 15개는 총 7,998프레임이다. 끝부분의 불완전한 청크 435개를 제외한 7,563개를 검사한다.
+닫힘 전이를 포함한 판정 구간은 450개다. 아래 비율은 **집기 성공률이 아니다**.
+
+| 검증 입력 | 모델 | close 적중 | 닫힘 시점 오차 중앙값 | pre-close 오경보 | 계획 판정 |
+| --- | --- | --- | --- | --- | --- |
+| LeRobot 디코딩 | 초기 영상 수정 데이터 10k | 398/450 (88.44%) | 0스텝 | 2.22% | 티처포싱 학습됨 |
+| LeRobot 디코딩 | 기존 데이터 10k | 390/450 (86.67%) | +1스텝 | 0.44% | 티처포싱 학습됨 |
+| raw 원본 배열 | 초기 영상 수정 데이터 10k | 393/450 (87.33%) | +1스텝 | 1.56% | 티처포싱 학습됨 |
+| raw 원본 배열 | 기존 데이터 10k | 368/450 (81.78%) | +2스텝 | 0.44% | 티처포싱 학습됨 |
+
+두 모델 모두 원래 학습한 장면 1개(`train episode 20`, `shard_009/demo_9`)의 238~338프레임 검사에서도 기준을 통과했다.
+검증 집합의 `src:demo_4/9`는 각 1개 에피소드뿐이므로 계열별 판정을 내리지 않는다. `src:demo_1/8`은 검증 집합에 없다.
+기존 모델의 `src:demo_7`은 raw 입력에서 112/150 (74.67%)로 계열별 기준에 미달한다. 전체 평균의 통과를 모든 계열의 통과로 해석하면 안 된다.
+
+**입력 동등성은 통과하지 못했다.** 같은 프레임의 raw와 디코딩 영상에서 최대 화소 차는 front 147/255, wrist 119/255다.
+검증한 7,563프레임 모두에서 두 카메라가 사전 등록 기준 5/255를 넘었다. 두 입력을 동등하다고 합치지 않았고 위 표처럼 각각 판정했다.
+이 측정만으로 압축·시간 정렬 중 어느 요인이 차이를 만들었는지, 집기 실패의 원인인지 단정하지 않는다.
+
+이 결과는 "닫힘 신호를 전혀 학습하지 못했다"는 가설을 지지하지 않는다.
+그러나 시연 관측에 대한 예측이므로 **자율 실행의 도달 실패와 좁은 상태 이웃 암기를 구분하지 못한다**.
+이 구분에는 다음 절의 폐루프 영상 입력이 필요하다.
+
+### 14.3 1.1.7은 상태 거리만 확인, 영상 프로브는 보류
+
+기존 `outputs/initial_frame_diag_20260921/rollout_demo9_fixedmodel_n30/trace_001.json`에는
+420스텝의 `state_before`가 있지만 정책 입력 영상은 초기 front/wrist PNG만 있다.
+계획에서 요구하는 240~340스텝의 224×224 PNG는 없다.
+
+`trace.step = s+1`로 정렬해 101스텝의 관절 상태 차이를 계산했다. close 구간 30개 중 17개는 모든 관절 차이가 0.2 rad 이내이고, 13개는 제외된다.
+잔존 표본 하한 15개는 넘지만 영상이 없으므로 **폐루프 적중률과 2×2 원인 판정은 미결**이다.
+기존 MP4나 초기 PNG로 빠진 정책 입력을 대신하지 않는다.
+
+근거: `outputs/grasp_signal_probe_20260921/closed_loop_prerequisites.json`.
+`scripts/evaluation/inspect_close_window_trace.py`는 이 선행조건만 검사하며 폐루프 ACT 실행 도구가 아니다.
+
+### 14.4 다음 실행 조건
+
+1. 디스크 확보 전에는 Isaac·학습을 시작하지 않는다. 이 실행 중 `/data` 여유는 약 4.2 GiB다.
+2. 확보 후 1.2의 정책 입력 PNG 덤프를 구현·검증하고 같은 demo_9 장면으로 실행한다. 현재 evaluator에는 해당 덤프 옵션이 아직 구현되지 않았으므로 계획의 명령을 그대로 실행하면 안 된다.
+3. PNG와 trace를 맞춘 1.1.7로 폐루프 축을 측정한 뒤 계획 4.1의 게이트를 적용한다.
+4. 다양성 학습 2.2는 진입 시 14,450 MiB 이상 여유가 필요하다. 기존 8 GiB 학습 가드를 낮추지 않는다.
+5. 원본 raw·파생 76 raw·두 모델과 다른 세션 산출물은 보존한다. 기존 실험 `outputs/robomimic` 약 7.0 GiB, `outputs/lerobot` 약 8.0 GiB는 회수 후보일 뿐 삭제 승인이나 이번 작업의 정리 대상이 아니다.
+
+### 14.5 검증과 재현
+
+- 전체 단위 테스트 171개와 변경한 Python 파일 6개의 컴파일 검사, `git diff --check`를 통과했다. 기존 action contract·strict replay·성공 판정·자원 가드는 수정하지 않았다.
+- 모델별 체크포인트 SHA-256은 기존 `a82ab0e5…`, 수정 `ebed7e54…`로 유지됐다. 각 체크포인트의 state/action 정규화 통계와 학습 split, 고정 ImageNet 영상 통계를 대조했다.
+- 각 실행에서 동일한 20개 관측을 두 번 질의했고 예측 배열이 비트 단위로 같았다.
+- 최종 집계에서 8개 실행의 정확한 프레임 집합, 4개 예측기의 지표·판정, 계열별 표본 하한을 다시 검사했다. 실행마다 표본 3개의 상태 복사 귀무모형 오차를 raw에서 별도로 재계산했으며 차이는 모두 0이었다.
+- 원본 500 raw와 파생 76 raw의 81개 파일 크기·mtime 보존 기록은 `outputs/source_attribution_20260921_verified/input_preservation.json`에 있다.
+- 검증 보고서 8개는 수정하지 않고 보존한다. 초기에 실행한 LeRobot 보고서는 선택 인자 검증 필드 추가 전 형식이므로 최종 집계 도구가 전체 행 집합과 모델/split 계약을 다시 검증했다.
+
+재현 예시(결과 경로는 기존 파일과 겹치면 거부한다):
+
+```bash
+cd "/data/$USER/leisaac"
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 "$HOME/miniforge3/envs/lerobot/bin/python" \
+  scripts/evaluation/probe_gripper_close_offline.py \
+  --checkpoint outputs/act_reset_fixed_76_20260921/model/checkpoints/010000/pretrained_model \
+  --split-root outputs/act_reset_fixed_76_20260921_split --part valid --stride 1 \
+  --device cpu --force-processor-device cpu --input-path raw --threads 2 \
+  --output outputs/grasp_signal_probe_followup/valid_fixedmodel_raw.json
+CUDA_VISIBLE_DEVICES='' "$HOME/miniforge3/envs/lerobot/bin/python" \
+  -m unittest discover -s scripts/imitation_learning -p 'test_*.py' -q
+```
