@@ -4,6 +4,7 @@
 > 정책 PNG 202장을 확보했지만 close 잔존도 14/30으로 최소 15개보다 적어 **1.1.7 판정은 미결**이다.
 > 같은 날 승인받은 중간 체크포인트 정리로 7.22 GiB를 회수했고 `/data` 여유는 약 15.1 GiB다.
 > 아래 7절은 실행 전 기록이다. **13절에 팔·그리퍼 명령 분리 진단과 Diffusion 대안 준비를 추가했다.**
+> Diffusion 실제 데이터 CPU 연결 검사는 통과했다(13.4). 새 진단 시뮬레이션·본학습은 아직 미실행이며, 재시작 절차는 **14절**이다.
 > 이어서 작업할 때는 12·13절과 [원인 인계 14절](HANDOFF_MIMIC_ACT_ROOT_CAUSE_20260921.md#14-남은-원인-cpu-조사-2026-09-22)을 먼저 읽는다.
 
 이 문서는 2026-09-21 세션의 결과를 다른 세션으로 옮기기 위한 정리다.
@@ -301,3 +302,56 @@ Diffusion은 state/action MIN_MAX 정규화, 관측/행동 시간창, 확률적 
 구현 존재와 데이터 호환 가능성을 확인한 것이며 **GPU 학습 가능 배치 크기·자율 성능·ACT 대비 우위는 아직 검증하지 않았다.**
 공식 근거는 [Diffusion Policy](https://diffusion-policy.cs.columbia.edu/)와
 [LeRobot 학습 예제](https://github.com/huggingface/lerobot/blob/main/examples/tutorial/diffusion/diffusion_training_example.py)다.
+
+### 13.4 Diffusion 실제 데이터 CPU 연결 검사 완료
+
+`scripts/evaluation/smoke_diffusion_contract.py`로 수정 76개 데이터 중 train episode 20/frame 248을 검사했다.
+
+- front/wrist 각 224×224, 관절 상태 6개, 패딩 없는 action 32×6을 실제 LeRobot 데이터에서 읽었다.
+- 라벨은 파생 raw `shard_009/demo_9`의 `target[249:281]`에 joint limit를 적용한 값과 비트 단위로 같다(최대 차이 0).
+- MIN_MAX 정규화 왕복 최대 오차는 `1.49e-7`이다.
+- loss는 `1.2822335958480835`로 유한하고, 212개 gradient tensor가 생성됐으며 모두 유한하다.
+- 역정규화한 예측의 크기는 `1×30×6`이고 모든 값이 유한하다.
+- 원본 split의 파일 크기·mtime과 읽은 raw SHA는 전후 동일했다.
+
+**의미:** 기존 데이터를 Diffusion의 학습·추론 계산 경로에 연결할 수 있다는 검사다.
+소형 random-weight 구성(`down_dims=64/128/256`, shared RGB encoder, 추론 2회)을 사용했고 optimizer.step은 하지 않았다.
+가중치·checkpoint 저장, Hub 전송, GPU·Isaac·실물 실행도 없다.
+따라서 이 loss 값은 학습 개선 지표가 아니며 **GPU 8GiB 적합성, 집기 성능, ACT 대비 우위를 증명하지 않는다.**
+
+근거:
+
+- 로컬 원본: `outputs/diffusion_contract_smoke_verified_20260922.json`
+- Git 보존본: [Diffusion 연결 검사](evidence/diffusion_contract_smoke_20260922.json)
+- 앞선 최초 검사 `outputs/diffusion_contract_smoke_20260922.json`도 덮어쓰지 않고 보존했다.
+
+## 14. 다음 세션에서 이어갈 순서
+
+### 14.1 먼저 확인할 것
+
+```bash
+cd "/data/$USER/leisaac"
+git status --short --branch
+df -h /data /home
+nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv
+```
+
+- 다른 프로젝트 GPU 작업을 종료하지 않는다. 이 인계 작성 시에는 `simulate_restaurant_mobile.py`가 점유 중이었다.
+- 원본 시연, raw 500개, 수정 raw 76개, ACT 모델은 보존한다.
+- `.omc/`는 기존 비추적 디렉터리다. 이번 작업 파일로 취급하거나 삭제하지 않는다.
+- GPU 유휴 대기 작업을 백그라운드로 예약하지 않았다. 실제 상태를 다시 확인하고 시작해야 한다.
+
+### 14.2 이어서 수행할 것
+
+1. GPU가 비면 13.2의 `run_action_intervention.py`를 실행한다. seed별 teacher_all 검증에 실패하면 그 seed의 혼합 조건을 진행하지 않는다.
+2. 네 조건 × 두 seed의 결과·영상·원본 보존·명령 감사를 정리한다. 이 실험을 ACT 자율 성공률이나 기존 1.1.7 통과로 취급하지 않는다.
+3. Diffusion 비교는 기존 76개 데이터와 분할을 유지하고, ACT 전용 학습/추론/평가/검증 코드를 정책별로 분기하는 작업부터 한다.
+4. Diffusion GPU batch1 forward/backward/optimizer와 추론 메모리 스모크로 실제 VRAM 여유를 확인한다. CPU 소형 연결 검사만으로 본학습을 시작하지 않는다.
+5. 학습 구성·자원 한도·같은 평가 조건을 기록한 뒤 모델 비교를 진행한다. 아직 Diffusion 본학습 명령이나 자율 실행 연결이 구현된 것은 아니다.
+
+2.0·1.1 분석과 13.4 CPU 스모크는 완료했다. 같은 작업을 처음부터 반복하지 않는다.
+plan_r5의 2.1·3.2·2.2는 여전히 별도 미완료이며, 이번 추가 진단으로 완료 처리하지 않는다.
+
+다음 AI에게 전달할 문장:
+
+> `/data/$USER/leisaac/docs/HANDOFF_REMAINING_CAUSES_20260922.md`의 13·14절부터 읽고 이어가라. 팔/그리퍼 분리 runner와 Diffusion CPU 데이터 연결 검사는 준비됐지만 새 시뮬레이션과 Diffusion 본학습은 아직 실행하지 않았다. GPU 점유를 확인한 후 명령 분리 진단을 시작하고, 원본·모델·기존 실패 근거·strict gate를 보존하라. GPU를 점유한 다른 프로젝트는 종료하지 말라.

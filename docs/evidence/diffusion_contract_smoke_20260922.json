@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "source_artifact": "/data/lim/leisaac/outputs/diffusion_contract_smoke_verified_20260922.json",
+  "source_sha256": "b46f866c5a27dafd7ce891e997d03e533f0bb89e93f7b808f9ad079f6f3433b7",
+  "implementation": "/data/lim/leisaac/scripts/evaluation/smoke_diffusion_contract.py",
+  "implementation_sha256": "413121b78e7543e4947c9fcb10175491df9ae16775ca5fcc94f5ed37d6938619",
+  "report": {
+    "schema_version": 1,
+    "success": true,
+    "device": "cpu",
+    "torch_threads": 2,
+    "source": {
+      "root": "/data/lim/leisaac/outputs/act_reset_fixed_76_20260921_split/train",
+      "repo_id": "local/so101_mimic_vision224_76_train",
+      "split": "train",
+      "episode": 20,
+      "sample": 248,
+      "global_frame": 8935,
+      "raw_path": "/data/lim/leisaac/outputs/mimic_reset_fixed_76_20260921/raw/shard_009.hdf5",
+      "raw_demo": "demo_9",
+      "raw_sha256": "ee18e7b2af65038075c4fdb98841611ab1d987e56cc30de0b0819f0bfd3d1818",
+      "contract": "/data/lim/leisaac/outputs/act_reset_fixed_76_20260921_split/action_contract.json",
+      "contract_sha256": "224f4b0d15aaf1a488147b7a8d36ab1a9963d74470c5c9648e619a3f403028af"
+    },
+    "sample": {
+      "state_shape": [
+        1,
+        6
+      ],
+      "front_shape": [
+        3,
+        224,
+        224
+      ],
+      "wrist_shape": [
+        3,
+        224,
+        224
+      ],
+      "action_shape": [
+        32,
+        6
+      ],
+      "action_padding_any": false,
+      "raw_clipped_exact": true,
+      "raw_clipped_max_abs_error": 0
+    },
+    "config": {
+      "n_obs_steps": 1,
+      "horizon": 32,
+      "n_action_steps": 30,
+      "drop_n_last_frames": 2,
+      "down_dims": [
+        64,
+        128,
+        256
+      ],
+      "num_inference_steps": 2,
+      "pretrained_backbone_weights": null,
+      "shared_rgb_encoder": true,
+      "feature_keys": [
+        "action",
+        "observation.images.front",
+        "observation.images.wrist",
+        "observation.state"
+      ]
+    },
+    "model_smoke": {
+      "loss": 1.2822335958480835,
+      "loss_finite": true,
+      "backward_gradient_tensors": 212,
+      "gradients_finite": true,
+      "optimizer_step": false,
+      "action_normalization": "MIN_MAX",
+      "roundtrip_max_abs_error": 1.4901161193847656e-7,
+      "prediction_shape": [
+        1,
+        30,
+        6
+      ],
+      "prediction_finite": true
+    },
+    "source_unchanged": true,
+    "artifacts_written": [
+      "/data/lim/leisaac/outputs/diffusion_contract_smoke_verified_20260922.json"
+    ],
+    "limitations": [
+      "random-weight wiring smoke; not training or a performance result",
+      "CPU execution does not establish 8 GiB GPU memory fit or GPU inference",
+      "no optimizer step, checkpoint/model save, Hub transfer, Isaac, or robot execution"
+    ]
+  }
+}
