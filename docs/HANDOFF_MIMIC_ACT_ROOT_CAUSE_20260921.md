@@ -519,3 +519,11 @@ CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 "$HOME/miniforge3/envs/lerobot/bin/pyth
 CUDA_VISIBLE_DEVICES='' "$HOME/miniforge3/envs/lerobot/bin/python" \
   -m unittest discover -s scripts/imitation_learning -p 'test_*.py' -q
 ```
+
+### 14.6 후속 용량 정리
+
+2026-09-22 사용자 승인으로 과거 중간 체크포인트 파일 105개(7.223 GiB)를 삭제했다.
+원본 데이터·현재 비교 모델·실험별 최종/최고 성능 모델·평가 참조 모델·로그·영상은 보존했다.
+정리 직후 `/data` 여유는 15.125 GiB로 14,450 MiB 기준을 넘었다. 다음 실행 직전에 다시 확인해야 한다.
+삭제한 중간 학습 상태는 백업이나 재학습 없이는 복구할 수 없다.
+상세 삭제·보존 목록과 다음 작업은 [후속 인계 11절](HANDOFF_REMAINING_CAUSES_20260922.md#11-승인받은-중간-체크포인트-용량-정리-2026-09-22)에 있다.
