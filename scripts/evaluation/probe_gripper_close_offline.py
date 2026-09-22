@@ -160,6 +160,110 @@ def registered_selection(part, stride, episode, frame_range, max_samples):
         part == "train" and episode == 20 and frame_range == [238, 338])
 
 
+def aligned_state(state, teacher_state):
+    state, teacher_state = (np.asarray(value, dtype=np.float64) for value in (state, teacher_state))
+    if any(value.shape != (6,) or not np.isfinite(value).all() for value in (state, teacher_state)):
+        raise ValueError("state comparison requires two finite six-joint vectors")
+    difference = np.abs(state - teacher_state)
+    return bool(np.all(difference <= .2)), float(difference.max())
+
+
+def run_closed_loop(args, model, pre, post, contract, input_validation):
+    """Paired, counterfactual chunk queries on verified recorded rollout inputs."""
+    import torch
+    from compare_close_window_inputs import analyze, load_json, load_trace, validate_manifest
+
+    if (args.part != "train" or args.episode != 20 or args.input_path != "raw"
+            or args.stride != 1 or args.max_samples is not None or args.frame_range is not None):
+        raise ValueError("closed-loop mode requires train episode 20, raw inputs, stride 1, no subsampling")
+    entry = contract["splits"]["train"]["episodes"][20]
+    if entry["raw_demo"] != "demo_9" or entry["aggregate_episode_index"] != 24:
+        raise ValueError("closed-loop diagnostic must use registered train episode 20 / aggregate 24 / demo_9")
+    raw_path = Path(entry["raw_path"])
+    comparison = analyze(args.closed_loop_dir, args.reference_dir, raw_path, entry["raw_demo"])
+    if not comparison["strict_reproduction_gate"]["pass"]:
+        raise ValueError("strict scene/config/420-step replay gate failed; closed-loop inference is blocked")
+    manifest_path = args.closed_loop_dir / "policy_images_001.json"
+    inputs = validate_manifest(args.closed_loop_dir, load_json(manifest_path),
+                               load_trace(args.closed_loop_dir / "trace_001.json"))
+    if sha256(manifest_path) != comparison["inputs"]["manifest_sha256"]:
+        raise ValueError("manifest changed between validation and inference snapshot")
+    evaluation = load_json(args.closed_loop_dir / "evaluation.json")
+    if Path(evaluation["checkpoint"]).resolve() != args.checkpoint.resolve():
+        raise ValueError("dump and probe checkpoints differ")
+    with h5py.File(raw_path, "r") as shard:
+        group = shard["data"][entry["raw_demo"]]
+        targets, states = group["obs/joint_pos_target"][:], group["obs/joint_pos"][:]
+        images = {camera: group[f"obs/{camera}"][:] for camera in ("front", "wrist")}
+    lower = np.asarray(contract["joint_limits"]["joint_lower_limits_rad"])
+    upper = np.asarray(contract["joint_limits"]["joint_upper_limits_rad"])
+    mean = np.asarray(json.loads((args.split_root / "train/meta/stats.json").read_text())["action"]["mean"]).reshape(6)
+    c = first_close(targets)
+    model_hash = sha256(args.checkpoint / "model.safetensors")
+    raw_hash = sha256(raw_path)
+    rows, teacher_rows, excluded, deterministic = [], [], [], []
+    for step, observation in inputs.items():
+        s = trace_index(step)
+        retained, distance = aligned_state(observation["state_before"], states[s])
+        if not retained:
+            excluded.append({"step": step, "s": s, "band": band_for(s, c), "max_state_distance_rad": distance})
+            continue
+        if s + CHUNK >= len(targets):
+            raise ValueError("closed-loop window lacks full target chunk")
+        pair = []
+        for kind in ("closed_loop", "paired_teacher"):
+            state = observation["state_before"] if kind == "closed_loop" else states[s]
+            sample = {"observation.state": torch.from_numpy(np.asarray(state, dtype=np.float32))}
+            for camera in ("front", "wrist"):
+                pixels = observation[camera]["pixels"] if kind == "closed_loop" else images[camera][s]
+                sample[f"observation.images.{camera}"] = torch.from_numpy(pixels.copy()).permute(2, 0, 1).float() / 255.
+            prediction = predict_chunk(model, pre, post, sample)
+            if len(deterministic) < 20:
+                deterministic.append(bool(np.array_equal(prediction, predict_chunk(model, pre, post, sample))))
+                if not deterministic[-1]:
+                    raise ValueError("CPU prediction not bit deterministic")
+            raw_target = targets[s + 1:s + CHUNK + 1]
+            target = np.clip(raw_target, lower, upper)
+            pair.append({"step": step, "s": s, "c": c, "band": band_for(s, c),
+                         "actual_chunk_query_boundary": s % 30 == 0,
+                         "max_state_distance_rad": distance,
+                         "clipped_target_share": float(np.any(raw_target != target, axis=1).mean()),
+                         "predictions": {name: metric_row(chunk, target) for name, chunk in
+                                         {"act": prediction, **null_chunks(state, mean)}.items()}})
+        rows.append(pair[0])
+        teacher_rows.append(pair[1])
+    names = ("act", "mean", "always_closed", "state_copy")
+    summaries = {name: summarize(rows, name) for name in names}
+    teacher = {name: summarize(teacher_rows, name) for name in names}
+    close = summaries["act"]["close"]
+    status = closed_loop_status(close["frames"], close["chunk_close_hit"])
+    if sha256(raw_path) != raw_hash or sha256(args.checkpoint / "model.safetensors") != model_hash:
+        raise ValueError("raw data or model changed during diagnostic")
+    after_comparison = analyze(args.closed_loop_dir, args.reference_dir, raw_path, entry["raw_demo"])
+    if after_comparison != comparison:
+        raise ValueError("rollout/reference inputs changed during diagnostic")
+    report = {"mode": "paired_closed_loop_counterfactual", "checkpoint": str(args.checkpoint.resolve()),
+              "model_sha256": model_hash, "input_validation": input_validation,
+              "device": "cpu", "processor_overrides": {"device_processor": {"device": "cpu"}},
+              "input_comparison": comparison, "formulas": FORMULAS,
+              "samples": len(rows), "excluded": excluded, "metrics": summaries,
+              "paired_teacher_metrics": teacher, "paired_teacher_verdict": verdict(teacher),
+              "closed_loop_status": status,
+              "scope_limit": "One scene, step-aligned close window; most queries are counterfactual, not grasp trials",
+              "determinism": {"repeated_queries": len(deterministic), "bit_equal": all(deterministic)},
+              "raw_sha256": raw_hash, "inputs_unchanged": True,
+              "unchanged_scope": ["raw shard", "model weights", "manifest", "candidate/reference evaluation and trace",
+                                  "202 PNG file and pixel hashes"],
+              "rows": rows, "paired_teacher_rows": teacher_rows}
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("x") as stream:
+        json.dump(report, stream, allow_nan=False, separators=(",", ":"))
+        stream.write("\n")
+    print(json.dumps({"samples": len(rows), "retained_close": close["frames"],
+                      "chunk_close_hit": close["chunk_close_hit"], "closed_loop_status": status,
+                      "paired_teacher_verdict": report["paired_teacher_verdict"]}), flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -174,6 +278,9 @@ def main():
     parser.add_argument("--frame-range", type=int, nargs=2)
     parser.add_argument("--max-samples", type=int)
     parser.add_argument("--threads", type=int, default=4)
+    parser.add_argument("--closed-loop-dir", type=Path)
+    parser.add_argument("--reference-dir", type=Path,
+                        default=Path("outputs/initial_frame_diag_20260921/rollout_demo9_fixedmodel_n30"))
     parser.add_argument("--source-hdf5", type=Path, default=Path("datasets/pick_cube_into_box_annotated_wrist_10_20260911.hdf5"))
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -200,6 +307,9 @@ def main():
                                         preprocessor_overrides=override, postprocessor_overrides=override)
     provenance = json.loads((args.split_root / "split_provenance.json").read_text())
     contract = json.loads((args.split_root / "action_contract.json").read_text())
+    if args.closed_loop_dir is not None:
+        run_closed_loop(args, model, pre, post, contract, input_validation)
+        return
     entries = contract["splits"][args.part]["episodes"]
     dataset = LeRobotDataset(provenance["splits"][args.part]["repo_id"], root=args.split_root / args.part)
     lower = np.asarray(contract["joint_limits"]["joint_lower_limits_rad"])

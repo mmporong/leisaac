@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 
 from isaaclab.app import AppLauncher
+from policy_image_dump import validate_dump_options, should_dump, write_policy_images
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -34,6 +35,10 @@ parser.add_argument(
     help="Render without advancing physics before the first action; 0 reproduces legacy observations.",
 )
 parser.add_argument("--trace-steps", type=int, default=60, help="Record the first N control steps per episode.")
+parser.add_argument("--dump-policy-images-every", type=int, default=0,
+                    help="Opt-in lossless pre-action policy images; 0 disables dumping.")
+parser.add_argument("--dump-policy-images-range", type=int, nargs=2, default=None, metavar=("START", "END"),
+                    help="Inclusive completed-step indices, aligned with trace.step (one-based).")
 parser.add_argument("--gripper-effort-mode", choices=("task", "fixed"), default="task",
                     help="Match Mimic task effort updates; fixed reproduces the legacy evaluator.")
 parser.add_argument(
@@ -70,6 +75,13 @@ args_cli = parser.parse_args()
 args_cli.enable_cameras = True
 if (args_cli.initial_state_hdf5 is None) != (args_cli.initial_state_demo is None):
     parser.error("--initial-state-hdf5 and --initial-state-demo must be given together")
+try:
+    dump_bounds = validate_dump_options(args_cli.dump_policy_images_every, args_cli.dump_policy_images_range,
+                                        args_cli.horizon, args_cli.trace_steps)
+except ValueError as error:
+    parser.error(str(error))
+if dump_bounds is not None and args_cli.policy_image_size != 224:
+    parser.error("policy image dumps require --policy-image-size 224")
 
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
@@ -345,6 +357,7 @@ def main() -> None:
             gripper_effort_min = float("inf")
             gripper_effort_max = 0.0
             trace = []
+            policy_image_manifest = []
             success = False
             trial_state_snapshots = []
             try:
@@ -352,6 +365,12 @@ def main() -> None:
                     policy_obs = observations["policy"]
                     front = resize_policy_image(policy_obs["front"][0], args_cli.policy_image_size)
                     wrist = resize_policy_image(policy_obs["wrist"][0], args_cli.policy_image_size)
+                    if should_dump(step + 1, args_cli.dump_policy_images_every, dump_bounds):
+                        policy_image_manifest.append(write_policy_images(
+                            output_dir, trial + 1, step + 1,
+                            policy_obs["joint_pos"][0].detach().cpu().numpy(),
+                            {"front": front, "wrist": wrist},
+                        ))
                     if initial_observation_sha256 is None:
                         initial_observation_sha256 = {
                             "front": hashlib.sha256(front.tobytes()).hexdigest(),
@@ -459,6 +478,9 @@ def main() -> None:
             }
             results.append(result)
             (output_dir / f"trace_{trial + 1:03d}.json").write_text(json.dumps(trace, indent=2), encoding="utf-8")
+            if args_cli.dump_policy_images_every:
+                (output_dir / f"policy_images_{trial + 1:03d}.json").write_text(
+                    json.dumps(policy_image_manifest, indent=2), encoding="utf-8")
             if not success and args_cli.failure_state_file is not None:
                 final_step = step + 1
                 if not trial_state_snapshots or trial_state_snapshots[-1]["step"] != final_step:
@@ -488,6 +510,8 @@ def main() -> None:
                 else None
             ),
             "trace_steps": args_cli.trace_steps,
+            "dump_policy_images_every": args_cli.dump_policy_images_every,
+            "dump_policy_images_range": list(dump_bounds) if dump_bounds is not None else None,
             "gripper_effort_mode": args_cli.gripper_effort_mode,
             "success_criteria": release_criteria_metadata(success_term.params),
             "control_dt_s": float(env.step_dt),
