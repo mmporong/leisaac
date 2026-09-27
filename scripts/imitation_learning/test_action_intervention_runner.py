@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -87,6 +89,35 @@ class ActionInterventionRunnerTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "audit failed"):
                 self.audit(case, "teacher_all", preflight)
 
+    def test_fixed_effort_is_audited_at_every_executed_step(self):
+        with tempfile.TemporaryDirectory() as folder:
+            case, preflight = self.fixture(Path(folder), "teacher_gripper")
+            preflight["gripper_effort_mode"] = "fixed"
+            evaluation_path = case / "evaluation.json"
+            evaluation = json.loads(evaluation_path.read_text())
+            evaluation.update(gripper_effort_mode="fixed", gripper_effort_limit=1)
+            evaluation_path.write_text(json.dumps(evaluation))
+            trace_path = case / "trace_001.json"
+            trace = json.loads(trace_path.read_text())
+            for row in trace:
+                row["gripper_effort_limit"] = 1
+            trace_path.write_text(json.dumps(trace))
+            self.assertTrue(self.audit(case, "teacher_gripper", preflight)["audit_pass"])
+            trace[1]["gripper_effort_limit"] = .768
+            trace_path.write_text(json.dumps(trace))
+            with self.assertRaisesRegex(ValueError, "fixed gripper effort mismatch"):
+                self.audit(case, "teacher_gripper", preflight)
+
+    def test_dynamic_effort_range_cannot_pass_the_constant_reference_gate(self):
+        with tempfile.TemporaryDirectory() as folder:
+            case, preflight = self.fixture(Path(folder), "teacher_gripper")
+            path = case / "evaluation.json"
+            evaluation = json.loads(path.read_text())
+            evaluation["results"][0]["gripper_effort_limit_range"] = [1, 2]
+            path.write_text(json.dumps(evaluation))
+            with self.assertRaisesRegex(ValueError, "gripper effort contract mismatch"):
+                self.audit(case, "teacher_gripper", preflight)
+
     def test_teacher_success_and_audit_gate_followups(self):
         self.assertEqual(runner.allowed_followups({"audit_pass":True,"success":True}), runner.FOLLOWUPS)
         self.assertEqual(runner.allowed_followups({"audit_pass":True,"success":False}), ())
@@ -97,6 +128,20 @@ class ActionInterventionRunnerTest(unittest.TestCase):
         self.assertEqual(len(runner.parse_compute_processes("123, python, 2 MiB\n")), 1)
         with tempfile.TemporaryDirectory() as folder:
             with self.assertRaises(FileExistsError): runner.prepare_output_root(Path(folder))
+
+    def test_gpu_release_retry_is_bounded_and_never_starts_on_occupied_gpu(self):
+        active = SimpleNamespace(stdout="123, python, 2 MiB\n")
+        empty = SimpleNamespace(stdout="")
+        with patch.object(runner.subprocess, "run", side_effect=[active, empty]) as query, \
+                patch.object(runner.time, "sleep") as pause:
+            runner.require_gpu_idle(wait_seconds=1)
+            self.assertEqual(query.call_count, 2)
+            pause.assert_called_once()
+        with patch.object(runner.subprocess, "run", return_value=active), \
+                patch.object(runner.time, "monotonic", side_effect=[0, .6, 1.1]), \
+                patch.object(runner.time, "sleep"):
+            with self.assertRaisesRegex(RuntimeError, "GPU compute process exists"):
+                runner.require_gpu_idle(wait_seconds=1)
 
 
 if __name__ == "__main__": unittest.main()

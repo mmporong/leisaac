@@ -1,5 +1,6 @@
 """Opt-in diagnostic substitution of recorded commands; never a learned policy."""
 import hashlib
+import math
 from pathlib import Path
 
 import h5py
@@ -7,6 +8,15 @@ import numpy as np
 
 
 SOURCES = ("policy", "teacher_arm", "teacher_gripper", "teacher_all")
+
+
+def validate_fixed_effort(mode, limit):
+    """Validate an optional explicit effort limit without changing legacy defaults."""
+    if limit is None:
+        return None
+    if mode != "fixed" or not math.isfinite(limit) or limit <= 0:
+        raise ValueError("an explicit gripper effort limit must be positive, finite, and use fixed mode")
+    return float(limit)
 
 
 def load_teacher_commands(path, demo, horizon):

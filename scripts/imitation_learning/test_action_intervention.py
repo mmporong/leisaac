@@ -10,10 +10,19 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "evaluation"))
-from action_intervention import load_teacher_commands, substitute_action
+from action_intervention import load_teacher_commands, substitute_action, validate_fixed_effort
 
 
 class ActionInterventionTests(unittest.TestCase):
+    def test_explicit_effort_is_opt_in_positive_finite_and_fixed_only(self):
+        self.assertIsNone(validate_fixed_effort("task", None))
+        self.assertIsNone(validate_fixed_effort("fixed", None))
+        self.assertEqual(validate_fixed_effort("fixed", 0.06666666269302368), 0.06666666269302368)
+        for mode, limit in (("task", .1), ("fixed", 0), ("fixed", -.1),
+                            ("fixed", float("nan")), ("fixed", float("inf"))):
+            with self.assertRaises(ValueError):
+                validate_fixed_effort(mode, limit)
+
     def test_channel_substitution_and_default_identity(self):
         policy = torch.arange(6).float().view(1, 6)
         teacher = policy + 10

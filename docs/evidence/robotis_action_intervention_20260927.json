@@ -1,0 +1,563 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-09-27T11:14:17.650170+00:00",
+  "status": "eight_conditions_completed_and_audited",
+  "output_root": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927",
+  "manifest_sha256": "fda262faa08107fcd9c07e40bc982e8b100ac4f6ca2d6218ee886b6152b8465c",
+  "upstream": {
+    "cyclo_lab": "f4c0470a5e0af54a18327cf96967e8716d64dbc0",
+    "isaaclab": "3c6e67bb5c7ada942a6d1884ab69338f57596f77",
+    "physical_ai_tools": "27192daf75fa5f421a3bd1825a50ee63d649dccd",
+    "lerobot": "989f3d05ba47f872d75c587e76838e9cc574857a"
+  },
+  "preflight": {
+    "control_dt_s": 0.016666666666666666,
+    "demo": "demo_9",
+    "effort": [
+      0.06666666269302368,
+      0.06666666269302368
+    ],
+    "gripper_effort_mode": "fixed",
+    "implementation": {
+      "evaluator": {
+        "path": "/data/lim/leisaac/scripts/evaluation/lerobot_act_so101.py",
+        "sha256": "43756bd126a8aa2d969bc426f31cea419ee848847f59dd249264f6e9b6619b62"
+      },
+      "intervention_helper": {
+        "path": "/data/lim/leisaac/scripts/evaluation/action_intervention.py",
+        "sha256": "4ac551475bf0a5e7a54af0dd36402f7e4cfec02fdc3d07032456a46bae3ac38e"
+      },
+      "runner": {
+        "path": "/data/lim/leisaac/scripts/evaluation/run_action_intervention.py",
+        "sha256": "a0753fdc0af626cf2b5d11a8a4df7a8cc21a649578133ed99995e06e4a43e378"
+      }
+    },
+    "joint_names": [
+      "shoulder_pan",
+      "shoulder_lift",
+      "elbow_flex",
+      "wrist_flex",
+      "wrist_roll",
+      "gripper"
+    ],
+    "lower": [
+      -1.9198598861694336,
+      -1.7453298568725586,
+      -1.7453298568725586,
+      -1.65805983543396,
+      -2.792530059814453,
+      -0.17453300952911377
+    ],
+    "model": "/data/lim/leisaac/outputs/act_reset_fixed_76_20260921/model/checkpoints/010000/pretrained_model",
+    "model_sha256": "ebed7e5415bf1f5501e7b834bfcb5f97c84593335fda145822f3c71fe4aeebab",
+    "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5",
+    "raw_sha256": "1e885d7070bab5bd16f18c57e71f28754c20a3609251c58d28d25c442df1cf35",
+    "reference_path": "/data/lim/leisaac/outputs/evaluation/control_diagnosis_20260921/shard009_recorded_target/evaluation.json",
+    "reference_sha256": "a993b63c1021d2d201c1021137fb7bcf957e43337f6a90a98204dfccf10ca9d8",
+    "scene_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+    "success_criteria": {
+      "half_extent_xy_m": 0.045,
+      "hold_time_s": 0.5,
+      "max_angular_speed_rad_s": 0.5,
+      "max_height_m": 0.075,
+      "max_linear_speed_m_s": 0.03,
+      "min_height_m": 0.012,
+      "open_threshold_rad": 0.26,
+      "version": "stable_release_v2"
+    },
+    "upper": [
+      1.9198598861694336,
+      1.7453298568725586,
+      1.5707998275756836,
+      1.65805983543396,
+      2.792530059814453,
+      1.7453298568725586
+    ]
+  },
+  "results": [
+    {
+      "condition": "teacher_all",
+      "seed": 4101,
+      "steps": 642,
+      "success": true,
+      "outcome": "success",
+      "max_cube_lift_m": 0.11544939875602722,
+      "first_lift_step": 402,
+      "first_success_step": 642,
+      "min_requested_gripper_rad": 0.11987358331680298,
+      "clipped_steps": 0,
+      "gripper_effort_limit_range": [
+        0.06666666269302368,
+        0.06666666269302368
+      ],
+      "initial_observation_sha256": {
+        "front": "1bbff18b928fb7b916a132b907d5e77abf852684ca1a0eead0fbfde0a7b395f3",
+        "wrist": "890dc5042795a9b5d897830143bfcd17deb986a0f2a413f4e8d221a705c3b073"
+      },
+      "max_errors": {
+        "applied_clip": 0,
+        "policy_preclip": 0,
+        "teacher_preclip": 0,
+        "teacher_trace": 0
+      },
+      "evaluation": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_all/evaluation.json",
+      "evaluation_sha256": "7bd6986a7800c3bbf53a0fa8d71d6e77d83a332f798802b7ca7ec51af4b8fd89",
+      "trace": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_all/trace_001.json",
+      "trace_sha256": "9f3030553e6ef73df769ec9b0f7dce3ce6d336ab7ccdb00c1bbe8b6d7f2b07f9",
+      "video": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_all/rollout_001_success.mp4",
+      "video_sha256": "3f43e4c50aa4730249fbb114dcec0cfaadca0004f8e691568acd204eb9693a7b",
+      "video_metadata": {
+        "frame_count": 642,
+        "width": 1280,
+        "height": 480,
+        "fps": 60,
+        "first_frame_decoded": true
+      },
+      "log": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/logs/seed_4101_teacher_all.log",
+      "log_sha256": "06c73148a4a24a1d00842cbe537653e3cd6a6149618f2bf12b7c0f24d01f6ef7",
+      "command_sha256": "ffed3eb7017e8b87600344f7cabd2734826f832eba724ce0d347c95154db000d"
+    },
+    {
+      "condition": "policy",
+      "seed": 4101,
+      "steps": 675,
+      "success": false,
+      "outcome": "no_lift",
+      "max_cube_lift_m": 0,
+      "first_lift_step": null,
+      "first_success_step": null,
+      "min_requested_gripper_rad": 0.7545868158340454,
+      "clipped_steps": 0,
+      "gripper_effort_limit_range": [
+        0.06666666269302368,
+        0.06666666269302368
+      ],
+      "initial_observation_sha256": {
+        "front": "e0328a9234f89a487571adee34e24fb2167b8876cf8ff42245ff2a277e22a772",
+        "wrist": "47b8a7a14be563a78bd67aef62034fc153c0ef29242f92b6b9f9b76b3dc2cb8b"
+      },
+      "max_errors": {
+        "applied_clip": 0,
+        "policy_preclip": 0,
+        "teacher_preclip": 0,
+        "teacher_trace": 0
+      },
+      "evaluation": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/policy/evaluation.json",
+      "evaluation_sha256": "423640e1ec19fc7fc407bb7d249caf77d80c2d9da6e0c7aa7a181d2bc5f83606",
+      "trace": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/policy/trace_001.json",
+      "trace_sha256": "fda8a6aa1c8e8c7b0b3cdcfb41e532bdc6716d6c5a5faafd692a8dda4eec0126",
+      "video": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/policy/rollout_001_failure.mp4",
+      "video_sha256": "b36773724364763810818b20fc3e54dad02f9af5d0c8fe71f89a26ae6dac1d96",
+      "video_metadata": {
+        "frame_count": 675,
+        "width": 1280,
+        "height": 480,
+        "fps": 60,
+        "first_frame_decoded": true
+      },
+      "log": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/logs/seed_4101_policy.log",
+      "log_sha256": "37df3cc94cbbb092565c5c496c4c6a6a2de5f62a8281d95b654fadb8640a28d5",
+      "command_sha256": "6b8a4ad89be82c6514e82d63f3922c59e0de9b962cf02b1ab633aa844fb33a61"
+    },
+    {
+      "condition": "teacher_gripper",
+      "seed": 4101,
+      "steps": 675,
+      "success": false,
+      "outcome": "no_lift",
+      "max_cube_lift_m": 0,
+      "first_lift_step": null,
+      "first_success_step": null,
+      "min_requested_gripper_rad": 0.11987358331680298,
+      "clipped_steps": 0,
+      "gripper_effort_limit_range": [
+        0.06666666269302368,
+        0.06666666269302368
+      ],
+      "initial_observation_sha256": {
+        "front": "5435a7d4805643070c1c9ef11b23f3668360ae135c2006a707e294fcef81cb53",
+        "wrist": "ca3daecbe882d52615523b5438bd614cb5de5371520c0a01792b5aa5f4f98cc6"
+      },
+      "max_errors": {
+        "applied_clip": 0,
+        "policy_preclip": 0,
+        "teacher_preclip": 0,
+        "teacher_trace": 0
+      },
+      "evaluation": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_gripper/evaluation.json",
+      "evaluation_sha256": "5233a9c4cbb88313feb6c3463d669994747466b995f6322e1cc1a49c4473a2f1",
+      "trace": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_gripper/trace_001.json",
+      "trace_sha256": "7d41e05c8584f568c56d40ad2566d21f0f69d7e098ba45f3ba3445505d8c0bd3",
+      "video": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_gripper/rollout_001_failure.mp4",
+      "video_sha256": "eaa1226cd1760ddcbaa3f0893f5433b797bf8f7d0040bc596005eee8ba50238d",
+      "video_metadata": {
+        "frame_count": 675,
+        "width": 1280,
+        "height": 480,
+        "fps": 60,
+        "first_frame_decoded": true
+      },
+      "log": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/logs/seed_4101_teacher_gripper.log",
+      "log_sha256": "1b62750b1d7f36af8fdd6844f5019403e145c0fa787575ce7c1ab25b119e84c0",
+      "command_sha256": "cf9a24bb25be2f45fa3031e59551c1e7229dc542946e0b214fc3f15504771cdc"
+    },
+    {
+      "condition": "teacher_arm",
+      "seed": 4101,
+      "steps": 639,
+      "success": true,
+      "outcome": "success",
+      "max_cube_lift_m": 0.11827568709850311,
+      "first_lift_step": 402,
+      "first_success_step": 639,
+      "min_requested_gripper_rad": 0.08312878012657166,
+      "clipped_steps": 0,
+      "gripper_effort_limit_range": [
+        0.06666666269302368,
+        0.06666666269302368
+      ],
+      "initial_observation_sha256": {
+        "front": "60d92d45a61981995830de4772658c0ef772194a393c7c01764a70eb955ca753",
+        "wrist": "3225abe230ea44adbb11b4f78311e1cd8fbb9ec9cad3f2719b3342e47e397e56"
+      },
+      "max_errors": {
+        "applied_clip": 0,
+        "policy_preclip": 0,
+        "teacher_preclip": 0,
+        "teacher_trace": 0
+      },
+      "evaluation": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_arm/evaluation.json",
+      "evaluation_sha256": "3ed607cd05bcaed7d9650deb0ec0d2f2bd74c44bf77dbb7a4c93182a7aa3fe8f",
+      "trace": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_arm/trace_001.json",
+      "trace_sha256": "3ad5708ab84036fc7add98bf9386c5f65984f708c2bd5da7aebd2a17d618af2c",
+      "video": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_arm/rollout_001_success.mp4",
+      "video_sha256": "5582fdf7188cf0f474b2392fbc86b1833a98c286d88fe030aa9074740283cb22",
+      "video_metadata": {
+        "frame_count": 639,
+        "width": 1280,
+        "height": 480,
+        "fps": 60,
+        "first_frame_decoded": true
+      },
+      "log": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/logs/seed_4101_teacher_arm.log",
+      "log_sha256": "46906f761d49d32af923d8e1fa938345620344dd3434ce0e206aa56ca823176f",
+      "command_sha256": "dbe2687e9eb1888a17fe65a66167f354ade3f815925563702b4fce3024554d99"
+    },
+    {
+      "condition": "teacher_all",
+      "seed": 4102,
+      "steps": 642,
+      "success": true,
+      "outcome": "success",
+      "max_cube_lift_m": 0.11544939875602722,
+      "first_lift_step": 402,
+      "first_success_step": 642,
+      "min_requested_gripper_rad": 0.11987358331680298,
+      "clipped_steps": 0,
+      "gripper_effort_limit_range": [
+        0.06666666269302368,
+        0.06666666269302368
+      ],
+      "initial_observation_sha256": {
+        "front": "2946cc8d485479ed6639feabcd114d21a9c2e1badfd94f5492c03921d06956e9",
+        "wrist": "fd1de22b443454c049f31d3e265f64a0ac9d69e818103769bd83ea284797d152"
+      },
+      "max_errors": {
+        "applied_clip": 0,
+        "policy_preclip": 0,
+        "teacher_preclip": 0,
+        "teacher_trace": 0
+      },
+      "evaluation": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_all/evaluation.json",
+      "evaluation_sha256": "ba7c47d47e23d107710521fc6e46e601bacbdcc776881aa97eacb01c552a1c5f",
+      "trace": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_all/trace_001.json",
+      "trace_sha256": "44e870f07098020b146b334793bc2946857828d3cc3c886e75e10ee303943d12",
+      "video": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_all/rollout_001_success.mp4",
+      "video_sha256": "eda640dd4e8f6aca3fbf5dd20eae58397da48b13868e47d8149942b38f914e46",
+      "video_metadata": {
+        "frame_count": 642,
+        "width": 1280,
+        "height": 480,
+        "fps": 60,
+        "first_frame_decoded": true
+      },
+      "log": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/logs/seed_4102_teacher_all.log",
+      "log_sha256": "37869322e8ed0950ba4c135e8d4079b4de2338b5dcd3320c9b52342c8d990ee7",
+      "command_sha256": "63fdef23b081065dde55d395873bbd77384eff81e4fa6636df99ed88932acfa4"
+    },
+    {
+      "condition": "policy",
+      "seed": 4102,
+      "steps": 675,
+      "success": false,
+      "outcome": "no_lift",
+      "max_cube_lift_m": 0.008293360471725464,
+      "first_lift_step": null,
+      "first_success_step": null,
+      "min_requested_gripper_rad": 0.10607612133026123,
+      "clipped_steps": 0,
+      "gripper_effort_limit_range": [
+        0.06666666269302368,
+        0.06666666269302368
+      ],
+      "initial_observation_sha256": {
+        "front": "ae3a3f9f8fe10a59822075e8664f769ea72427eac53e95e9f71d1965b6ed2766",
+        "wrist": "13f7f2558f95aade6c14aec516c2e13f50ff2b393c8c001d5577201533760e57"
+      },
+      "max_errors": {
+        "applied_clip": 0,
+        "policy_preclip": 0,
+        "teacher_preclip": 0,
+        "teacher_trace": 0
+      },
+      "evaluation": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/policy/evaluation.json",
+      "evaluation_sha256": "e096dad703c837e31191ad304e2ea71b3738dbc36e0459237a3f0be693da6a89",
+      "trace": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/policy/trace_001.json",
+      "trace_sha256": "42aed4922d833d7efc05c181038352c8ced89ef234bb7a48938545419ef0cd4f",
+      "video": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/policy/rollout_001_failure.mp4",
+      "video_sha256": "ce5442fd4a90f83f9afac02033d692c61e2bbbd3739337bf3c5db08cd3b9dab1",
+      "video_metadata": {
+        "frame_count": 675,
+        "width": 1280,
+        "height": 480,
+        "fps": 60,
+        "first_frame_decoded": true
+      },
+      "log": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/logs/seed_4102_policy.log",
+      "log_sha256": "7793774cebbe65a0768da1f2369d365c9b5d583c5e3f95e36bd3b6ca2ad115ef",
+      "command_sha256": "1815d06f30ed43d67b0197f7f118e735e9fb80e4f5cab79b175b7fbf07a19a83"
+    },
+    {
+      "condition": "teacher_gripper",
+      "seed": 4102,
+      "steps": 675,
+      "success": false,
+      "outcome": "no_lift",
+      "max_cube_lift_m": 0,
+      "first_lift_step": null,
+      "first_success_step": null,
+      "min_requested_gripper_rad": 0.11987358331680298,
+      "clipped_steps": 0,
+      "gripper_effort_limit_range": [
+        0.06666666269302368,
+        0.06666666269302368
+      ],
+      "initial_observation_sha256": {
+        "front": "dd361f89df648237148599d0ce436d1555b2f5cb25a9d4a260b4fdd2aa07f8d2",
+        "wrist": "b2d86a4b3413674d794275213c736d4d4a1750ccc93a19a6c6e26163ebde3d0b"
+      },
+      "max_errors": {
+        "applied_clip": 0,
+        "policy_preclip": 0,
+        "teacher_preclip": 0,
+        "teacher_trace": 0
+      },
+      "evaluation": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_gripper/evaluation.json",
+      "evaluation_sha256": "5d04ef79b064f6fd55324b0fb8bb4548ac3015155624550ad061639479e48fca",
+      "trace": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_gripper/trace_001.json",
+      "trace_sha256": "62942503c22a5ea4a85e7e7a5c2896abab64ec49b748f760fea099eb6c619e7c",
+      "video": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_gripper/rollout_001_failure.mp4",
+      "video_sha256": "c3e2045590c18a2555cf2399fbb8164f2a2e21e96264b5778b796a444712d9c0",
+      "video_metadata": {
+        "frame_count": 675,
+        "width": 1280,
+        "height": 480,
+        "fps": 60,
+        "first_frame_decoded": true
+      },
+      "log": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/logs/seed_4102_teacher_gripper.log",
+      "log_sha256": "e8f0c5b74d96c2d8f75fd058a4e58625e088def79ee184ed8bc9cdf01e114b35",
+      "command_sha256": "29bf12788363ca6b64e38ce959059f94d57af4d08190dab41a5c40258c46efb2"
+    },
+    {
+      "condition": "teacher_arm",
+      "seed": 4102,
+      "steps": 642,
+      "success": true,
+      "outcome": "success",
+      "max_cube_lift_m": 0.11745797097682953,
+      "first_lift_step": 402,
+      "first_success_step": 642,
+      "min_requested_gripper_rad": 0.08329752087593079,
+      "clipped_steps": 0,
+      "gripper_effort_limit_range": [
+        0.06666666269302368,
+        0.06666666269302368
+      ],
+      "initial_observation_sha256": {
+        "front": "962c3cdc9aee88548aada1004b10d1c45b99f8aa4edf946c350fdcfb931a44ee",
+        "wrist": "05cc2078409c0eb58f6da202d2f94ea522cd8b0d98e262d664bba76d2bfc9ea3"
+      },
+      "max_errors": {
+        "applied_clip": 0,
+        "policy_preclip": 0,
+        "teacher_preclip": 0,
+        "teacher_trace": 0
+      },
+      "evaluation": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_arm/evaluation.json",
+      "evaluation_sha256": "3bcca336aa6840ff2c1ce479d8eeb5f907f60df01695814b471adfe870f51d1c",
+      "trace": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_arm/trace_001.json",
+      "trace_sha256": "18d5484aa79eeb3e74f480de682b5d8ded61b509d3184309c9ca3e6f2f0c6d71",
+      "video": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_arm/rollout_001_success.mp4",
+      "video_sha256": "f4dee63475f453dc15ec97a10d524ab3b8bdfb5e6ce03293e9ac4816f1d0480f",
+      "video_metadata": {
+        "frame_count": 642,
+        "width": 1280,
+        "height": 480,
+        "fps": 60,
+        "first_frame_decoded": true
+      },
+      "log": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/logs/seed_4102_teacher_arm.log",
+      "log_sha256": "bcc9314e09f83ad3800989cea664469ed608016d180b06bcfb10d41530f53116",
+      "command_sha256": "4f836a01f33d098b22063349e52e9709acad7638c813693b8cc00d1efa57edc2"
+    }
+  ],
+  "launch_comparison": {
+    "policy": {
+      "executions": 2,
+      "interpretation": "launch-sensitive diagnostic only; not an autonomy success rate",
+      "launch_consistent": true,
+      "lifted_values": [
+        false,
+        false
+      ],
+      "outcomes": [
+        "no_lift",
+        "no_lift"
+      ],
+      "success_values": [
+        false,
+        false
+      ]
+    },
+    "teacher_all": {
+      "executions": 2,
+      "interpretation": "launch-sensitive diagnostic only; not an autonomy success rate",
+      "launch_consistent": true,
+      "lifted_values": [
+        true,
+        true
+      ],
+      "outcomes": [
+        "success",
+        "success"
+      ],
+      "success_values": [
+        true,
+        true
+      ]
+    },
+    "teacher_arm": {
+      "executions": 2,
+      "interpretation": "launch-sensitive diagnostic only; not an autonomy success rate",
+      "launch_consistent": true,
+      "lifted_values": [
+        true,
+        true
+      ],
+      "outcomes": [
+        "success",
+        "success"
+      ],
+      "success_values": [
+        true,
+        true
+      ]
+    },
+    "teacher_gripper": {
+      "executions": 2,
+      "interpretation": "launch-sensitive diagnostic only; not an autonomy success rate",
+      "launch_consistent": true,
+      "lifted_values": [
+        false,
+        false
+      ],
+      "outcomes": [
+        "no_lift",
+        "no_lift"
+      ],
+      "success_values": [
+        false,
+        false
+      ]
+    }
+  },
+  "continuations": [
+    {
+      "path": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/continuation_001.json",
+      "sha256": "c6bc0498ad8014145fbfa0fb2de8eb5a86fcb6801c11822d588cb95db877c0ed",
+      "script": "/data/lim/leisaac/scripts/evaluation/resume_action_intervention.py",
+      "script_sha256": "07d0c5375a57d7c7ab42a2fa6caf406f4bc0a06c5176e02205a7bb41f3332b09",
+      "argv": [
+        "scripts/evaluation/resume_action_intervention.py",
+        "--output-root",
+        "outputs/action_intervention_fixed_effort_v2_20260927"
+      ],
+      "snapshot": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/resume_snapshot_001.json",
+      "snapshot_sha256": "d571ee4b5a0946e4f1a2684ad526c073b384f16acc6213d389482b79848a53ae",
+      "previous_run_count": 3
+    },
+    {
+      "path": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/continuation_002.json",
+      "sha256": "94fb4400542ecac383a6f01ae7a455c2a5f2ca4e981666e64fa70738bd59408a",
+      "script": "/data/lim/leisaac/scripts/evaluation/resume_action_intervention.py",
+      "script_sha256": "07d0c5375a57d7c7ab42a2fa6caf406f4bc0a06c5176e02205a7bb41f3332b09",
+      "argv": [
+        "scripts/evaluation/resume_action_intervention.py",
+        "--output-root",
+        "outputs/action_intervention_fixed_effort_v2_20260927"
+      ],
+      "snapshot": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/resume_snapshot_002.json",
+      "snapshot_sha256": "4dd774474511c5c19f902d2829cd64d2f7d7fff3049b240b268fe8cf0a33122c",
+      "previous_run_count": 4
+    },
+    {
+      "path": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/continuation_003.json",
+      "sha256": "9ece747a993e62c6f56c42801f22807b6e1f824cce02f6b88ff34d840a77a1cd",
+      "script": "/data/lim/leisaac/scripts/evaluation/resume_action_intervention.py",
+      "script_sha256": "07d0c5375a57d7c7ab42a2fa6caf406f4bc0a06c5176e02205a7bb41f3332b09",
+      "argv": [
+        "scripts/evaluation/resume_action_intervention.py",
+        "--output-root",
+        "outputs/action_intervention_fixed_effort_v2_20260927"
+      ],
+      "snapshot": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/resume_snapshot_003.json",
+      "snapshot_sha256": "e0306e0e039a418b88cd9f2843460e81a29f47208650ca0e6c7adc794bc016cd",
+      "previous_run_count": 5
+    }
+  ],
+  "historical_partial_roots": [
+    {
+      "root": "/data/lim/leisaac/outputs/action_intervention_20260927",
+      "manifest_sha256": "5179b5effee320fe0d5cb7a4cd3f5a24647887cfa61abf0d83d305467e7b47f8",
+      "manifest_run_count": 2,
+      "evaluation_file_count": 3,
+      "status": "partial_preserved_not_pooled_into_final_results"
+    },
+    {
+      "root": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_20260927",
+      "manifest_sha256": "16648667b5c776e62e42f32cf92bd5bf704be5b65c7f5fbc4cbfa266b38b98ab",
+      "manifest_run_count": 3,
+      "evaluation_file_count": 3,
+      "status": "partial_preserved_not_pooled_into_final_results"
+    }
+  ],
+  "verification": {
+    "independent_verifier_artifact_approval": true,
+    "trace_and_command_full_prefix_audit": true,
+    "constant_actual_gripper_effort_all_steps": true,
+    "raw_model_and_core_code_sha_unchanged": true,
+    "videos_first_frame_and_count_size_fps": true,
+    "unit_tests_passed": 205,
+    "physical_robot_executed": false,
+    "new_training_executed": false
+  },
+  "interpretation": "Both launches support an effect of arm commands and the observations reached by them; mixed teacher-command results are not autonomous performance.",
+  "limitations": [
+    "One fixed physical initial state; two seeds only test launch variation",
+    "Initial RGB differences across launches remain a confound",
+    "No proof of a particular approach phase, RGB feature, dataset insufficiency, or ACT architecture limitation",
+    "Existing plan_r5 closed-loop causal gates are not reclassified as passed",
+    "Simulation cube is approximately 3 cm; real 4 cm deployment is untested"
+  ]
+}

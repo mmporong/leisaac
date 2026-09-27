@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
 
 import h5py
 import numpy as np
@@ -36,14 +37,20 @@ def parse_compute_processes(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 
-def require_gpu_idle() -> None:
-    result = subprocess.run(
-        ["nvidia-smi", "--query-compute-apps=pid,process_name,used_memory", "--format=csv,noheader"],
-        capture_output=True, text=True, check=True,
-    )
-    active = parse_compute_processes(result.stdout)
-    if active:
-        raise RuntimeError(f"GPU compute process exists; refusing to stop it or start Isaac: {active}")
+def require_gpu_idle(wait_seconds: float = 0.0) -> None:
+    deadline = time.monotonic() + wait_seconds
+    while True:
+        result = subprocess.run(
+            ["nvidia-smi", "--query-compute-apps=pid,process_name,used_memory", "--format=csv,noheader"],
+            capture_output=True, text=True, check=True,
+        )
+        active = parse_compute_processes(result.stdout)
+        if not active:
+            return
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise RuntimeError(f"GPU compute process exists; refusing to stop it or start Isaac: {active}")
+        time.sleep(min(0.5, remaining))
 
 
 def prepare_output_root(path: Path) -> Path:
@@ -79,6 +86,8 @@ def load_preflight(raw_path: Path, demo: str, model: Path, reference_path: Path)
             and result["steps"] == HORIZON and result["source_frame_count"] == 676
             and result["success"] and result["final_success"] and result["raw_sha256"] == raw_hash
             and result["initial_physical_sha256"] == EXPECTED_SCENE
+            and np.isfinite(result["gripper_effort_limit_range"]).all()
+            and result["gripper_effort_limit_range"][0] > 0
             and result["gripper_effort_limit_range"][0] == result["gripper_effort_limit_range"][1]):
         raise ValueError("existing recorded-target positive control contract changed")
     return {"raw_path": str(raw_path), "raw_sha256": raw_hash, "demo": demo,
@@ -100,7 +109,7 @@ def audit_case(case_dir: Path, condition: str, seed: int, preflight: dict) -> di
         "task": TASK, "checkpoint": preflight["model"], "num_rollouts": 1,
         "seed_start": seed, "horizon": HORIZON,
         "trace_steps": HORIZON, "n_action_steps": 30, "reset_render_frames": 4,
-        "gripper_effort_mode": "task", "diagnostic_action_source": condition,
+        "gripper_effort_mode": preflight.get("gripper_effort_mode", "task"), "diagnostic_action_source": condition,
         "server_seed": 0, "server_device": "cpu", "render_width": 640,
         "render_height": 480, "policy_image_size": 224, "lift_threshold_m": 0.02,
         "autonomous_policy_evaluation": condition == "policy",
@@ -108,6 +117,8 @@ def audit_case(case_dir: Path, condition: str, seed: int, preflight: dict) -> di
         "joint_names": preflight["joint_names"], "joint_lower_limits_rad": preflight["lower"],
         "joint_upper_limits_rad": preflight["upper"],
     }
+    if preflight.get("gripper_effort_mode") == "fixed":
+        required["gripper_effort_limit"] = preflight["effort"][0]
     for key, expected in required.items():
         if evaluation.get(key) != expected:
             raise ValueError(f"evaluation contract mismatch: {key}")
@@ -147,6 +158,8 @@ def audit_case(case_dir: Path, condition: str, seed: int, preflight: dict) -> di
     teacher_indices = set(range(6)) if condition == "teacher_all" else ({5} if condition == "teacher_gripper" else (set(range(5)) if condition == "teacher_arm" else set()))
     for row in trace:
         step = row["step"]
+        if preflight.get("gripper_effort_mode") == "fixed" and row.get("gripper_effort_limit") != preflight["effort"][0]:
+            raise ValueError(f"fixed gripper effort mismatch at step {step}")
         policy = finite_six(row.get("policy_action"), f"policy_action step {step}")
         requested = finite_six(row.get("requested_action"), f"requested_action step {step}")
         applied = finite_six(row.get("applied_action"), f"applied_action step {step}")
@@ -188,6 +201,7 @@ def audit_case(case_dir: Path, condition: str, seed: int, preflight: dict) -> di
             "first_success_step": first_success_step,
             "min_requested_gripper_rad": min_requested_gripper,
             "clipped_steps": result["clipped_steps"],
+            "gripper_effort_limit_range": result["gripper_effort_limit_range"],
             "max_clip_correction_rad": result["max_clip_correction_rad"],
             "initial_observation_sha256": result["initial_observation_sha256"],
             "first_policy_action": trace[0]["policy_action"], "max_errors": maxima,
@@ -201,19 +215,22 @@ def allowed_followups(teacher_audit: dict) -> tuple[str, ...]:
 
 
 def build_command(args, condition, seed, output):
-    return [str(args.isaac_python), "-u", str(args.evaluator), "--checkpoint", str(args.checkpoint),
+    command = [str(args.isaac_python), "-u", str(args.evaluator), "--checkpoint", str(args.checkpoint),
             "--initial-state-hdf5", str(args.raw_path), "--initial-state-demo", args.demo,
             "--num-rollouts", "1", "--seed", str(seed), "--horizon", str(HORIZON),
             "--n-action-steps", "30", "--render-width", "640", "--render-height", "480",
-            "--policy-image-size", "224", "--reset-render-frames", "4", "--gripper-effort-mode", "task",
+            "--policy-image-size", "224", "--reset-render-frames", "4", "--gripper-effort-mode", args.gripper_effort_mode,
             "--lift-threshold-m", "0.02",
             "--trace-steps", str(HORIZON), "--diagnostic-action-source", condition,
             "--server-device", "cpu", "--server-seed", "0", "--server-python", str(args.server_python),
             "--video-count", "1", "--output-dir", str(output), "--headless", "--device", "cuda:0"]
+    if args.gripper_effort_mode == "fixed":
+        command.extend(("--gripper-effort-limit", str(args.gripper_effort_limit)))
+    return command
 
 
 def run_case(args, root, preflight, condition, seed):
-    require_gpu_idle()
+    require_gpu_idle(wait_seconds=10.0)
     output, log = root / f"seed_{seed}" / condition, root / "logs" / f"seed_{seed}_{condition}.log"
     command = build_command(args, condition, seed, output)
     command_sha256 = hashlib.sha256(json.dumps(command, separators=(",", ":")).encode()).hexdigest()
@@ -247,6 +264,8 @@ def main():
     parser.add_argument("--checkpoint", type=Path, default=REPO / "outputs/act_reset_fixed_76_20260921/model/checkpoints/010000/pretrained_model")
     parser.add_argument("--raw-path", type=Path, default=REPO / "outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5")
     parser.add_argument("--demo", default="demo_9")
+    parser.add_argument("--gripper-effort-mode", choices=("task", "fixed"), default="task",
+                        help="Fixed uses the existing positive control's constant effort for all conditions.")
     parser.add_argument("--reference", type=Path, default=REPO / "outputs/evaluation/control_diagnosis_20260921/shard009_recorded_target/evaluation.json")
     parser.add_argument("--evaluator", type=Path, default=REPO / "scripts/evaluation/lerobot_act_so101.py")
     parser.add_argument("--isaac-python", type=Path, default=Path("/data") / user / "conda-envs/leisaac/bin/python")
@@ -259,6 +278,8 @@ def main():
     args.checkpoint = args.checkpoint.expanduser().resolve(strict=True)
     args.raw_path = args.raw_path.expanduser().resolve(strict=True)
     preflight = load_preflight(args.raw_path, args.demo, args.checkpoint, args.reference)
+    preflight["gripper_effort_mode"] = args.gripper_effort_mode
+    args.gripper_effort_limit = preflight["effort"][0]
     implementation_paths = {
         "runner": Path(__file__).resolve(),
         "evaluator": args.evaluator,

@@ -75,3 +75,55 @@ Diffusion의 기본 MIN_MAX 정규화와 관측/행동 시간창을 ACT 설정�
 후보 연결 설정은 n_obs_steps=1, horizon=32, n_action_steps=30, drop_n_last_frames=2이며, 성능 최적값이라는 주장은 아니다.
 현재 GPU 8GiB에서 두 카메라 224×224 입력의 batch1 학습/추론 메모리 스모크가 선행해야 한다.
 이번 진단에서는 새 모델을 학습하지 않는다. ACT보다 더 나은지 아직 확인하지 않았으며, 같은 평가 조건에서 비교해야 한다.
+
+## 2026-09-27 실행 후 프로토콜 보완
+
+`outputs/action_intervention_20260927`의 teacher_all은 642스텝 성공, policy는 no_lift였다.
+teacher_gripper에서 task의 nearest-object 질량 기반 effort가 0.06666666에서 0.76800007로 변했고,
+기존 effort 동등성 감사가 중단시켰다. 이 실행은 완료된 2×2 비교가 아니며 모든 부분 산출물을 보존한다.
+
+새 fixed-effort 진단에서는 기존 성공 reference의 상수 effort를 명시적으로 고정한다.
+첫 fixed root `outputs/action_intervention_fixed_effort_20260927`은 세 조건 감사 통과 뒤 일시적 GPU 점유 감지로 중단됐다.
+감지 PID는 이어진 확인에서 이미 종료 상태였다. 실행 사이의 점유 확인은 최대 10초 재시도하며, 남아 있으면 중단한다.
+최종 새 root는 `outputs/action_intervention_fixed_effort_v2_20260927`이고, 두 seed 각각의 teacher_all부터 8조건을 다시 실행한다.
+고정값은 reference의 유한·양수·min=max 검증 뒤 얻고, 모든 실행 step의 actual effort와 summary range가 같은 값인지 감사한다.
+action, 모델, 원본, joint limit, stable_release_v2, dt, horizon, 영상 조건은 유지한다.
+기존 evaluator/runner의 기본 task 모드는 유지하고 fixed 옵션으로만 이 변경을 켠다.
+task 모드와 fixed 모드의 결과를 섞어 채널 효과를 판정하지 않는다.
+
+당시 새 root에서 시작한 명령이다. 아래 root는 현재 완료됐으므로 다시 실행하지 않는다.
+
+```bash
+cd "/data/$USER/leisaac"
+"$HOME/miniforge3/envs/lerobot/bin/python" scripts/evaluation/run_action_intervention.py \
+  --gripper-effort-mode fixed \
+  --output-root outputs/action_intervention_fixed_effort_v2_20260927
+```
+
+공식 비교 근거와 해석 한계는 [ROBOTIS 비교 문서](../../ROBOTIS_PIPELINE_AUDIT_20260927.md)에 있다.
+
+## 2026-09-27 최종 완료와 재개 도구
+
+최종 v2 8조건을 완료했고 command/trace 전구간·effort·원본·모델·core SHA 감사를 통과했다.
+teacher_all과 teacher_arm은 각 두 번 안정 놓기 성공, policy와 teacher_gripper는 각 두 번 no_lift다.
+팔 궤적과 그로 얻는 관측의 영향이 크다는 지지 근거이며 자율 성능이나 접근 구간 단일 원인 확정이 아니다.
+회귀 205개 및 별도 verifier의 최종 산출물 승인을 통과했다.
+[결과·영상·해시](../../evidence/robotis_action_intervention_20260927.json)를 보존했다.
+
+GPU 점유로 중단된 **미완료 fixed-effort root**에 한해 다음 절차를 쓸 수 있다.
+실행한 core 코드·모델·원본을 유지하고 `output-root`는 해당 미완료 경로로 지정한다.
+완료된 v2 root나 코드 SHA가 다른 첫 fixed root에는 적용하지 않는다.
+
+```bash
+cd "/data/$USER/leisaac"
+"$HOME/miniforge3/envs/lerobot/bin/python" scripts/evaluation/resume_action_intervention.py \
+  --output-root outputs/미완료_fixed_root --check-only
+"$HOME/miniforge3/envs/lerobot/bin/python" scripts/evaluation/resume_action_intervention.py \
+  --output-root outputs/미완료_fixed_root
+```
+
+`--check-only`는 해시·저장 prefix·양성 대조·감사를 읽기 전용으로 확인한다.
+실제 재개는 GPU 유휴 확인 후 스냅샷·재개 이력을 남기고 남은 조건만 실행한다.
+완료 조건이나 부분 조건의 산출물을 덮어쓰지 않는다. 완료된 root는 재개를 거부한다.
+이번 v2는 3·4·5개 완료 시점에서 재개했고 마지막 8개 모두 감사 후 최종화했다.
+현재 자동 재개 작업은 종료됐다. 구간별 팔 교체 후속 진단은 아직 구현·실행하지 않았다.

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from isaaclab.app import AppLauncher
 from policy_image_dump import validate_dump_options, should_dump, write_policy_images
+from action_intervention import validate_fixed_effort
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -41,6 +42,8 @@ parser.add_argument("--dump-policy-images-range", type=int, nargs=2, default=Non
                     help="Inclusive completed-step indices, aligned with trace.step (one-based).")
 parser.add_argument("--gripper-effort-mode", choices=("task", "fixed"), default="task",
                     help="Match Mimic task effort updates; fixed reproduces the legacy evaluator.")
+parser.add_argument("--gripper-effort-limit", type=float, default=None,
+                    help="Opt-in constant gripper effort for fixed-mode diagnostics, in actuator torque units.")
 parser.add_argument("--diagnostic-action-source", choices=("policy", "teacher_arm", "teacher_gripper", "teacher_all"),
                     default="policy", help="Non-policy modes replace selected commands using the initial-state demo; diagnostic only.")
 parser.add_argument(
@@ -74,6 +77,10 @@ parser.add_argument(
 )
 AppLauncher.add_app_launcher_args(parser)
 args_cli = parser.parse_args()
+try:
+    validate_fixed_effort(args_cli.gripper_effort_mode, args_cli.gripper_effort_limit)
+except ValueError as error:
+    parser.error(str(error))
 args_cli.enable_cameras = True
 if (args_cli.initial_state_hdf5 is None) != (args_cli.initial_state_demo is None):
     parser.error("--initial-state-hdf5 and --initial-state-demo must be given together")
@@ -421,6 +428,11 @@ def main() -> None:
                     state_before = policy_obs["joint_pos"][0].detach().clone()
                     if args_cli.gripper_effort_mode == "task" and env.cfg.dynamic_reset_gripper_effort_limit:
                         dynamic_reset_gripper_effort_limit_sim(env, "so101leader")
+                    if args_cli.gripper_effort_limit is not None:
+                        robot.write_joint_effort_limit_to_sim(
+                            torch.full_like(robot.data.joint_effort_limits[:, -1:], args_cli.gripper_effort_limit),
+                            joint_ids=[5],
+                        )
                     gripper_effort = float(robot.data.joint_effort_limits[0, -1])
                     gripper_effort_min = min(gripper_effort_min, gripper_effort)
                     gripper_effort_max = max(gripper_effort_max, gripper_effort)
@@ -441,6 +453,7 @@ def main() -> None:
                             "applied_action": clipped[0].detach().cpu().tolist(),
                             "state_after": observations["policy"]["joint_pos"][0].detach().cpu().tolist(),
                             "cube_xyz": env.scene["cube"].data.root_pos_w[0, :3].detach().cpu().tolist(),
+                            "gripper_effort_limit": gripper_effort,
                             **({"teacher_action": teacher_action[0].detach().cpu().tolist()}
                                if teacher_commands is not None else {}),
                         })
@@ -535,6 +548,7 @@ def main() -> None:
             "dump_policy_images_every": args_cli.dump_policy_images_every,
             "dump_policy_images_range": list(dump_bounds) if dump_bounds is not None else None,
             "gripper_effort_mode": args_cli.gripper_effort_mode,
+            "gripper_effort_limit": args_cli.gripper_effort_limit,
             "diagnostic_action_source": args_cli.diagnostic_action_source,
             "autonomous_policy_evaluation": args_cli.diagnostic_action_source == "policy",
             "teacher_command_source": teacher_metadata,
