@@ -20,6 +20,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--episodes", type=int, nargs="+", default=None)
     parser.add_argument("--max-samples", type=int, default=500)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--grasp-window", type=int, nargs=2, default=None,
+                        help="Optional inclusive zero-based dataset frame interval; self-fit metric only.")
     return parser.parse_args()
 
 
@@ -101,6 +103,20 @@ def main() -> None:
         "first_frames": error_summary(np.asarray(first_errors)),
         "uniform_frames": error_summary(np.asarray(sampled_errors)),
     }
+    if args.grasp_window is not None:
+        start, end = args.grasp_window
+        if not 0 <= start <= end < len(dataset):
+            raise ValueError("grasp-window must be within selected dataset frames")
+        selected = [error for index, error in zip(sampled_indices, sampled_errors, strict=True)
+                    if start <= index <= end]
+        if len(selected) != end - start + 1:
+            raise ValueError("grasp-window requires sampling every frame in its interval")
+        report["grasp_window"] = {
+            "frame_start": start, "frame_end": end,
+            "interpretation": "stored-observation self-fit; not autonomous grasp success",
+            **error_summary(np.asarray(selected)),
+            "per_joint_max_abs_error": np.abs(np.asarray(selected)).max(axis=0).tolist(),
+        }
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))

@@ -100,7 +100,10 @@ def load_preflight(raw_path: Path, demo: str, model: Path, reference_path: Path)
             "effort": result["gripper_effort_limit_range"]}
 
 
-def audit_case(case_dir: Path, condition: str, seed: int, preflight: dict) -> dict:
+def _audit_action_case(case_dir: Path, condition: str, seed: int, preflight: dict,
+                       n_action_steps: int) -> dict:
+    if isinstance(n_action_steps, bool) or not 1 <= n_action_steps <= 30:
+        raise ValueError("audit queue must be within the fixed 30-step chunk")
     evaluation_path, trace_path = case_dir / "evaluation.json", case_dir / "trace_001.json"
     evaluation, trace = json.loads(evaluation_path.read_text()), json.loads(trace_path.read_text())
     if len(evaluation.get("results", [])) != 1:
@@ -111,7 +114,7 @@ def audit_case(case_dir: Path, condition: str, seed: int, preflight: dict) -> di
     required = {
         "task": TASK, "checkpoint": preflight["model"], "num_rollouts": 1,
         "seed_start": seed, "horizon": HORIZON,
-        "trace_steps": HORIZON, "n_action_steps": 30, "reset_render_frames": 4,
+        "trace_steps": HORIZON, "n_action_steps": n_action_steps, "reset_render_frames": 4,
         "gripper_effort_mode": preflight.get("gripper_effort_mode", "task"), "diagnostic_action_source": condition,
         "server_seed": 0, "server_device": "cpu", "render_width": 640,
         "render_height": 480, "policy_image_size": 224, "lift_threshold_m": 0.02,
@@ -219,6 +222,19 @@ def audit_case(case_dir: Path, condition: str, seed: int, preflight: dict) -> di
             "evaluation": str(evaluation_path), "evaluation_sha256": sha256_file(evaluation_path),
             "trace": str(trace_path), "trace_sha256": sha256_file(trace_path),
             "video": str(videos[0]), "video_sha256": sha256_file(videos[0])}
+
+
+def audit_case(case_dir: Path, condition: str, seed: int, preflight: dict) -> dict:
+    """Preserve the historical diagnostic API and its fixed 30-step queue."""
+    return _audit_action_case(case_dir, condition, seed, preflight, n_action_steps=30)
+
+
+def audit_autonomous_case(case_dir: Path, seed: int, preflight: dict,
+                          n_action_steps: int) -> dict:
+    """Audit only policy commands with an explicitly preregistered ACT queue."""
+    if isinstance(n_action_steps, bool) or n_action_steps not in (1, 30):
+        raise ValueError("autonomous queue must be exactly 30 or 1")
+    return _audit_action_case(case_dir, "policy", seed, preflight, n_action_steps)
 
 
 def allowed_followups(teacher_audit: dict) -> tuple[str, ...]:
