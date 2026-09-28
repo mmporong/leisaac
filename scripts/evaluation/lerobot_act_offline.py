@@ -86,11 +86,15 @@ def main() -> None:
     first_errors = []
     for index in start_indices:
         sample = dataset[index]
+        if not isinstance(sample, dict):
+            raise TypeError("integer dataset index must return a single sample mapping")
         first_errors.append(predict(model, preprocessor, postprocessor, sample, device) - sample["action"].numpy())
 
     sampled_errors = []
     for index in sampled_indices:
         sample = dataset[index]
+        if not isinstance(sample, dict):
+            raise TypeError("integer dataset index must return a single sample mapping")
         sampled_errors.append(
             predict(model, preprocessor, postprocessor, sample, device) - sample["action"].numpy()
         )

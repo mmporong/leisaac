@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import sys
 
@@ -35,6 +36,17 @@ TRAIN = SPLIT / 'train'
 REPO_ID = 'local/so101_mimic_vision224_76_train'
 ORIGINAL_MODEL = REPO / 'outputs/act_reset_fixed_76_20260921/model/checkpoints/010000/pretrained_model'
 RAW = REPO / 'outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5'
+EXPECTED_RAW_SHA256 = '1e885d7070bab5bd16f18c57e71f28754c20a3609251c58d28d25c442df1cf35'
+EXPECTED_INPUT_SHA256 = {
+    REPO / 'outputs/act_reset_fixed_76_20260921/model/checkpoints/010000/pretrained_model/model.safetensors': 'ebed7e5415bf1f5501e7b834bfcb5f97c84593335fda145822f3c71fe4aeebab',
+    REPO / 'outputs/act_reset_fixed_76_20260921_split/train/data/chunk-000/file-000.parquet': 'edbbf66f834ed01079f0b3e1847d9b976ac97adbfde5ec0dc080c3204b3bb8b9',
+    REPO / 'outputs/act_reset_fixed_76_20260921_split/train/meta/info.json': '7a80ecaf893eebbac1eca68e441d528b2a8726e9fab391b565f08ef9e80105ad',
+    REPO / 'outputs/act_reset_fixed_76_20260921_split/train/meta/stats.json': '03c54f25a28c450d9d36a3faec57b103ee5f9ea4f3259d00fd46df5024322a27',
+    REPO / 'outputs/act_reset_fixed_76_20260921_split/train/videos/observation.images.front/chunk-000/file-000.mp4': '215348e70ac29e887a34897db6f42627376ebb095f0b677aa49d6f443a79622b',
+    REPO / 'outputs/act_reset_fixed_76_20260921_split/train/videos/observation.images.wrist/chunk-000/file-000.mp4': 'b3b79f6564a53ffc6471e75706fcd26ae990a9925c6354f0ea33b45ca57525b0',
+    REPO / 'outputs/mimic_reset_fixed_76_20260921/raw/shard_009.hdf5': 'ee18e7b2af65038075c4fdb98841611ab1d987e56cc30de0b0819f0bfd3d1818',
+    REPO / 'outputs/evaluation/control_diagnosis_20260921/shard009_recorded_target/evaluation.json': 'a993b63c1021d2d201c1021137fb7bcf957e43337f6a90a98204dfccf10ca9d8',
+}
 RESET_RAW = REPO / 'outputs/mimic_reset_fixed_76_20260921/raw/shard_009.hdf5'
 REFERENCE = REPO / 'outputs/evaluation/control_diagnosis_20260921/shard009_recorded_target/evaluation.json'
 SCREEN_SEEDS = (4201, 4202, 4203)
@@ -52,7 +64,8 @@ def single_training_command(output, candidate):
                else f"--policy.use_vae={str(candidate['use_vae']).lower()}"
                if value.startswith('--policy.use_vae=') else value for value in command]
     return command + ['--dataset.episodes=[20]', '--dataset.image_transforms.enable=false',
-                      '--dataset.video_backend=pyav', f"--policy.dropout={candidate['dropout']}"]
+                      '--dataset.video_backend=pyav', '--policy.kl_weight=10',
+                      f"--policy.dropout={candidate['dropout']}"]
 
 
 def validate_subset_arrays(ids, state, action, raw_state, target):
@@ -151,14 +164,22 @@ def screening_case(candidate, order, queue, error, audits, checkpoint):
 
 
 def preflight():
+    if sha256_file(RAW) != EXPECTED_RAW_SHA256:
+        raise ValueError('preregistered original RAW sha256 changed')
+    for path, expected in EXPECTED_INPUT_SHA256.items():
+        if sha256_file(path) != expected:
+            raise ValueError(f'preregistered input sha256 changed: {path}')
     from lerobot.datasets.lerobot_dataset import LeRobotDataset
     from lerobot.datasets.sampler import EpisodeAwareSampler
     validate_split(SPLIT)
     result = load_preflight(RAW, 'demo_9', ORIGINAL_MODEL, REFERENCE)
     d = LeRobotDataset(REPO_ID, root=TRAIN, episodes=[20],
                       delta_timestamps={'action': [i / 60 for i in range(30)]}, video_backend='pyav')
+    episodes = d.meta.episodes
+    if episodes is None:
+        raise ValueError('selected episode metadata is missing')
     indices = list(EpisodeAwareSampler(
-        d.meta.episodes['dataset_from_index'], d.meta.episodes['dataset_to_index'],
+        episodes['dataset_from_index'], episodes['dataset_to_index'],
         episode_indices_to_use=d.episodes, absolute_to_relative_idx=d.absolute_to_relative_idx))
     if len(d) != 675 or sorted(indices) != list(range(675)):
         raise ValueError('sampler must contain exactly the 675 selected relative frame indices')
@@ -166,8 +187,13 @@ def preflight():
     action = np.stack([np.asarray(x) for x in d.hf_dataset['action']])
     with h5py.File(RESET_RAW, 'r') as stream:
         group = stream['data/demo_9']
+        if not isinstance(group, h5py.Group):
+            raise ValueError('selected raw episode must be an HDF5 group')
+        raw_state, raw_target = group['obs/joint_pos'], group['obs/joint_pos_target']
+        if not isinstance(raw_state, h5py.Dataset) or not isinstance(raw_target, h5py.Dataset):
+            raise ValueError('selected raw state and target must be HDF5 datasets')
         validate_subset_arrays(np.asarray(d.hf_dataset['episode_index']).tolist(), state, action,
-                               group['obs/joint_pos'][:], group['obs/joint_pos_target'][:])
+                               raw_state[:], raw_target[:])
     marker = json.loads((SPLIT / 'split_provenance.json').read_text())
     if marker['splits']['train']['original_to_new_episode_index'].get('24') != 20:
         raise ValueError('aggregate24 -> train20 mapping changed')
@@ -207,17 +233,61 @@ def guard_resources(root):
         raise RuntimeError('new experiment exceeded its 4GiB output guard')
 
 
-def verify_training(checkpoint, candidate):
+def validate_training_config(config, candidate):
+    expected = {
+        ('seed',): 43, ('steps',): candidate['steps'], ('batch_size',): 8,
+        ('num_workers',): 2, ('save_freq',): candidate['steps'], ('log_freq',): 100,
+        ('eval_steps',): 0, ('cudnn_deterministic',): True, ('resume',): False,
+        ('save_checkpoint',): True, ('save_checkpoint_to_hub',): False,
+        ('wandb', 'enable'): False, ('dataset', 'repo_id'): REPO_ID,
+        ('dataset', 'episodes'): [20], ('dataset', 'eval_split'): 0,
+        ('dataset', 'image_transforms', 'enable'): False,
+        ('dataset', 'use_imagenet_stats'): True, ('dataset', 'video_backend'): 'pyav',
+        ('policy', 'type'): 'act', ('policy', 'device'): 'cuda',
+        ('policy', 'push_to_hub'): False, ('policy', 'pretrained_path'): None,
+        ('policy', 'chunk_size'): 30, ('policy', 'n_action_steps'): 30,
+        ('policy', 'n_obs_steps'): 1, ('policy', 'dim_model'): 256,
+        ('policy', 'n_heads'): 8, ('policy', 'dim_feedforward'): 1024,
+        ('policy', 'n_encoder_layers'): 4, ('policy', 'kl_weight'): 10,
+        ('policy', 'use_vae'): candidate['use_vae'], ('policy', 'dropout'): candidate['dropout'],
+        ('policy', 'optimizer_lr'): 0.0001, ('policy', 'optimizer_lr_backbone'): 0.00001,
+        ('policy', 'temporal_ensemble_coeff'): None,
+    }
+    for keys, required in expected.items():
+        value = config
+        for key in keys:
+            value = value[key]
+        if value != required:
+            raise ValueError(f'training config mismatch: {".".join(keys)}')
+    if Path(config['dataset']['root']).resolve() != TRAIN.resolve():
+        raise ValueError('training dataset root changed')
+
+
+def audit_training_log(log, candidate):
+    rows = [dict(re.findall(r'\b([a-z][a-z0-9_]*):([^\s]+)', line))
+            for line in re.split(r'[\r\n]', log.read_text())
+            if 'step:' in line and 'l1_loss:' in line]
+    required = ('loss', 'l1_loss', 'grdn') + (('kld_loss',) if candidate['use_vae'] else ())
+    if len(rows) != candidate['steps'] // 100:
+        raise ValueError('training loss log row count changed')
+    if any(key not in row for row in rows for key in required):
+        raise ValueError('training loss or gradient log field missing')
+    values = [float(row[key]) for row in rows for key in required]
+    if not np.isfinite(values).all():
+        raise ValueError('non-finite training loss or gradient')
+    step = rows[-1]['step']
+    count = float(step.rstrip('KM')) * (1000 if step.endswith('K') else 1000000 if step.endswith('M') else 1)
+    if count != candidate['steps']:
+        raise ValueError('training log final step changed')
+    return {'loss_rows': len(rows), 'loss_and_gradient_finite': True,
+            'training_log_sha256': sha256_file(log)}
+
+
+def verify_training(checkpoint, candidate, log):
     report = verify_checkpoint(checkpoint, TRAIN, candidate['steps'])
     config = json.loads((checkpoint / 'train_config.json').read_text())
-    policy = config['policy']
-    if (config['dataset']['episodes'] != [20] or config['dataset']['eval_split'] != 0
-            or config['dataset']['image_transforms']['enable']
-            or Path(config['dataset']['root']).resolve() != TRAIN.resolve()
-            or config['batch_size'] != 8 or config['steps'] != candidate['steps']
-            or policy['use_vae'] != candidate['use_vae'] or policy['dropout'] != candidate['dropout']
-            or policy['chunk_size'] != 30 or policy['n_action_steps'] != 30):
-        raise ValueError('trained checkpoint differs from the preregistered single-demo candidate')
+    validate_training_config(config, candidate)
+    report.update(audit_training_log(log, candidate))
     report['train_config_sha256'] = sha256_file(checkpoint / 'train_config.json')
     return report
 
@@ -277,7 +347,7 @@ def audit_rollout(output, queue, seed, base, checkpoint):
 def main():
     install_termination_handlers()
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output-root', type=Path, default=REPO / 'outputs/act_single_demo_success_v3_20260928')
+    parser.add_argument('--output-root', type=Path, default=REPO / 'outputs/act_single_demo_checked_20260928')
     parser.add_argument('--stage', choices=('prepare', 'screen', 'final'), required=True)
     parser.add_argument('--resume', action='store_true')
     parser.add_argument('--check-only', action='store_true')
@@ -352,7 +422,8 @@ def main():
         checkpoint = checkpoint_path(candidate)
         stage(f"{candidate['name']}_train",
               single_training_command(root / candidate['name'] / 'model', candidate),
-              lambda: verify_training(checkpoint, candidate), required_completed)
+              lambda: verify_training(checkpoint, candidate, root / 'logs' / f"{candidate['name']}_train.log"),
+              required_completed)
         offline = root / f"offline_{candidate['name']}.json"
         command = [sys.executable, '-u', str(REPO / 'scripts/evaluation/lerobot_act_offline.py'),
                    '--checkpoint', str(checkpoint), '--dataset-root', str(TRAIN), '--repo-id', REPO_ID,
@@ -379,7 +450,8 @@ def main():
                 update(stage='screen', status='candidate_complete')
                 if case['successes'] == 3:
                     break
-            if choose_candidate(manifest['cases']) and choose_candidate(manifest['cases'])['successes'] == 3:
+            best = choose_candidate(manifest['cases'])
+            if best is not None and best['successes'] == 3:
                 break
         selection = choose_candidate(manifest['cases'])
         if selection is not None:

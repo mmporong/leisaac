@@ -1368,18 +1368,55 @@
     "sha256": "4b23bbccf425ad9dd92fd587ea227b76876e326630899d4cee0dfb96ea4ebcd0"
   },
   "validation": {
-    "regression_tests": 234,
+    "regression_tests": 240,
     "result": "PASS",
-    "completed_stage_reaudit": "PASS; --stage final --resume; no new simulation launches",
+    "completed_stage_reaudit": "PASS before prospective guard repairs, under the preserved execution source; --stage final --resume; no new simulation launches",
     "physical_robot_tested": false,
     "scope": "fixed training scene, one augmented demonstration; not position generalization, 4cm real cube, or RL"
   },
   "review": {
-    "status": "REQUEST CHANGES; execution artifacts verified; guard repairs pending",
-    "code_reviewer": "/root/single_demo_g004_reviewer",
-    "architect": "final lane launch temporarily unavailable; existing code-bound Architect CLEAR is not final merge approval",
-    "code_reviewer_artifact_checks": 78,
-    "code_reviewer_trace_steps_checked": 6345,
-    "findings": ["fixed RAW absolute SHA missing", "early failed rollout horizon guard missing", "full training config and finite loss audit incomplete"]
+    "status": "COMMENT; original findings repaired; Python diagnostics PASS; latest independent re-review unavailable due to agent thread limit",
+    "original_code_reviewer": "/root/single_demo_g004_reviewer",
+    "original_artifact_hash_checks": 78,
+    "original_trace_steps_checked": 6345,
+    "architect": "/root/single_demo_g004_architect_checked",
+    "architect_scope": "CLEAR for the three original guard repairs before the later type-boundary changes",
+    "verifier": "/root/single_demo_g004_verifier",
+    "verifier_result": "PASS",
+    "verifier_trace_steps": 6345,
+    "verifier_policy_png_files": 1800,
+    "verifier_initial_png_files": 20,
+    "verifier_video_files": 10,
+    "verifier_frozen_source_files": 6,
+    "latest_code_approval": false,
+    "latest_architecture_approval": false
+  },
+  "execution_source_commit": "4841bdad798cc5245f52d0a580ac72936a719532",
+  "guard_repairs": {
+    "scope": "prospective checked-root execution; not retroactively executed in v3",
+    "raw_and_selected_inputs_pinned": true,
+    "failed_rollout_requires_675_steps": true,
+    "explicit_kl_weight": 10,
+    "training_config_rechecked": "PASS",
+    "p3k_loss_rows": 30,
+    "p10k_loss_rows": 100,
+    "loss_and_gradient_finite": true,
+    "performance_root_preserved": true,
+    "explicit_external_type_boundaries": true,
+    "python_typecheck": {
+      "tool": "existing cached Pyright1.1.414 with installed Pylance typeshed",
+      "files": 4,
+      "errors": 0,
+      "warnings": 0,
+      "result": "PASS"
+    },
+    "omx_diagnostics": "installed lsp_diagnostics handler invoked for six files; TypeScript-only/no-tsconfig skip, not Python proof",
+    "new_dependency_installed": false,
+    "implementation_sha256": {
+      "scripts/imitation_learning/run_single_demo_act.py": "486953b8ad0a88d64825d17f26c206464e009ce2d17c2214509c20592c02272a",
+      "scripts/imitation_learning/test_single_demo_act.py": "8ee713285e32d802bea333fa352952aa219993c40e16d4ece63861010570b3f6",
+      "scripts/evaluation/run_action_intervention.py": "28cc204b867f731531aeda60e175c397acd8c6d2b16bbf32638018f5e1c962d1",
+      "scripts/evaluation/lerobot_act_offline.py": "c5b421b5162ae6928a531dc5409379f761a903c98b9f0c0f5507149a74bd4bf0"
+    }
   }
 }

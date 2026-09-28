@@ -76,7 +76,12 @@ def load_preflight(raw_path: Path, demo: str, model: Path, reference_path: Path)
     raw_hash = sha256_file(raw_path)
     with h5py.File(raw_path, "r") as file:
         group = file[f"data/{demo}"]
-        target = group["obs/joint_pos_target"][:]
+        if not isinstance(group, h5py.Group):
+            raise ValueError("raw episode must be an HDF5 group")
+        dataset = group["obs/joint_pos_target"]
+        if not isinstance(dataset, h5py.Dataset):
+            raise ValueError("raw target must be an HDF5 dataset")
+        target = dataset[:]
         if target.shape != (676, 6) or target.dtype != np.float32 or not np.isfinite(target).all():
             raise ValueError("raw source must be finite float32 (676,6)")
         if not bool(group.attrs.get("success", False)):
@@ -234,7 +239,10 @@ def audit_autonomous_case(case_dir: Path, seed: int, preflight: dict,
     """Audit only policy commands with an explicitly preregistered ACT queue."""
     if isinstance(n_action_steps, bool) or n_action_steps not in (1, 30):
         raise ValueError("autonomous queue must be exactly 30 or 1")
-    return _audit_action_case(case_dir, "policy", seed, preflight, n_action_steps)
+    result = _audit_action_case(case_dir, "policy", seed, preflight, n_action_steps)
+    if not result['success'] and result['steps'] != HORIZON:
+        raise ValueError('autonomous failure must execute the complete horizon')
+    return result
 
 
 def allowed_followups(teacher_audit: dict) -> tuple[str, ...]:
