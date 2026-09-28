@@ -1375,7 +1375,7 @@
     "scope": "fixed training scene, one augmented demonstration; not position generalization, 4cm real cube, or RL"
   },
   "review": {
-    "status": "COMMENT; original findings repaired; Python diagnostics PASS; latest independent re-review unavailable due to agent thread limit",
+    "status": "APPROVE with architecture CLEAR; original findings and diagnostics gap resolved by independent typed sequential reviews",
     "original_code_reviewer": "/root/single_demo_g004_reviewer",
     "original_artifact_hash_checks": 78,
     "original_trace_steps_checked": 6345,
@@ -1388,8 +1388,19 @@
     "verifier_initial_png_files": 20,
     "verifier_video_files": 10,
     "verifier_frozen_source_files": 6,
-    "latest_code_approval": false,
-    "latest_architecture_approval": false
+    "latest_code_approval": true,
+    "latest_architecture_approval": true,
+    "latest_implementation_commit": "a1238f1f45bb0dc0df906aa65c7c898098212012",
+    "latest_code_reviewer": "/root/single_demo_final_reviewer_recovered",
+    "latest_code_reviewer_role": "code-reviewer",
+    "latest_code_reviewer_result": "APPROVE",
+    "latest_code_reviewer_findings": 0,
+    "latest_architect": "/root/single_demo_final_architect_serial",
+    "latest_architect_role": "architect",
+    "latest_architect_result": "CLEAR",
+    "latest_architecture_invariants_checked": 13,
+    "capacity_recovery": "existing verifier reuse followed by sequential typed reviews; no restart, thread deletion, configuration change, training or simulation rerun",
+    "documentation_update_scope": "approval status only; performance table, manifest, model, selection and implementation hashes unchanged"
   },
   "execution_source_commit": "4841bdad798cc5245f52d0a580ac72936a719532",
   "guard_repairs": {

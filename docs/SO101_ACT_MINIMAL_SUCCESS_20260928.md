@@ -5,7 +5,7 @@
 2026-09-28: **ACT6축 자율 집기·들어 올리기10/10, 박스 안 안정 놓기8/10.**
 선별과 분리한 새 launch10회 전체를 집계해 최소 고정 장면 성능 목표를 달성했다.
 단일 증강 시연 맞춤 학습이며, 위치 일반화·4cm 실물·실물 실행·강화학습 성공은 아니다.
-원본·모델·성공/실패 영상은 보존했다. 독립 산출물 검증은 PASS다. 코드 리뷰의 검증 guard3개를 보완했고, 추가 정적 진단도 통과했다. 최신 보완 코드의 독립 재승인은 아직 미확보이며 성능 달성과 전체 작업 완료를 구분한다.
+원본·모델·성공/실패 영상은 보존했다. 성능 산출물은 실행 소스 `4841bdad798cc5245f52d0a580ac72936a719532`에 귀속되며 독립 검증 PASS다. guard3개와 정적 진단을 보완한 구현 `a1238f1f45bb0dc0df906aa65c7c898098212012`은 독립 코드 리뷰 APPROVE와 구조 검토 CLEAR를 받았다. 성능 달성·구현 승인·문서 반영은 각각 구분해 기록한다.
 
 ## 목표
 
@@ -53,6 +53,8 @@ ACT가 팔 5축과 그리퍼를 모두 제어하여 같은 학습 장면에서 �
 - screening seed4201..4203, 최종 seed4301..4310. 고정 장면의 새 launch seed이며 위치 holdout은 아니다.
 
 ## 초기 검증 기록
+
+이 절은 최종 승인 이전의 초기 기록이다. 최신 승인 상태는 맨 위 요약과 마지막 검토 기록을 따른다.
 
 OMX `ralplan`의 Architect→Critic 검토에서 r2 계획·명세를 승인받고 `ultragoal`로 실행 중이다.
 실제 episode20의675frame 선택과 원본 t+1 정렬을 검증했다. 전체 imitation_learning unittest234개가 통과했다.
@@ -142,7 +144,11 @@ KL10을 명령에 명시하고 seed·lr·KL·구조·subset·외부 전송 설�
 추가 반례2개를 포함한 전체240개 unittest, 실제 prepare/check-only, Pyright4파일 error0/warning0, diff-check가 통과했다.
 OMX의 설치된 `lsp_diagnostics` handler도6파일에서 실행했으나 TypeScript 전용이어서 no-tsconfig로 skip됐다. 이 skip를 Python 검사 통과 근거로 사용하지 않으며, Python은 별도의 Pyright 결과로 확인했다.
 
-현재 최신 보완의 native code-reviewer/architect 재검토 호출은 `agent thread limit reached`로 실패했다. verifier의 성능 PASS와 이전 구조 CLEAR를 최신 코드 승인으로 대체하지 않는다. 독립 최종 승인·원격 push·aggregate goal 완료는 보류한다.
+동시 검토 생성은 `agent thread limit reached`로 막혔으나 기존 verifier 재사용과 typed 검토의 순차 실행으로 재개했다. 앱 재시작·thread 삭제·설정 변경·새 학습·시뮬레이션 실행은 하지 않았다. 종료된 작업의 슬롯 점유나 버전 차이를 원인으로 확정하지 않는다.
+
+최신 구현 커밋 `a1238f1f45bb0dc0df906aa65c7c898098212012`을 native code-reviewer `/root/single_demo_final_reviewer_recovered`가 독립 재검토해 **APPROVE**(발견 이슈0)를 반환했다. 전체240개 테스트, Python4파일 Pyright 진단0, 실제 prepare/check-only `writes:false`, 입력·모델·선별·manifest SHA와 실제 학습 설정·유한 로그를 확인했다.
+이후 순차 실행한 native architect `/root/single_demo_final_architect_serial`은 같은 구현 커밋의13개 불변식과 최신 타입 경계에 **CLEAR**를 반환했다. 성능 실행 소스6개 SHA와 manifest를 대조하고, 타입 경계 검사가 성공 경로의 수치 계약을 바꾸지 않음을 확인했다.
+성능 산출물은 기존 독립 verifier PASS, 최신 구현은 위 두 검토의 승인으로 구분한다. 이 절의 승인 기록 갱신도 별도 검토한 뒤 개인 `mmporong/main`에 반영한다. 공개 upstream `origin`에는 push하지 않는다.
 
 ## 파일과 실행
 
