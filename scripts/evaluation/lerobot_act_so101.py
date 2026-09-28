@@ -5,7 +5,7 @@ from pathlib import Path
 
 from isaaclab.app import AppLauncher
 from policy_image_dump import validate_dump_options, should_dump, write_policy_images
-from action_intervention import validate_fixed_effort
+from action_intervention import action_source_at_step, validate_arm_prefix, validate_fixed_effort
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -46,6 +46,8 @@ parser.add_argument("--gripper-effort-limit", type=float, default=None,
                     help="Opt-in constant gripper effort for fixed-mode diagnostics, in actuator torque units.")
 parser.add_argument("--diagnostic-action-source", choices=("policy", "teacher_arm", "teacher_gripper", "teacher_all"),
                     default="policy", help="Non-policy modes replace selected commands using the initial-state demo; diagnostic only.")
+parser.add_argument("--diagnostic-teacher-arm-until-step", type=int, default=None,
+                    help="Opt-in teacher_arm prefix: teacher through this one-based step, then policy; queue unchanged.")
 parser.add_argument(
     "--lift-threshold-m",
     type=float,
@@ -79,6 +81,8 @@ AppLauncher.add_app_launcher_args(parser)
 args_cli = parser.parse_args()
 try:
     validate_fixed_effort(args_cli.gripper_effort_mode, args_cli.gripper_effort_limit)
+    validate_arm_prefix(args_cli.diagnostic_action_source, args_cli.diagnostic_teacher_arm_until_step,
+                        args_cli.horizon)
 except ValueError as error:
     parser.error(str(error))
 args_cli.enable_cameras = True
@@ -413,7 +417,9 @@ def main() -> None:
                     if teacher_commands is not None:
                         teacher_action = torch.as_tensor(teacher_commands[step], dtype=action.dtype,
                                                          device=action.device).view(1, 6)
-                        action = substitute_action(action, teacher_action, args_cli.diagnostic_action_source)
+                        action = substitute_action(action, teacher_action, args_cli.diagnostic_action_source,
+                                                   completed_step=step + 1,
+                                                   until_step=args_cli.diagnostic_teacher_arm_until_step)
                     if first_action is None:
                         first_action = action[0].detach().cpu().tolist()
                         action_min = action[0].detach().clone()
@@ -454,6 +460,9 @@ def main() -> None:
                             "state_after": observations["policy"]["joint_pos"][0].detach().cpu().tolist(),
                             "cube_xyz": env.scene["cube"].data.root_pos_w[0, :3].detach().cpu().tolist(),
                             "gripper_effort_limit": gripper_effort,
+                            "applied_action_source": action_source_at_step(
+                                args_cli.diagnostic_action_source, completed_step,
+                                args_cli.diagnostic_teacher_arm_until_step),
                             **({"teacher_action": teacher_action[0].detach().cpu().tolist()}
                                if teacher_commands is not None else {}),
                         })
@@ -550,6 +559,7 @@ def main() -> None:
             "gripper_effort_mode": args_cli.gripper_effort_mode,
             "gripper_effort_limit": args_cli.gripper_effort_limit,
             "diagnostic_action_source": args_cli.diagnostic_action_source,
+            "diagnostic_teacher_arm_until_step": args_cli.diagnostic_teacher_arm_until_step,
             "autonomous_policy_evaluation": args_cli.diagnostic_action_source == "policy",
             "teacher_command_source": teacher_metadata,
             "success_criteria": release_criteria_metadata(success_term.params),

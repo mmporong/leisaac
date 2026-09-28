@@ -17,6 +17,7 @@ import numpy as np
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 from scripts.imitation_learning.action_contract import atomic_json, sha256_file
+from scripts.evaluation.action_intervention import action_source_at_step, validate_arm_prefix
 
 SEEDS = (4101, 4102)
 FOLLOWUPS = ("policy", "teacher_gripper", "teacher_arm")
@@ -105,6 +106,8 @@ def audit_case(case_dir: Path, condition: str, seed: int, preflight: dict) -> di
     if len(evaluation.get("results", [])) != 1:
         raise ValueError("evaluation must contain exactly one rollout result")
     result = evaluation["results"][0]
+    until_step = preflight.get("teacher_arm_until_step")
+    validate_arm_prefix(condition, until_step, HORIZON)
     required = {
         "task": TASK, "checkpoint": preflight["model"], "num_rollouts": 1,
         "seed_start": seed, "horizon": HORIZON,
@@ -119,6 +122,10 @@ def audit_case(case_dir: Path, condition: str, seed: int, preflight: dict) -> di
     }
     if preflight.get("gripper_effort_mode") == "fixed":
         required["gripper_effort_limit"] = preflight["effort"][0]
+    if until_step is not None:
+        required["diagnostic_teacher_arm_until_step"] = until_step
+    elif evaluation.get("diagnostic_teacher_arm_until_step") is not None:
+        raise ValueError("unexpected arm prefix in an unbounded condition")
     for key, expected in required.items():
         if evaluation.get(key) != expected:
             raise ValueError(f"evaluation contract mismatch: {key}")
@@ -155,9 +162,12 @@ def audit_case(case_dir: Path, condition: str, seed: int, preflight: dict) -> di
     maxima = {"teacher_trace": 0.0, "teacher_preclip": 0.0,
               "policy_preclip": 0.0, "applied_clip": 0.0}
     min_requested_gripper = float("inf")
-    teacher_indices = set(range(6)) if condition == "teacher_all" else ({5} if condition == "teacher_gripper" else (set(range(5)) if condition == "teacher_arm" else set()))
     for row in trace:
         step = row["step"]
+        active_source = action_source_at_step(condition, step, until_step)
+        if until_step is not None and row.get("applied_action_source") != active_source:
+            raise ValueError(f"arm prefix source mismatch at step {step}")
+        teacher_indices = set(range(6)) if active_source == "teacher_all" else ({5} if active_source == "teacher_gripper" else (set(range(5)) if active_source == "teacher_arm" else set()))
         if preflight.get("gripper_effort_mode") == "fixed" and row.get("gripper_effort_limit") != preflight["effort"][0]:
             raise ValueError(f"fixed gripper effort mismatch at step {step}")
         policy = finite_six(row.get("policy_action"), f"policy_action step {step}")
@@ -196,6 +206,7 @@ def audit_case(case_dir: Path, condition: str, seed: int, preflight: dict) -> di
     if len(videos) != 1:
         raise ValueError("expected exactly one rollout video")
     return {"audit_pass": True, "condition": condition, "seed": seed, "steps": steps,
+            **({"teacher_arm_until_step": until_step} if until_step is not None else {}),
             "success": bool(result["success"]), "outcome": result["outcome"],
             "max_cube_lift_m": result["max_cube_lift_m"], "first_lift_step": result["first_lift_step"],
             "first_success_step": first_success_step,

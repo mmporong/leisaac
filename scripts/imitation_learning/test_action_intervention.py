@@ -10,10 +10,34 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "evaluation"))
-from action_intervention import load_teacher_commands, substitute_action, validate_fixed_effort
+from action_intervention import (action_source_at_step, load_teacher_commands, substitute_action,
+                                 validate_arm_prefix, validate_fixed_effort)
 
 
 class ActionInterventionTests(unittest.TestCase):
+    def test_arm_prefix_boundary_is_inclusive_and_preserves_gripper(self):
+        policy = torch.arange(6).float().view(1, 6)
+        teacher = policy + 10
+        for step in (1, 239, 240):
+            result = substitute_action(policy, teacher, "teacher_arm", completed_step=step, until_step=240)
+            torch.testing.assert_close(result, torch.tensor([[10, 11, 12, 13, 14, 5]], dtype=policy.dtype))
+        self.assertIs(substitute_action(policy, teacher, "teacher_arm", completed_step=241, until_step=240), policy)
+        self.assertEqual(action_source_at_step("teacher_arm", 240, 240), "teacher_arm")
+        self.assertEqual(action_source_at_step("teacher_arm", 241, 240), "policy")
+        torch.testing.assert_close(policy, torch.arange(6).float().view(1, 6))
+
+    def test_invalid_arm_prefix_is_rejected_and_defaults_unchanged(self):
+        for source in ("policy", "teacher_all", "teacher_gripper"):
+            self.assertIsNone(validate_arm_prefix(source, None, 675))
+            with self.assertRaises(ValueError):
+                validate_arm_prefix(source, 240, 675)
+        for cutoff in (0, -1, 675, True, 1.5):
+            with self.assertRaises(ValueError):
+                validate_arm_prefix("teacher_arm", cutoff, 675)
+        for step in (0, None, True, 1.5):
+            with self.assertRaises(ValueError):
+                action_source_at_step("teacher_arm", step, 240)
+
     def test_explicit_effort_is_opt_in_positive_finite_and_fixed_only(self):
         self.assertIsNone(validate_fixed_effort("task", None))
         self.assertIsNone(validate_fixed_effort("fixed", None))

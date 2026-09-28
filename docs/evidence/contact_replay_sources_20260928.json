@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "audited_historical_source_pins",
+  "sources": {
+    "old_success_4101": {
+      "parent_manifest": "outputs/action_intervention_fixed_effort_v2_20260927/manifest.json",
+      "parent_manifest_sha256": "fda262faa08107fcd9c07e40bc982e8b100ac4f6ca2d6218ee886b6152b8465c",
+      "condition": "teacher_arm",
+      "seed": 4101,
+      "horizon": 639,
+      "source_was_successful": true,
+      "trace": "outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_arm/trace_001.json",
+      "trace_sha256": "3ad5708ab84036fc7add98bf9386c5f65984f708c2bd5da7aebd2a17d618af2c",
+      "evaluation": "outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_arm/evaluation.json",
+      "evaluation_sha256": "3ed607cd05bcaed7d9650deb0ec0d2f2bd74c44bf77dbb7a4c93182a7aa3fe8f"
+    },
+    "old_success_4102": {
+      "parent_manifest": "outputs/action_intervention_fixed_effort_v2_20260927/manifest.json",
+      "parent_manifest_sha256": "fda262faa08107fcd9c07e40bc982e8b100ac4f6ca2d6218ee886b6152b8465c",
+      "condition": "teacher_arm",
+      "seed": 4102,
+      "horizon": 642,
+      "source_was_successful": true,
+      "trace": "outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_arm/trace_001.json",
+      "trace_sha256": "18d5484aa79eeb3e74f480de682b5d8ded61b509d3184309c9ca3e6f2f0c6d71",
+      "evaluation": "outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_arm/evaluation.json",
+      "evaluation_sha256": "3bcca336aa6840ff2c1ce479d8eeb5f907f60df01695814b471adfe870f51d1c"
+    },
+    "new_failure_4101": {
+      "parent_manifest": "outputs/arm_prefix_intervention_20260928/manifest.json",
+      "parent_manifest_sha256": "e040ac66993de11a55064526ca6455ce8f9bc62cd05323dd1c45f0263a1e0896",
+      "condition": "teacher_arm",
+      "seed": 4101,
+      "horizon": 675,
+      "source_was_successful": false,
+      "trace": "outputs/arm_prefix_intervention_20260928/seed_4101/teacher_arm/trace_001.json",
+      "trace_sha256": "f7dffe4b5c1d049a27ec17d0b5e87a0ab1d7cff85d5bc6cf35f5774da32ca98b",
+      "evaluation": "outputs/arm_prefix_intervention_20260928/seed_4101/teacher_arm/evaluation.json",
+      "evaluation_sha256": "256ae5262db082e2676a722a32dde02a613f324b6ec2ce84adb9f20b66758ee5"
+    }
+  }
+}

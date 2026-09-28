@@ -43,10 +43,30 @@ def load_teacher_commands(path, demo, horizon):
     }
 
 
-def substitute_action(policy_action, teacher_action, source):
-    """Return a copy with selected channels replaced, preserving tensor device/dtype."""
+def validate_arm_prefix(source, until_step, horizon):
+    """Only teacher-arm diagnostics may release a finite one-based prefix."""
+    if until_step is not None and (
+        source != "teacher_arm" or type(until_step) is not int or not 1 <= until_step < horizon
+    ):
+        raise ValueError("arm prefix requires teacher_arm and an integer cutoff before horizon")
+    return until_step
+
+
+def action_source_at_step(source, completed_step, until_step=None):
     if source not in SOURCES:
         raise ValueError("unknown diagnostic action source")
+    if until_step is None:
+        return source
+    if source != "teacher_arm" or type(until_step) is not int or until_step < 1:
+        raise ValueError("arm prefix requires teacher_arm and a positive integer cutoff")
+    if type(completed_step) is not int or completed_step < 1:
+        raise ValueError("arm prefix requires a positive one-based completed step")
+    return source if completed_step <= until_step else "policy"
+
+
+def substitute_action(policy_action, teacher_action, source, *, completed_step=None, until_step=None):
+    """Return a copy with selected channels replaced, preserving tensor device/dtype."""
+    source = action_source_at_step(source, completed_step, until_step)
     if policy_action.shape != (1, 6):
         raise ValueError("expected policy action shape (1,6)")
     if source == "policy":

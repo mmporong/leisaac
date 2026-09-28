@@ -1,0 +1,691 @@
+{
+  "schema_version": 1,
+  "status": "prefix_positive_control_failed_and_six_recorded_replays_completed",
+  "prefix": {
+    "root": "/data/lim/leisaac/outputs/arm_prefix_intervention_20260928",
+    "manifest_sha256": "e040ac66993de11a55064526ca6455ce8f9bc62cd05323dd1c45f0263a1e0896",
+    "planned_runs": 12,
+    "completed_runs": 2,
+    "followups_executed": false,
+    "stop_reason": "teacher_arm_positive_control_no_lift",
+    "implementation": {
+      "base_runner": {
+        "path": "/data/lim/leisaac/scripts/evaluation/run_action_intervention.py",
+        "sha256": "6d9da56c89f2cc49f9abb2d27d3075d5e50afc15d277c045a9a46ca2a2870a34"
+      },
+      "evaluator": {
+        "path": "/data/lim/leisaac/scripts/evaluation/lerobot_act_so101.py",
+        "sha256": "59f1acbc9c0c03639ebaf713cdb1735514efbe358bd435380067a3c3d858f338"
+      },
+      "helper": {
+        "path": "/data/lim/leisaac/scripts/evaluation/action_intervention.py",
+        "sha256": "09cb960d15dbe21bf1a3dbb5f5b9bd54ab408c07fc80587b3f25d15df40917a4"
+      },
+      "image_dump": {
+        "path": "/data/lim/leisaac/scripts/evaluation/policy_image_dump.py",
+        "sha256": "6d0dd077e32c3586944001999b5d549f0811c89c2beb1df115d826f41a464c1a"
+      },
+      "prefix_runner": {
+        "path": "/data/lim/leisaac/scripts/evaluation/run_arm_prefix_intervention.py",
+        "sha256": "48fbccbc727796357a98451bac4045a6e2822b8678c9f01b183318cd3c80c67e"
+      },
+      "protocol": {
+        "path": "/data/lim/leisaac/docs/plans/remaining_causes_20260921/arm_prefix_intervention_20260928.md",
+        "sha256": "1b7db7a51d02c4ac6753c533d751c356c7645bfae0755cda69936b035c4345c6"
+      },
+      "server": {
+        "path": "/data/lim/leisaac/scripts/imitation_learning/serve_lerobot_act.py",
+        "sha256": "e7caf7d50770666d228765199d2d2e278de685fa7def5a606ee54bfa659785a9"
+      }
+    },
+    "runs": [
+      {
+        "audit_pass": true,
+        "case": "teacher_all",
+        "clipped_steps": 0,
+        "condition": "teacher_all",
+        "evaluation": "/data/lim/leisaac/outputs/arm_prefix_intervention_20260928/seed_4101/teacher_all/evaluation.json",
+        "evaluation_sha256": "1227ca86a7e78b6edc42a02cef449ac542be695115823697aeb351e98a869e11",
+        "first_lift_step": 402,
+        "first_policy_action": [
+          0.019924402236938477,
+          -0.16270390152931213,
+          0.1814763844013214,
+          -0.12746179103851318,
+          0.08307462930679321,
+          0.8403711318969727
+        ],
+        "first_success_step": 642,
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "initial_observation_sha256": {
+          "front": "fb33c031038302a81c78c035af694d2a05178232396f0fb1afc55df1ee982fc9",
+          "wrist": "5bb6e84f390ff0f9630c57e9dba7cace28377e5c1cf488dc15c0193e87248530"
+        },
+        "input_dump_frames": 9,
+        "input_manifest_sha256": "3ebdc39b7cb189d4b8a0e2c1f6aa9b07e5c45736a244c8a3533f5dcdbcf85575",
+        "max_clip_correction_rad": {
+          "elbow_flex": 0,
+          "gripper": 0,
+          "shoulder_lift": 0,
+          "shoulder_pan": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0
+        },
+        "max_cube_lift_m": 0.11544939875602722,
+        "max_errors": {
+          "applied_clip": 0,
+          "policy_preclip": 0,
+          "teacher_preclip": 0,
+          "teacher_trace": 0
+        },
+        "min_requested_gripper_rad": 0.11987358331680298,
+        "outcome": "success",
+        "seed": 4101,
+        "steps": 642,
+        "success": true,
+        "trace": "/data/lim/leisaac/outputs/arm_prefix_intervention_20260928/seed_4101/teacher_all/trace_001.json",
+        "trace_sha256": "9231f6ba96210cf3bd259040a9c171149bb5dc20f8f2e302e29c3929db132311",
+        "video": "/data/lim/leisaac/outputs/arm_prefix_intervention_20260928/seed_4101/teacher_all/rollout_001_success.mp4",
+        "video_metadata": {
+          "first_frame_decoded": true,
+          "fps": 60,
+          "frame_count": 642,
+          "height": 480,
+          "width": 1280
+        },
+        "video_sha256": "b42a79fcacf486ed7b230ebb55993cacd45aae80b77a48b6c16da3d8b54f3855",
+        "command_sha256": "9f7c9ec27bf34263307fbc417ebb0027f5fd594b209f7eb231ff2bd9b76fe056",
+        "log": "/data/lim/leisaac/outputs/arm_prefix_intervention_20260928/logs/seed_4101_teacher_all.log",
+        "log_sha256": "86b05e741a085861aac4009f677f1f76d69951a522be3175bf6be0036a73736d"
+      },
+      {
+        "audit_pass": true,
+        "case": "teacher_arm",
+        "clipped_steps": 0,
+        "condition": "teacher_arm",
+        "evaluation": "/data/lim/leisaac/outputs/arm_prefix_intervention_20260928/seed_4101/teacher_arm/evaluation.json",
+        "evaluation_sha256": "256ae5262db082e2676a722a32dde02a613f324b6ec2ce84adb9f20b66758ee5",
+        "first_lift_step": null,
+        "first_policy_action": [
+          0.01994679868221283,
+          -0.16299909353256226,
+          0.18123358488082886,
+          -0.12707388401031494,
+          0.0840340256690979,
+          0.8407124280929565
+        ],
+        "first_success_step": null,
+        "gripper_effort_limit_range": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "initial_observation_sha256": {
+          "front": "4cc175d4f42e7c243815a660881578f5b891936ca1821fde2ba8a44c7947178f",
+          "wrist": "4c5bdd7bb00cbde0c3c274e10b7923d8223976a714acef5abce2948baac2baad"
+        },
+        "input_dump_frames": 9,
+        "input_manifest_sha256": "5256369132d0dee1e0f4f7db589716dde06d8432dacfccdf837286ab67c59057",
+        "max_clip_correction_rad": {
+          "elbow_flex": 0,
+          "gripper": 0,
+          "shoulder_lift": 0,
+          "shoulder_pan": 0,
+          "wrist_flex": 0,
+          "wrist_roll": 0
+        },
+        "max_cube_lift_m": 0,
+        "max_errors": {
+          "applied_clip": 0,
+          "policy_preclip": 0,
+          "teacher_preclip": 0,
+          "teacher_trace": 0
+        },
+        "min_requested_gripper_rad": 0.08240208029747009,
+        "outcome": "no_lift",
+        "seed": 4101,
+        "steps": 675,
+        "success": false,
+        "trace": "/data/lim/leisaac/outputs/arm_prefix_intervention_20260928/seed_4101/teacher_arm/trace_001.json",
+        "trace_sha256": "f7dffe4b5c1d049a27ec17d0b5e87a0ab1d7cff85d5bc6cf35f5774da32ca98b",
+        "video": "/data/lim/leisaac/outputs/arm_prefix_intervention_20260928/seed_4101/teacher_arm/rollout_001_failure.mp4",
+        "video_metadata": {
+          "first_frame_decoded": true,
+          "fps": 60,
+          "frame_count": 675,
+          "height": 480,
+          "width": 1280
+        },
+        "video_sha256": "8b3f6348499013995b3609250ebd2993960a7ca290bb9188d730b3d8e36c4810",
+        "command_sha256": "9825143e1c20004246c5dbef56eb6d4e08e60436e1f3de02d188b32994021ace",
+        "log": "/data/lim/leisaac/outputs/arm_prefix_intervention_20260928/logs/seed_4101_teacher_arm.log",
+        "log_sha256": "a554ad82ebade0f8755be314468d0d09f941d9a9fb821719d44746355edab317"
+      }
+    ]
+  },
+  "contact_replay": {
+    "root": "/data/lim/leisaac/outputs/contact_replay_20260928",
+    "manifest_sha256": "fe32fccadbe589bc5feef88d4d8fe2135aa92ceba7196072fb147e949f59e6ac",
+    "preflight": {
+      "control_dt_s": 0.016666666666666666,
+      "demo": "demo_9",
+      "effort": [
+        0.06666666269302368,
+        0.06666666269302368
+      ],
+      "implementation": {
+        "base_runner": {
+          "path": "/data/lim/leisaac/scripts/evaluation/run_action_intervention.py",
+          "sha256": "6d9da56c89f2cc49f9abb2d27d3075d5e50afc15d277c045a9a46ca2a2870a34"
+        },
+        "evaluator": {
+          "path": "/data/lim/leisaac/scripts/evaluation/lerobot_act_so101.py",
+          "sha256": "59f1acbc9c0c03639ebaf713cdb1735514efbe358bd435380067a3c3d858f338"
+        },
+        "helper": {
+          "path": "/data/lim/leisaac/scripts/evaluation/action_intervention.py",
+          "sha256": "09cb960d15dbe21bf1a3dbb5f5b9bd54ab408c07fc80587b3f25d15df40917a4"
+        },
+        "image_dump": {
+          "path": "/data/lim/leisaac/scripts/evaluation/policy_image_dump.py",
+          "sha256": "6d0dd077e32c3586944001999b5d549f0811c89c2beb1df115d826f41a464c1a"
+        },
+        "prefix_runner": {
+          "path": "/data/lim/leisaac/scripts/evaluation/run_arm_prefix_intervention.py",
+          "sha256": "48fbccbc727796357a98451bac4045a6e2822b8678c9f01b183318cd3c80c67e"
+        },
+        "protocol": {
+          "path": "/data/lim/leisaac/docs/plans/remaining_causes_20260921/contact_replay_20260928.md",
+          "sha256": "6707db41722ef036c0d0c24fb35d5ac97d8aacc0b6d109f980ce1f0a97174594"
+        },
+        "protocol_transport": {
+          "path": "/data/lim/leisaac/scripts/imitation_learning/serve_lerobot_act.py",
+          "sha256": "e7caf7d50770666d228765199d2d2e278de685fa7def5a606ee54bfa659785a9"
+        },
+        "runner": {
+          "path": "/data/lim/leisaac/scripts/evaluation/run_contact_replay.py",
+          "sha256": "e709effb85a1064e7cdf7ff1787b0762efdde30bfc9eafb9a2fb137bc97c48c0"
+        },
+        "server": {
+          "path": "/data/lim/leisaac/scripts/evaluation/serve_recorded_actions.py",
+          "sha256": "37c63ad60b4733a5435e29675f590d4d74f29acb805a030da46063df87816c32"
+        },
+        "source_pins": {
+          "path": "/data/lim/leisaac/docs/evidence/contact_replay_sources_20260928.json",
+          "sha256": "651655b85841f702ecadfba0d624561bdfdc098aa56d06ebc700c4e697eb0acb"
+        }
+      },
+      "joint_names": [
+        "shoulder_pan",
+        "shoulder_lift",
+        "elbow_flex",
+        "wrist_flex",
+        "wrist_roll",
+        "gripper"
+      ],
+      "lower": [
+        -1.9198598861694336,
+        -1.7453298568725586,
+        -1.7453298568725586,
+        -1.65805983543396,
+        -2.792530059814453,
+        -0.17453300952911377
+      ],
+      "model": "/data/lim/leisaac/outputs/act_reset_fixed_76_20260921/model/checkpoints/010000/pretrained_model",
+      "model_sha256": "ebed7e5415bf1f5501e7b834bfcb5f97c84593335fda145822f3c71fe4aeebab",
+      "raw_path": "/data/lim/leisaac/outputs/mimic_vision224_500_20260913/raw/shard_009.hdf5",
+      "raw_sha256": "1e885d7070bab5bd16f18c57e71f28754c20a3609251c58d28d25c442df1cf35",
+      "reference_path": "/data/lim/leisaac/outputs/evaluation/control_diagnosis_20260921/shard009_recorded_target/evaluation.json",
+      "reference_sha256": "a993b63c1021d2d201c1021137fb7bcf957e43337f6a90a98204dfccf10ca9d8",
+      "scene_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+      "success_criteria": {
+        "half_extent_xy_m": 0.045,
+        "hold_time_s": 0.5,
+        "max_angular_speed_rad_s": 0.5,
+        "max_height_m": 0.075,
+        "max_linear_speed_m_s": 0.03,
+        "min_height_m": 0.012,
+        "open_threshold_rad": 0.26,
+        "version": "stable_release_v2"
+      },
+      "upper": [
+        1.9198598861694336,
+        1.7453298568725586,
+        1.5707998275756836,
+        1.65805983543396,
+        2.792530059814453,
+        1.7453298568725586
+      ]
+    },
+    "sources": {
+      "new_failure_4101": {
+        "evaluation": "/data/lim/leisaac/outputs/arm_prefix_intervention_20260928/seed_4101/teacher_arm/evaluation.json",
+        "evaluation_sha256": "256ae5262db082e2676a722a32dde02a613f324b6ec2ce84adb9f20b66758ee5",
+        "horizon": 675,
+        "kind": "historical_applied_action_replay",
+        "model_loaded": false,
+        "parent_manifest": "/data/lim/leisaac/outputs/arm_prefix_intervention_20260928/manifest.json",
+        "parent_manifest_sha256": "e040ac66993de11a55064526ca6455ce8f9bc62cd05323dd1c45f0263a1e0896",
+        "source_condition": "teacher_arm",
+        "source_seed": 4101,
+        "source_was_successful": false,
+        "trace": "/data/lim/leisaac/outputs/arm_prefix_intervention_20260928/seed_4101/teacher_arm/trace_001.json",
+        "trace_sha256": "f7dffe4b5c1d049a27ec17d0b5e87a0ab1d7cff85d5bc6cf35f5774da32ca98b"
+      },
+      "old_success_4101": {
+        "evaluation": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_arm/evaluation.json",
+        "evaluation_sha256": "3ed607cd05bcaed7d9650deb0ec0d2f2bd74c44bf77dbb7a4c93182a7aa3fe8f",
+        "horizon": 639,
+        "kind": "historical_applied_action_replay",
+        "model_loaded": false,
+        "parent_manifest": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/manifest.json",
+        "parent_manifest_sha256": "fda262faa08107fcd9c07e40bc982e8b100ac4f6ca2d6218ee886b6152b8465c",
+        "source_condition": "teacher_arm",
+        "source_seed": 4101,
+        "source_was_successful": true,
+        "trace": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4101/teacher_arm/trace_001.json",
+        "trace_sha256": "3ad5708ab84036fc7add98bf9386c5f65984f708c2bd5da7aebd2a17d618af2c"
+      },
+      "old_success_4102": {
+        "evaluation": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_arm/evaluation.json",
+        "evaluation_sha256": "3bcca336aa6840ff2c1ce479d8eeb5f907f60df01695814b471adfe870f51d1c",
+        "horizon": 642,
+        "kind": "historical_applied_action_replay",
+        "model_loaded": false,
+        "parent_manifest": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/manifest.json",
+        "parent_manifest_sha256": "fda262faa08107fcd9c07e40bc982e8b100ac4f6ca2d6218ee886b6152b8465c",
+        "source_condition": "teacher_arm",
+        "source_seed": 4102,
+        "source_was_successful": true,
+        "trace": "/data/lim/leisaac/outputs/action_intervention_fixed_effort_v2_20260927/seed_4102/teacher_arm/trace_001.json",
+        "trace_sha256": "18d5484aa79eeb3e74f480de682b5d8ded61b509d3184309c9ca3e6f2f0c6d71"
+      }
+    },
+    "runs": [
+      {
+        "audit_pass": true,
+        "clipped_steps": 0,
+        "effort": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "evaluation": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4101/seed_4101/evaluation.json",
+        "evaluation_sha256": "3b1b91ee6d4a3580af0ff14d2add1dc896cedefa184938d259194ab2050db7e7",
+        "first_lift_step": 402,
+        "first_success_step": 639,
+        "initial_scene_state_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "input_dump_frames": 9,
+        "input_manifest_sha256": "5054ab59d634ccd90a39fb1dd68040cba520df3f2c5e68341fe24977378ab137",
+        "kind": "historical_applied_action_replay",
+        "max_cube_lift_m": 0.11827568709850311,
+        "model_loaded": false,
+        "outcome": "success",
+        "seed": 4101,
+        "source": "old_success_4101",
+        "source_was_successful": true,
+        "steps": 639,
+        "success": true,
+        "trace": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4101/seed_4101/trace_001.json",
+        "trace_sha256": "a7231b8e589eb1055a18059d9d61f8ce71df82f2b89b918808f665cd82e536a1",
+        "video": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4101/seed_4101/rollout_001_success.mp4",
+        "video_metadata": {
+          "first_frame_decoded": true,
+          "fps": 60,
+          "frame_count": 639,
+          "height": 480,
+          "width": 1280
+        },
+        "video_sha256": "04c6ac15325780142180707d972433f52e0156294cd14af8d49276ce6ffbbf84",
+        "command_sha256": "37a8a8d4f21a359b06e101f63e2d53889e735e72e878095bed42076675ec8c2b",
+        "log": "/data/lim/leisaac/outputs/contact_replay_20260928/logs/old_success_4101_4101.log",
+        "log_sha256": "099819d1d619df3448f01574061d631f0eaaf4ccd1b45a25c0499ca1dc2d4678",
+        "source_manifest": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4101_source.json",
+        "source_manifest_sha256": "0a00cbfea4cccec993085161e40734b3e8cd0b03185be87115656d8c19aa5951"
+      },
+      {
+        "audit_pass": true,
+        "clipped_steps": 0,
+        "effort": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "evaluation": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4101/seed_4102/evaluation.json",
+        "evaluation_sha256": "097391fb98d7053dee4f59cb90f582eb7e6378119a7d35980dcbf7c506f7c220",
+        "first_lift_step": 402,
+        "first_success_step": 639,
+        "initial_scene_state_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "input_dump_frames": 9,
+        "input_manifest_sha256": "819d276abc0bb088d6cfb59d5b63766964bff93add46c4ec731d5c4257e9c550",
+        "kind": "historical_applied_action_replay",
+        "max_cube_lift_m": 0.11827568709850311,
+        "model_loaded": false,
+        "outcome": "success",
+        "seed": 4102,
+        "source": "old_success_4101",
+        "source_was_successful": true,
+        "steps": 639,
+        "success": true,
+        "trace": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4101/seed_4102/trace_001.json",
+        "trace_sha256": "a7231b8e589eb1055a18059d9d61f8ce71df82f2b89b918808f665cd82e536a1",
+        "video": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4101/seed_4102/rollout_001_success.mp4",
+        "video_metadata": {
+          "first_frame_decoded": true,
+          "fps": 60,
+          "frame_count": 639,
+          "height": 480,
+          "width": 1280
+        },
+        "video_sha256": "17d7e2949d34b4a8021e5a88a838c7d1538518168da0c4e30de435ad0ed9de04",
+        "command_sha256": "49891cc7457c7631664ec7327f0537bd130e7b27a748e3bd6063c00b4b9f87c1",
+        "log": "/data/lim/leisaac/outputs/contact_replay_20260928/logs/old_success_4101_4102.log",
+        "log_sha256": "2ad161704f088dbbb88cd02b1c03cdb1be9b7a6a2d8d70a88ea5739efcf1abc8",
+        "source_manifest": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4101_source.json",
+        "source_manifest_sha256": "0a00cbfea4cccec993085161e40734b3e8cd0b03185be87115656d8c19aa5951"
+      },
+      {
+        "audit_pass": true,
+        "clipped_steps": 0,
+        "effort": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "evaluation": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4102/seed_4101/evaluation.json",
+        "evaluation_sha256": "db17f565b88b0c67cbb3d297484d8b12053e09c587e3196a46f78434bec9ca49",
+        "first_lift_step": 402,
+        "first_success_step": 642,
+        "initial_scene_state_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "input_dump_frames": 9,
+        "input_manifest_sha256": "b5ca980179039bd7b3dda38a09a30edc53374d054f9e47dbfd45ca947230ef83",
+        "kind": "historical_applied_action_replay",
+        "max_cube_lift_m": 0.11745797097682953,
+        "model_loaded": false,
+        "outcome": "success",
+        "seed": 4101,
+        "source": "old_success_4102",
+        "source_was_successful": true,
+        "steps": 642,
+        "success": true,
+        "trace": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4102/seed_4101/trace_001.json",
+        "trace_sha256": "553b3625ab282015762520e407c2f87bfa033e8b169b6e4b3f1d8819592789b1",
+        "video": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4102/seed_4101/rollout_001_success.mp4",
+        "video_metadata": {
+          "first_frame_decoded": true,
+          "fps": 60,
+          "frame_count": 642,
+          "height": 480,
+          "width": 1280
+        },
+        "video_sha256": "58940fcf625441fae4a7049a8e59e8b88b3ba4897ec44116ccf1080a07be2429",
+        "command_sha256": "c3bbb4eae2f26fe91a5f57b5b4393475007bcb73efae55a9cfd98c2c5f1113d6",
+        "log": "/data/lim/leisaac/outputs/contact_replay_20260928/logs/old_success_4102_4101.log",
+        "log_sha256": "58cfc2bc3c9c56ad31c2a4503fcef79026620a2b7adc68ae25057b8234bda85b",
+        "source_manifest": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4102_source.json",
+        "source_manifest_sha256": "38dee34e3c785d02edfe0e8d6921858526e448a14ffced085f3e24ff0a080059"
+      },
+      {
+        "audit_pass": true,
+        "clipped_steps": 0,
+        "effort": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "evaluation": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4102/seed_4102/evaluation.json",
+        "evaluation_sha256": "144b4384bd0b51684d292885099d68079bdfe74978e6d18eca01d07b25568d1b",
+        "first_lift_step": 402,
+        "first_success_step": 642,
+        "initial_scene_state_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "input_dump_frames": 9,
+        "input_manifest_sha256": "587cac0d421d4affc1d99ff2181fbb4108051ec667e8de4bbf04db64096a6a00",
+        "kind": "historical_applied_action_replay",
+        "max_cube_lift_m": 0.11745797097682953,
+        "model_loaded": false,
+        "outcome": "success",
+        "seed": 4102,
+        "source": "old_success_4102",
+        "source_was_successful": true,
+        "steps": 642,
+        "success": true,
+        "trace": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4102/seed_4102/trace_001.json",
+        "trace_sha256": "553b3625ab282015762520e407c2f87bfa033e8b169b6e4b3f1d8819592789b1",
+        "video": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4102/seed_4102/rollout_001_success.mp4",
+        "video_metadata": {
+          "first_frame_decoded": true,
+          "fps": 60,
+          "frame_count": 642,
+          "height": 480,
+          "width": 1280
+        },
+        "video_sha256": "2be596ecd528925c4dbf544c25ff4c0ce24882714acbbb938bfec66c7d41e415",
+        "command_sha256": "0839785954213fcb5e643a958bcac6033176792085ce1c0b3fe3342fc7603c5d",
+        "log": "/data/lim/leisaac/outputs/contact_replay_20260928/logs/old_success_4102_4102.log",
+        "log_sha256": "5ac08c7bf5909b52adcc384ae7a1dd69da84b79e58fa0334e453764a77088dfe",
+        "source_manifest": "/data/lim/leisaac/outputs/contact_replay_20260928/old_success_4102_source.json",
+        "source_manifest_sha256": "38dee34e3c785d02edfe0e8d6921858526e448a14ffced085f3e24ff0a080059"
+      },
+      {
+        "audit_pass": true,
+        "clipped_steps": 0,
+        "effort": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "evaluation": "/data/lim/leisaac/outputs/contact_replay_20260928/new_failure_4101/seed_4101/evaluation.json",
+        "evaluation_sha256": "f9a6d5c9d8415ab9ecb43fecfc3cd3fde0a0e7b03344ff7695630e9ad72558c9",
+        "first_lift_step": null,
+        "first_success_step": null,
+        "initial_scene_state_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "input_dump_frames": 9,
+        "input_manifest_sha256": "11eff4e2b193af3c2bfd5ab1fa445f4c4d8718e57b4ee9c5217a07a1edb0c190",
+        "kind": "historical_applied_action_replay",
+        "max_cube_lift_m": 0,
+        "model_loaded": false,
+        "outcome": "no_lift",
+        "seed": 4101,
+        "source": "new_failure_4101",
+        "source_was_successful": false,
+        "steps": 675,
+        "success": false,
+        "trace": "/data/lim/leisaac/outputs/contact_replay_20260928/new_failure_4101/seed_4101/trace_001.json",
+        "trace_sha256": "3b221c6292bee8ba1eaf6cbcf94d3bf41f2ad41c69370563fdfeca61fd7a018d",
+        "video": "/data/lim/leisaac/outputs/contact_replay_20260928/new_failure_4101/seed_4101/rollout_001_failure.mp4",
+        "video_metadata": {
+          "first_frame_decoded": true,
+          "fps": 60,
+          "frame_count": 675,
+          "height": 480,
+          "width": 1280
+        },
+        "video_sha256": "eefa1cd21124c9fd864d352d20b378e9a49a48c7e4650fdfcdc7b0679b5e09a8",
+        "command_sha256": "f0e916cd382b6e60996ea1821baf2aa0cdf7131d74a832ec295412143b4e0031",
+        "log": "/data/lim/leisaac/outputs/contact_replay_20260928/logs/new_failure_4101_4101.log",
+        "log_sha256": "eff1addda010c9ac961dbdaa94b08daa16452c414c14ed18eeb806d78335d602",
+        "source_manifest": "/data/lim/leisaac/outputs/contact_replay_20260928/new_failure_4101_source.json",
+        "source_manifest_sha256": "906ecbd8873a4590876c3ca029907078aac8e883c362d293999dc9a5b31a6288"
+      },
+      {
+        "audit_pass": true,
+        "clipped_steps": 0,
+        "effort": [
+          0.06666666269302368,
+          0.06666666269302368
+        ],
+        "evaluation": "/data/lim/leisaac/outputs/contact_replay_20260928/new_failure_4101/seed_4102/evaluation.json",
+        "evaluation_sha256": "6879038d21a643c349632783453a5aa169323a3d207f19361e4eb74b0cbd5ba5",
+        "first_lift_step": null,
+        "first_success_step": null,
+        "initial_scene_state_sha256": "375aaad23fe61b89eb0eb3c79037f53acb55348823dd674385f9d1c0c66d2205",
+        "input_dump_frames": 9,
+        "input_manifest_sha256": "f7cd3ba5f84acf0e2e738929c21d8d5366a7c782ed1993638d8a677e2c848e36",
+        "kind": "historical_applied_action_replay",
+        "max_cube_lift_m": 0,
+        "model_loaded": false,
+        "outcome": "no_lift",
+        "seed": 4102,
+        "source": "new_failure_4101",
+        "source_was_successful": false,
+        "steps": 675,
+        "success": false,
+        "trace": "/data/lim/leisaac/outputs/contact_replay_20260928/new_failure_4101/seed_4102/trace_001.json",
+        "trace_sha256": "3b221c6292bee8ba1eaf6cbcf94d3bf41f2ad41c69370563fdfeca61fd7a018d",
+        "video": "/data/lim/leisaac/outputs/contact_replay_20260928/new_failure_4101/seed_4102/rollout_001_failure.mp4",
+        "video_metadata": {
+          "first_frame_decoded": true,
+          "fps": 60,
+          "frame_count": 675,
+          "height": 480,
+          "width": 1280
+        },
+        "video_sha256": "78be09a3d6f35d85f401faad543b538b3292bf1cf48954d5fec0d40dc55b6b0c",
+        "command_sha256": "974f4d50d00ecb2be995f85eb4046435353d7b9d1457a96b2a3ea60f97cb17cb",
+        "log": "/data/lim/leisaac/outputs/contact_replay_20260928/logs/new_failure_4101_4102.log",
+        "log_sha256": "b6b3221b5c01e4762f0594fd85131958e36c0035661e56ae1fe1f074f2c71569",
+        "source_manifest": "/data/lim/leisaac/outputs/contact_replay_20260928/new_failure_4101_source.json",
+        "source_manifest_sha256": "906ecbd8873a4590876c3ca029907078aac8e883c362d293999dc9a5b31a6288"
+      }
+    ],
+    "reproduction_comparison": [
+      {
+        "source": "old_success_4101",
+        "seed": 4101,
+        "cube_max_abs_diff_m": 0,
+        "joint_state_max_abs_diff_rad": 0,
+        "source_steps": 639,
+        "replay_steps": 639,
+        "same_success_as_source": true
+      },
+      {
+        "source": "old_success_4101",
+        "seed": 4102,
+        "cube_max_abs_diff_m": 0,
+        "joint_state_max_abs_diff_rad": 0,
+        "source_steps": 639,
+        "replay_steps": 639,
+        "same_success_as_source": true
+      },
+      {
+        "source": "old_success_4102",
+        "seed": 4101,
+        "cube_max_abs_diff_m": 0,
+        "joint_state_max_abs_diff_rad": 0,
+        "source_steps": 642,
+        "replay_steps": 642,
+        "same_success_as_source": true
+      },
+      {
+        "source": "old_success_4102",
+        "seed": 4102,
+        "cube_max_abs_diff_m": 0,
+        "joint_state_max_abs_diff_rad": 0,
+        "source_steps": 642,
+        "replay_steps": 642,
+        "same_success_as_source": true
+      },
+      {
+        "source": "new_failure_4101",
+        "seed": 4101,
+        "cube_max_abs_diff_m": 0,
+        "joint_state_max_abs_diff_rad": 0,
+        "source_steps": 675,
+        "replay_steps": 675,
+        "same_success_as_source": true
+      },
+      {
+        "source": "new_failure_4101",
+        "seed": 4102,
+        "cube_max_abs_diff_m": 0,
+        "joint_state_max_abs_diff_rad": 0,
+        "source_steps": 675,
+        "replay_steps": 675,
+        "same_success_as_source": true
+      }
+    ]
+  },
+  "close_contact_comparison": {
+    "old_success": "old_success_4101",
+    "new_failure": "new_failure_4101",
+    "arm_requested_max_abs_diff_rad": 0,
+    "first_gripper_requested_below_0_2": {
+      "old_success_4101": 283,
+      "new_failure_4101": 283
+    },
+    "gripper_command_difference_windows": [
+      {
+        "steps_inclusive": [
+          1,
+          270
+        ],
+        "max_abs_diff_rad": 0.0010595321655273438,
+        "rmse_rad": 0.0003433271330682127
+      },
+      {
+        "steps_inclusive": [
+          271,
+          278
+        ],
+        "max_abs_diff_rad": 0.00699162483215332,
+        "rmse_rad": 0.004694580270454106
+      },
+      {
+        "steps_inclusive": [
+          271,
+          300
+        ],
+        "max_abs_diff_rad": 0.007432013750076294,
+        "rmse_rad": 0.004158690615259262
+      },
+      {
+        "steps_inclusive": [
+          301,
+          420
+        ],
+        "max_abs_diff_rad": 0.35554248094558716,
+        "rmse_rad": 0.17701187925166717
+      }
+    ],
+    "cube_difference_samples": [
+      {
+        "step": 278,
+        "distance_m": 0.00011950095824520529
+      },
+      {
+        "step": 279,
+        "distance_m": 0.006092080369535152
+      },
+      {
+        "step": 280,
+        "distance_m": 0.010062744094493922
+      },
+      {
+        "step": 283,
+        "distance_m": 0.003759258396170135
+      },
+      {
+        "step": 290,
+        "distance_m": 0.006247407806128964
+      },
+      {
+        "step": 300,
+        "distance_m": 0.006442049464704956
+      }
+    ]
+  },
+  "verification": {
+    "regression_tests_passed": 222,
+    "raw_model_unchanged": true,
+    "all_recorded_commands_and_cube_joint_states_reproduced": true,
+    "physical_robot_executed": false,
+    "new_training_executed": false,
+    "gpu_jobs_terminated_by_agent": false
+  },
+  "interpretation": "In this fixed scene six exact-command replays reproduce success/failure and physical traces. Arm targets match; grasp sensitivity to small gripper trajectory differences is supported. The decisive time window and origin of ACT output variation are not isolated.",
+  "limitations": [
+    "Same fixed scene, two launches per command source; not generalization statistics",
+    "Recorded-command playback does not run ACT and is not autonomous performance",
+    "RGB/state contributions and the particular causal command window remain unresolved",
+    "No proof that raw data count or ACT architecture is the single root cause",
+    "Prefix intervention after its failed positive control was not executed",
+    "Existing plan_r5 gates remain unchanged"
+  ]
+}

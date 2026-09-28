@@ -108,6 +108,41 @@ class ActionInterventionRunnerTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "fixed gripper effort mismatch"):
                 self.audit(case, "teacher_gripper", preflight)
 
+    def test_arm_prefix_switch_and_gripper_preservation_are_audited(self):
+        with tempfile.TemporaryDirectory() as folder:
+            case, preflight = self.fixture(Path(folder), "teacher_arm")
+            preflight["teacher_arm_until_step"] = 2
+            evaluation_path = case / "evaluation.json"
+            evaluation = json.loads(evaluation_path.read_text())
+            evaluation["diagnostic_teacher_arm_until_step"] = 2
+            evaluation_path.write_text(json.dumps(evaluation))
+            trace_path = case / "trace_001.json"
+            trace = json.loads(trace_path.read_text())
+            for row in trace:
+                row["applied_action_source"] = "teacher_arm" if row["step"] <= 2 else "policy"
+                if row["step"] > 2:
+                    row["requested_action"] = row["policy_action"][:]
+                    row["applied_action"] = row["policy_action"][:]
+            trace_path.write_text(json.dumps(trace))
+            self.assertTrue(self.audit(case, "teacher_arm", preflight)["audit_pass"])
+            trace[2]["requested_action"][0] = trace[2]["teacher_action"][0]
+            trace_path.write_text(json.dumps(trace))
+            with self.assertRaisesRegex(ValueError, "audit failed"):
+                self.audit(case, "teacher_arm", preflight)
+
+    def test_arm_prefix_wrong_source_or_metadata_is_rejected(self):
+        with tempfile.TemporaryDirectory() as folder:
+            case, preflight = self.fixture(Path(folder), "teacher_arm")
+            preflight["teacher_arm_until_step"] = 2
+            with self.assertRaisesRegex(ValueError, "diagnostic_teacher_arm_until_step"):
+                self.audit(case, "teacher_arm", preflight)
+            evaluation_path = case / "evaluation.json"
+            evaluation = json.loads(evaluation_path.read_text())
+            evaluation["diagnostic_teacher_arm_until_step"] = 2
+            evaluation_path.write_text(json.dumps(evaluation))
+            with self.assertRaisesRegex(ValueError, "arm prefix source mismatch"):
+                self.audit(case, "teacher_arm", preflight)
+
     def test_dynamic_effort_range_cannot_pass_the_constant_reference_gate(self):
         with tempfile.TemporaryDirectory() as folder:
             case, preflight = self.fixture(Path(folder), "teacher_gripper")
