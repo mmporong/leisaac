@@ -3,7 +3,12 @@ from collections.abc import Sequence
 import isaaclab.utils.math as PoseUtils
 import torch
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLMimicEnv
-from leisaac.utils.env_utils import dynamic_reset_gripper_effort_limit_sim
+from isaaclab.sensors import Camera
+from leisaac.utils.env_utils import (
+    dynamic_reset_gripper_effort_limit_sim,
+    refresh_camera_obs_after_reset,
+    use_isaaclab_reset_rerender,
+)
 
 
 class ManagerBasedRLLeIsaacMimicEnv(ManagerBasedRLMimicEnv):
@@ -13,10 +18,27 @@ class ManagerBasedRLLeIsaacMimicEnv(ManagerBasedRLMimicEnv):
 
     def __init__(self, cfg: ManagerBasedRLEnvCfg, render_mode: str | None = None, **kwargs):
         cfg.use_teleop_device(f"mimic_{cfg.task_type}")
+        # the first observation after a reset is recorded as frame 0 of the generated demo, so the
+        # cameras must show the reset scene rather than the last frame of the previous attempt
+        self._refresh_cameras_on_reset = not use_isaaclab_reset_rerender(cfg)
+        self._reset_cameras = []
         super().__init__(cfg, render_mode, **kwargs)
+        self._reset_cameras = [sensor for sensor in self.scene.sensors.values() if isinstance(sensor, Camera)]
         self.robot_root_pos = self.scene["robot"].data.root_pos_w
         self.robot_root_quat = self.scene["robot"].data.root_quat_w
         self.task_type = cfg.task_type
+
+    def reset(self, seed: int | None = None, env_ids: Sequence[int] | None = None, options: dict | None = None):
+        super().reset(seed=seed, env_ids=env_ids, options=options)
+        if self._refresh_cameras_on_reset:
+            refresh_camera_obs_after_reset(self, env_ids, self._reset_cameras)
+        return self.obs_buf, self.extras
+
+    def reset_to(self, state: dict, env_ids: Sequence[int] | None, seed: int | None = None, is_relative: bool = False):
+        super().reset_to(state, env_ids, seed=seed, is_relative=is_relative)
+        if self._refresh_cameras_on_reset:
+            refresh_camera_obs_after_reset(self, env_ids, self._reset_cameras)
+        return self.obs_buf, self.extras
 
     def get_robot_eef_pose(self, eef_name: str, env_ids: Sequence[int] | None = None) -> torch.Tensor:
         if env_ids is None:
