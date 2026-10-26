@@ -1,0 +1,59 @@
+# Provenance for simulation values used by LeIsaac-SO101-PickCubeRot45-v0 and its oracle.
+# Everything here is authored or measured in simulation. None of it is a measurement
+# of the physical SO101 follower, tabletop, camera or cube.
+# Evidence paths under outputs/ are local and git-ignored.
+
+table_top_z:
+  value: 0.040911312247732035
+  unit: m
+  measured_at: 2026-10-26
+  valid_for: "scenes/table_with_cube/scene.usd sha256 654443f27a55bdf8ce07bd8fb1c60dec14bd7de230304056c185b4f90fb05cbc"
+  method: "world AABB max Z of /world/counter_right_main_group collider; 12 of 24 vertices share this Z"
+  note: "pick_cube_rot45_env_cfg.authored_table_top_z() re-checks it whenever the env cfg is built"
+
+source_cube:
+  size: {value: 0.03, unit: m}
+  mass: {value: 0.01, unit: kg}
+  friction_static_dynamic: [0.95, 0.95]
+  restitution: 0.0
+  measured_at: 2026-10-26
+  valid_for: "same scene.usd, prim /world/cube/cube"
+  note: "The task deactivates this cube and spawns a 40 mm cube with the same density and friction"
+
+pan_axis:
+  value: "shoulder link origin"
+  measured_at: 2026-10-26
+  valid_for: "robots/so101_follower.usd sha256 64a877c3b82cdc4a48ab8a1f321a2dd3ef7c55d4b10bce222b58c530d978ae58"
+  method: "shoulder_pan stepped by 0.5 rad in sim; shoulder origin moved < 1e-6 m and matched the USD joint origin"
+  positive_shoulder_pan_turns: "world -Z (clockwise seen from above), so the 45 degree left goal is shoulder_pan -0.785 rad"
+  source: "outputs/pick_cube_rot45_smoke_20261026T141854/smoke_result.json"
+
+finger_geometry:
+  fixed_finger_inner_face_x: {value: -0.0079, unit: m, frame: gripper link}
+  fixed_finger_tip_z: {value: -0.1044, unit: m, frame: gripper link}
+  measured_at: 2026-10-26
+  valid_for: "same so101_follower.usd collision meshes (wrist_roll_follower_so101_v1, moving_jaw_so101_v1)"
+  method: "mesh vertices transformed through the gripper joint (pivot 0.0202, 0.0188, -0.0234; axis gripper -Y)"
+  note: "Sets the oracle grasp point (0.016, 0, -0.088): 4 mm from the fixed finger, tips 4 mm above the table"
+
+hold_gripper_angle_40mm:
+  value: [0.426, 0.429]
+  unit: rad
+  measured_at: 2026-10-26
+  valid_for: "40 mm cube, so101_follower.usd, PhysX convex decomposition, gripper target 0.0 rad, oracle grasp"
+  method: "median gripper joint while the cube was lifted more than 30 mm, two envs"
+  mesh_prediction: {value: [0.35, 0.37], unit: rad, note: "raw meshes; PhysX colliders hold the cube wider"}
+  jaw_frame_to_cube_max: {value: 0.0177, unit: m}
+  source: "outputs/pick_cube_rot45_smoke_20261026T141854/smoke_result.json"
+  used_by: "GRASPED_MAX_GRIPPER_RAD = RELEASED_MIN_GRIPPER_RAD = 0.55, GRASP_JAW_DISTANCE_M = 0.03"
+
+grasp_tilt_reach:
+  measured_at: 2026-10-26
+  valid_for: "same so101_follower.usd joint frames and limits, grasp point (0.016, 0, -0.088)"
+  method: "CPU IK on the USD kinematics; smallest outward tilt reaching 0.1 m above and at the cube within 1 mm"
+  smallest_tilt_by_pan_radius_m:
+    "0.24": 0.3
+    "0.28": 0.4
+    "0.31": 0.5
+    "0.34": 0.7
+    "0.36": 0.8
