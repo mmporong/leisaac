@@ -93,7 +93,8 @@ def spawn_table_without_source_cube(prim_path, cfg, translation=None, orientatio
     return prim
 
 
-def _cube_cfg(source_pos: tuple[float, float, float]) -> RigidObjectCfg:
+def red_cube_40mm_cfg(source_pos: tuple[float, float, float]) -> RigidObjectCfg:
+    """Red 40 mm cube resting on the authored table at the source cube XY."""
     return RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/Cube",
         init_state=RigidObjectCfg.InitialStateCfg(pos=(source_pos[0], source_pos[1], TABLE_TOP_Z + CUBE_HALF_EXTENT_M)),
@@ -211,7 +212,7 @@ class PickCubeRot45EnvCfg(LiftCubeEnvCfg):
             raise RuntimeError(f"authored table top {table_top_z} no longer matches TABLE_TOP_Z={TABLE_TOP_Z}")
 
         # LiftCube registered the authored 30 mm cube; keep its XY and swap the body.
-        self.scene.cube = _cube_cfg(self.scene.cube.init_state.pos)
+        self.scene.cube = red_cube_40mm_cfg(self.scene.cube.init_state.pos)
 
         # Added after LiftCube's cube randomization so the goal follows the final cube pose.
         self.events.reset_goal_from_cube = EventTerm(
