@@ -36,7 +36,7 @@ Please refer to our [documentation](https://lightwheelai.github.io/leisaac/) to 
 
 ### SO101 cube-to-box MimicGen workflow
 
-The custom 4 cm cube pick-and-place task, its verified 10-demonstration MimicGen pipeline, and the remaining simulation-to-real steps are documented in [SO101 MimicGen Sim-to-Real Workflow (Korean)](docs/SO101_MIMICGEN_SIM2REAL_KO.md).
+The cube-into-box task (3 cm simulated cube), its verified 10-demonstration MimicGen pipeline, the 4 cm left-45-degree tabletop placement task (`LeIsaac-SO101-PickCubeRot45-v0`) with its joint-space demonstration oracle, and the remaining simulation-to-real steps are documented in [SO101 MimicGen Sim-to-Real Workflow (Korean)](docs/SO101_MIMICGEN_SIM2REAL_KO.md).
 
 ## Contributing 🤝
 

@@ -8,6 +8,9 @@
 아래 과거 실행 절차의 관절 변환 중간 HDF5 3개는 정리되어 재변환이 필요할 수 있으며,
 원본 시연·성공/실패 생성 원본·next-state 학습 데이터·모델·영상은 보존했다.
 
+실물 목표와 같은 4 cm 큐브를 왼쪽 45도에 놓는 새 시뮬레이션 과제는
+[4 cm 왼쪽 45도 책상 놓기 과제](#4-cm-왼쪽-45도-책상-놓기-과제--2026-10-26)에 정리했다.
+
 ## 결론
 
 이 프로젝트는 **LeIsaac을 실행 기반으로 사용하고, ROBOTIS `cyclo_lab`은 파이프라인 설계의 비교 자료로 사용한다.** 두 저장소를 동시에 실행하거나 코드를 섞는 방식은 아니다.
@@ -64,6 +67,71 @@ SO101 팔로워 1대 실물 평가
   2. `place_cube`: 큐브가 박스 안에 있고 그리퍼가 열린다.
 
 성공 판정은 큐브 위치뿐 아니라 그리퍼 해제까지 확인한다. 큐브 파지 판정이 `0.26 rad 미만`을 사용하므로 배치 판정은 같은 경계의 반대인 `0.26 rad 초과`를 사용한다.
+
+## 4 cm 왼쪽 45도 책상 놓기 과제 — 2026-10-26
+
+실물 목표(빨간 4 cm 큐브를 집어 팔 베이스 기준 왼쪽 45도, 같은 반경·같은 책상 높이에 놓기)에 맞춘
+새 시뮬레이션 과제다. 기존 박스 과제와 데이터·모델은 바꾸지 않았다.
+
+| 항목 | 내용 |
+|---|---|
+| Gym ID | `LeIsaac-SO101-PickCubeRot45-v0`, Mimic용 `LeIsaac-SO101-PickCubeRot45-Mimic-v0` |
+| 장면 | 기존 `table_with_cube` 책상을 쓰고 USD 안의 3 cm 큐브는 비활성화한다. 박스 없음 |
+| 큐브 | 4 cm primitive. 질량은 기존 큐브와 같은 밀도로 환산한 값, 마찰 0.95. 실물 측정값이 아니다 |
+| 목표 | 리셋한 큐브 포즈 전체를 `shoulder_pan` 축 기준 +45도(위에서 볼 때 반시계) 강체 회전한 포즈. 보이지 않고 충돌하지 않는 kinematic `goal_marker`에 저장한다 |
+| 성공 | 그리퍼 0.55 rad 초과, 목표 XY 15 mm 이하, 큐브 바닥과 책상 3 mm 이하, 선속도 0.03 m/s·각속도 0.5 rad/s 이하가 0.5초 연속 |
+| Mimic 신호 | `pick_cube`(그리퍼 0.55 rad 미만, jaw 기준점 3 cm 이내), `place_cube_at_goal` |
+
+시뮬레이션 USD에서 `shoulder_pan` +방향은 위에서 볼 때 시계 방향이다. 따라서 시뮬레이션 기준 왼쪽
+45도 놓기는 `shoulder_pan` −0.785 rad 회전과 같다. 실물 관절 부호와의 대응은 아직 검증하지 않았다.
+
+그리퍼 경계는 3 cm 과제의 0.26 rad를 쓰지 않는다. 시뮬레이션에서 4 cm 큐브를 쥔 관절각이
+0.426~0.429 rad였으므로 0.26 rad를 쓰면 쥔 상태를 놓은 상태로 읽는다. 측정 방법과 출처는
+[provenance](provenance/so101_pick_cube_rot45_20261026.yaml)에 있다.
+
+### 시연 오라클
+
+`PickCubeRot45StateMachine`은 리더 텔레옵과 같은 관절 위치 동작(`so101leader`)을 낸다.
+USD 관절 정의로 만든 순기구학과 위치 우선 IK로 큐브가 있어야 할 위치를 풀고, 손가락은 큐브 면에
+맞춰 바깥쪽으로 기울인다. 기울기는 큐브 위치마다 닿는 가장 작은 값(0.3~0.8 rad)을 고른다.
+Isaac Lab 미분 IK로 6자유도 자세를 강제하면 5축 팔에서 위치 오차가 35~45 mm 남아 4 cm 큐브를
+놓쳤기 때문에 이 방식으로 바꿨다.
+
+아래 명령은 [Linux 재현 명령](#linux-재현-명령)의 환경 변수를 먼저 지정한 셸에서 실행한다.
+RTX 8 GB 장비에서는 Isaac 앱을 한 번에 하나만 띄운다.
+
+```bash
+# CPU 단위 테스트
+"$LEISAAC_PYTHON" -m pytest -q \
+  scripts/imitation_learning/test_pick_cube_rot45.py \
+  scripts/imitation_learning/test_so101_kinematics.py
+
+# GPU 통합 smoke: 새 출력 폴더를 지정한다(기존 폴더는 덮어쓰지 않는다)
+"$LEISAAC_PYTHON" scripts/evaluation/smoke_pick_cube_rot45.py \
+  --output_dir "outputs/pick_cube_rot45_smoke_$(date +%Y%m%dT%H%M%S)" --num_envs 2
+
+# 오라클 시연 시도(기록하려면 --record --dataset_file 을 추가한다)
+"$LEISAAC_PYTHON" scripts/datagen/state_machine/generate.py \
+  --task LeIsaac-SO101-PickCubeRot45-v0 --num_envs 1 --device cuda \
+  --enable_cameras --headless --max_attempts 6 \
+  --summary_file "outputs/pick_cube_rot45_generate_$(date +%Y%m%dT%H%M%S)/summary.json"
+```
+
+### 검증 결과
+
+| 검사 | 결과 | 근거 |
+|---|---|---|
+| CPU 단위 테스트(기하·기구학) | 12개 통과 | `scripts/imitation_learning/test_pick_cube_rot45.py`, `test_so101_kinematics.py` |
+| GPU 통합 smoke(env 2개) | 25개 검사 통과 | `outputs/pick_cube_rot45_smoke_20261026T141854/smoke_result.json` |
+| `generate.py` 무작위 배치 | 6회 중 6회 성공 | `outputs/pick_cube_rot45_generate_check_20261026T142105/summary.json` |
+| 기존 박스 생성기 회귀 | 변경 전 HEAD와 같은 결과 | `outputs/pick_cube_into_box_{regression,baseline}_20261026T14*/summary.json` |
+
+### 남은 일
+
+- 이 오라클로 원본 시연 녹화 → Mimic 증강 → ACT 학습·평가는 아직 하지 않았다.
+- 정책 관측은 기존 과제처럼 front·wrist 두 카메라다. 실물은 현재 손목 카메라 하나다.
+- 실물 책상 높이·큐브 위치·카메라 보정·손목 영점과 관절 부호는 미검증이다.
+- `goal_marker`가 보이지 않으므로 키보드·리더 텔레옵으로 이 과제를 녹화할 때는 목표 표시 방법이 따로 필요하다.
 
 ## 현재 실행 결과와 증거
 

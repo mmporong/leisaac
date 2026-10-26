@@ -72,7 +72,11 @@ import torch
 from isaaclab.envs import DirectRLEnv, ManagerBasedRLEnv
 from isaaclab.managers import DatasetExportMode, TerminationTermCfg
 from isaaclab_tasks.utils import parse_env_cfg
-from leisaac.datagen.state_machine import PickCubeIntoBoxStateMachine, PickOrangeStateMachine
+from leisaac.datagen.state_machine import (
+    PickCubeIntoBoxStateMachine,
+    PickCubeRot45StateMachine,
+    PickOrangeStateMachine,
+)
 from leisaac.enhance.managers import EnhanceDatasetExportMode, StreamingRecorderManager
 from leisaac.utils.env_utils import dynamic_reset_gripper_effort_limit_sim
 
@@ -80,6 +84,7 @@ from leisaac.utils.env_utils import dynamic_reset_gripper_effort_limit_sim
 TASK_REGISTRY = {
     "LeIsaac-SO101-PickOrange-v0": (PickOrangeStateMachine, "so101_state_machine"),
     "LeIsaac-SO101-PickCubeIntoBox-v0": (PickCubeIntoBoxStateMachine, "so101_cube_state_machine"),
+    "LeIsaac-SO101-PickCubeRot45-v0": (PickCubeRot45StateMachine, PickCubeRot45StateMachine.TELEOP_DEVICE),
 }
 
 
