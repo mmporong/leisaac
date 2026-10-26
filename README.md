@@ -36,7 +36,7 @@ Please refer to our [documentation](https://lightwheelai.github.io/leisaac/) to 
 
 ### SO101 cube-to-box MimicGen workflow
 
-The cube-into-box task (3 cm simulated cube), its verified 10-demonstration MimicGen pipeline, the 4 cm left-45-degree tabletop placement task (`LeIsaac-SO101-PickCubeRot45-v0`) with its joint-space demonstration oracle, and the remaining simulation-to-real steps are documented in [SO101 MimicGen Sim-to-Real Workflow (Korean)](docs/SO101_MIMICGEN_SIM2REAL_KO.md).
+The cube-into-box task (3 cm simulated cube), its verified 10-demonstration MimicGen pipeline, the 4 cm cube into a black box task with FinRay fingers and the wrist camera only (`LeIsaac-SO101-PickCubeIntoBlackBox-v0`), the 4 cm left-45-degree tabletop placement task (`LeIsaac-SO101-PickCubeRot45-v0`), their joint-space demonstration oracles, and the remaining simulation-to-real steps are documented in [SO101 MimicGen Sim-to-Real Workflow (Korean)](docs/SO101_MIMICGEN_SIM2REAL_KO.md).
 
 ## Contributing 🤝
 

@@ -8,8 +8,9 @@
 아래 과거 실행 절차의 관절 변환 중간 HDF5 3개는 정리되어 재변환이 필요할 수 있으며,
 원본 시연·성공/실패 생성 원본·next-state 학습 데이터·모델·영상은 보존했다.
 
-실물 목표와 같은 4 cm 큐브를 왼쪽 45도에 놓는 새 시뮬레이션 과제는
-[4 cm 왼쪽 45도 책상 놓기 과제](#4-cm-왼쪽-45도-책상-놓기-과제--2026-10-26)에 정리했다.
+실물 구성(4 cm 큐브, 검은 상자, FinRay 손가락, 손목 카메라)에 맞춘 현재 과제는
+[4 cm 큐브 검은 상자 넣기 과제](#4-cm-큐브-검은-상자-넣기-과제finray손목-카메라--2026-10-26)에,
+앞서 만든 왼쪽 45도 놓기 과제는 [4 cm 왼쪽 45도 책상 놓기 과제](#4-cm-왼쪽-45도-책상-놓기-과제--2026-10-26)에 정리했다.
 
 ## 결론
 
@@ -67,6 +68,56 @@ SO101 팔로워 1대 실물 평가
   2. `place_cube`: 큐브가 박스 안에 있고 그리퍼가 열린다.
 
 성공 판정은 큐브 위치뿐 아니라 그리퍼 해제까지 확인한다. 큐브 파지 판정이 `0.26 rad 미만`을 사용하므로 배치 판정은 같은 경계의 반대인 `0.26 rad 초과`를 사용한다.
+
+## 4 cm 큐브 검은 상자 넣기 과제(FinRay·손목 카메라) — 2026-10-26
+
+실물 목표 구성은 빨간 4 cm 큐브, 검은 상자(팔 오른쪽, 각도 무관), 흰 책상, 손목 카메라 하나,
+순정 SO-101 그리퍼 모터에 양쪽 80 mm FinRay TPU 손가락이다. 기존 박스 과제의 배치를 쓰고
+실물과 다른 부분만 바꾼 과제다. 기존 박스 과제와 데이터·모델은 바꾸지 않았다.
+
+| 항목 | 내용 |
+|---|---|
+| Gym ID | `LeIsaac-SO101-PickCubeIntoBlackBox-v0`, Mimic용 `LeIsaac-SO101-PickCubeIntoBlackBox-Mimic-v0` |
+| 상자 | 박스 과제와 같은 위치·크기(회전축에서 36.6 cm, 정면 기준 오른쪽 43°, 안쪽 12×12 cm, 벽 높이 약 7.5 cm), 검은색 |
+| 책상·큐브 | USD 3 cm 큐브를 비활성화하고 4 cm 빨간 큐브, 책상은 흰색 |
+| 카메라 | 앞 카메라와 그 랜덤화 이벤트를 제거하고 손목 카메라만 관측 |
+| 그리퍼 | FinRay STL을 고정·움직이는 죠에 붙인 강체 근사(convex hull). 실물 TPU의 휘어짐은 표현하지 않는다 |
+| 시작 자세 | 리셋 이벤트로 관찰 자세 적용(잠정값, 실물 카메라 보정 뒤 재계산) |
+| 성공 | 상자 판정 함수 그대로, 그리퍼 열림 경계만 0.85 rad |
+
+FinRay STL은 라이선스를 확인하지 못해 저장소에 넣지 않는다. 로컬 에셋 폴더
+`$LEISAAC_ASSETS_ROOT/robots/so101_finray_80mm_lip3_tpu95a.stl`에 두면 불러올 때 SHA-256을 검사한다.
+장착 위치는 사용자 실측 세 값(닫힘 손끝 간격 0, 열림 18 cm, 회전축–손끝 8 cm)과 순정 손가락 위치로 추정했다.
+근거는 [FinRay 장착 provenance](provenance/so101_finray_mount_20261026.yaml)에 있다.
+
+- FinRay로 4 cm 큐브를 쥔 시뮬 관절각은 0.65~0.70 rad였다. 순정 손가락 기준값(0.55 rad)을 쓰면 쥔 상태를 놓은 상태로 읽는다.
+- 리더용 관절 위치 동작(`so101leader`)은 기본 관절 자세를 오프셋으로 더한다. 그래서 시작 자세를 `init_state`가 아니라 리셋 이벤트로 넣는다.
+- 시연 오라클(`PickCubeIntoBlackBoxStateMachine`)은 왼쪽 45도 과제와 같은 관절 공간 오라클을 쓰고, 상자 벽 위 1.2 cm에서 큐브를 놓는다.
+
+| 검사 | 결과 | 근거 |
+|---|---|---|
+| CPU 단위 테스트(FinRay 장착) | 5개 통과 | `scripts/imitation_learning/test_so101_finray_geometry.py` |
+| GPU 통합 smoke(env 2개) | 10개 검사 통과 | `outputs/pick_cube_into_black_box_smoke_20261026T153727/smoke_result.json` |
+| `generate.py` 무작위 배치 | 6회 중 5회 성공 | `outputs/pick_cube_into_black_box_generate_check_20261026T153946/summary.json` |
+| 왼쪽 45도 과제 회귀 | 25개 검사 통과 | `outputs/pick_cube_rot45_smoke_20261026T153946/smoke_result.json` |
+
+생성 실패 1회는 큐브가 상자 벽에 걸렸다. 성공 회차도 상자 중심에서 2~3 cm 치우쳐 떨어졌다.
+
+```bash
+"$LEISAAC_PYTHON" scripts/evaluation/smoke_pick_cube_into_black_box.py \
+  --output_dir "outputs/pick_cube_into_black_box_smoke_$(date +%Y%m%dT%H%M%S)" --num_envs 2
+"$LEISAAC_PYTHON" scripts/datagen/state_machine/generate.py \
+  --task LeIsaac-SO101-PickCubeIntoBlackBox-v0 --num_envs 1 --device cuda \
+  --enable_cameras --headless --max_attempts 6 \
+  --summary_file "outputs/pick_cube_into_black_box_generate_$(date +%Y%m%dT%H%M%S)/summary.json"
+```
+
+### 남은 일
+
+- 실물 손목 카메라의 장착 위치와 내부 파라미터 보정. 실물 카메라는 FinRay를 옆에서 보는 위치이고,
+  시뮬 카메라는 LeIsaac 기본 장착이라 시점이 다르다. 보정 뒤 시뮬 카메라와 시작 자세를 다시 정한다.
+- 원본 시연 생성 → Mimic 증강 → 손목 카메라 ACT 학습·평가.
+- 실물 상자·큐브 배치를 팔 기준으로 표시하고, 관절 부호·영점을 실물과 대조한다.
 
 ## 4 cm 왼쪽 45도 책상 놓기 과제 — 2026-10-26
 

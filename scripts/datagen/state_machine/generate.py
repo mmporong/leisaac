@@ -73,6 +73,7 @@ from isaaclab.envs import DirectRLEnv, ManagerBasedRLEnv
 from isaaclab.managers import DatasetExportMode, TerminationTermCfg
 from isaaclab_tasks.utils import parse_env_cfg
 from leisaac.datagen.state_machine import (
+    PickCubeIntoBlackBoxStateMachine,
     PickCubeIntoBoxStateMachine,
     PickCubeRot45StateMachine,
     PickOrangeStateMachine,
@@ -85,6 +86,10 @@ TASK_REGISTRY = {
     "LeIsaac-SO101-PickOrange-v0": (PickOrangeStateMachine, "so101_state_machine"),
     "LeIsaac-SO101-PickCubeIntoBox-v0": (PickCubeIntoBoxStateMachine, "so101_cube_state_machine"),
     "LeIsaac-SO101-PickCubeRot45-v0": (PickCubeRot45StateMachine, PickCubeRot45StateMachine.TELEOP_DEVICE),
+    "LeIsaac-SO101-PickCubeIntoBlackBox-v0": (
+        PickCubeIntoBlackBoxStateMachine,
+        PickCubeIntoBlackBoxStateMachine.TELEOP_DEVICE,
+    ),
 }
 
 
