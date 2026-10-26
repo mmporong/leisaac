@@ -1,0 +1,46 @@
+# Provenance for the FinRay finger proxy and black-box task values (simulation only).
+# Evidence paths under outputs/ are local and git-ignored.
+
+finray_finger_stl:
+  file: "ASSETS_ROOT/robots/so101_finray_80mm_lip3_tpu95a.stl (local, not committed: license not verified)"
+  sha256: 93d2fd90adc2b6b045f3cca8f153ed68d5431e301bcc370924c75d72f82b6373
+  source: "SO101_finray_80mm_lip3_reinforced_TPU95A.stl selected in bimanual-robot design/gripper/finray_80mm_lip3_selection.yaml"
+  measured_at: 2026-10-26
+  contact_face_plane_y: {value: 9.91, unit: mm, method: "largest +Y-facing face area (1337 mm2), X -51.97..9.5"}
+  tip_x: {value: -70.496, unit: mm}
+  width_center_z: {value: -0.1255, unit: mm, method: "midpoint of Z -12.169..11.918"}
+  lip_height: {value: 3.0, unit: mm, method: "max Y 12.914 minus contact face"}
+  bolt_holes: "two 3.4 mm holes along Z, 10 mm apart at X 7.0; no matching holes on the stock SO101 jaws"
+
+physical_gripper_report:
+  reported_at: 2026-10-26
+  source: "user report, tape measure"
+  fingers: "FinRay STL shape on both jaws, stock SO101 gripper servo and linkage"
+  closed_tip_gap: {value: 0, unit: mm}
+  open_tip_gap: {value: 180, unit: mm}
+  pivot_to_moving_tip: {value: 80, unit: mm}
+  calibration: "gripper range recorded fully closed to fully open (ticks 1832..3270)"
+
+finray_mount_model:
+  method: "fixed finger: contact face on the stock fixed finger inner face (gripper X -0.0079 m), tip at the stock tip (gripper Z -0.1044 m); moving finger: mirror image whose lips touch the fixed lips at gripper -10 deg"
+  checks: "scripts/imitation_learning/test_so101_finray_geometry.py"
+  pivot_to_moving_tip_model_m: 0.0837
+  open_tip_gap_at_sim_limit_m: "about 0.14 (sim gripper limit 100 deg) vs reported 0.18"
+  limits: "mount placement is inferred, not measured; fingers are rigid convex hulls, the TPU fingers bend"
+
+finray_hold_gripper_angle_40mm:
+  value: [0.649, 0.702]
+  unit: rad
+  measured_at: 2026-10-26
+  valid_for: "FinRay proxy above, 40 mm cube, oracle grasp point (0.019, 0, -0.088), gripper target 0.0 rad"
+  method: "median gripper joint while the cube was lifted more than 30 mm, two envs"
+  jaw_frame_to_cube_max: {value: 0.0342, unit: m}
+  source: "outputs/pick_cube_into_black_box_smoke_20261026T153727/smoke_result.json"
+  used_by: "FINRAY_GRASPED_MAX_GRIPPER_RAD = FINRAY_RELEASED_MIN_GRIPPER_RAD = 0.85, FINRAY_GRASP_JAW_DISTANCE_M = 0.045"
+
+observation_joint_pose:
+  value: {shoulder_pan: -0.524, shoulder_lift: -0.791, elbow_flex: 0.409, wrist_flex: 1.508, wrist_roll: 0.083}
+  unit: rad
+  measured_at: 2026-10-26
+  method: "offline random search on the USD kinematics with LeIsaac's stock wrist camera offset; wrist_roll kept within 0.3 rad"
+  status: "provisional: the physical wrist camera is mounted elsewhere (it sees the FinRay fingers from the side), so this pose is re-derived after the real camera mount is calibrated"
