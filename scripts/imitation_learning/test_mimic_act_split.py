@@ -10,6 +10,7 @@ import numpy as np
 
 from scripts.imitation_learning.prepare_mimic_act_split import (
     EXPECTED_EPISODES,
+    _validate_frame_stats,
     build_split_indices,
     run_split,
     validate_split,
@@ -28,6 +29,13 @@ class MimicActSplitTest(unittest.TestCase):
         for start in range(0, EXPECTED_EPISODES, 25):
             self.assertEqual(sum(start <= index < start + 25 for index in first["valid"]), 5)
         self.assertEqual(first["valid"][:10], [1, 9, 10, 14, 24, 30, 37, 43, 45, 46])
+
+    def test_frame_stat_tolerance_is_configurable(self):
+        expected = {"action": {"std": np.array([0.267772])}}
+        stored = {"action": {"std": np.array([0.267766])}}  # relative error 2.2e-5
+        with self.assertRaisesRegex(ValueError, "frame-stat mismatch"):
+            _validate_frame_stats(stored, expected, "train")
+        self.assertEqual(_validate_frame_stats(stored, expected, "train", 1e-4), ["action"])
 
     def test_seed_changes_selection(self):
         self.assertNotEqual(

@@ -159,14 +159,14 @@ def _frame_stats(dataset: LeRobotDataset, episode_indices: list[int]) -> dict[st
     return result
 
 
-def _validate_frame_stats(actual: dict, expected: dict, label: str) -> list[str]:
+def _validate_frame_stats(actual: dict, expected: dict, label: str, rtol: float = 1e-5) -> list[str]:
     for feature, feature_stats in expected.items():
         if feature not in actual:
             raise ValueError(f"{label} is missing frame stats for {feature}")
         for statistic, expected_value in feature_stats.items():
             actual_value = np.asarray(actual[feature][statistic])
             if actual_value.shape != expected_value.shape or not np.allclose(
-                actual_value, expected_value, rtol=1e-5, atol=1e-7, equal_nan=False
+                actual_value, expected_value, rtol=rtol, atol=1e-7, equal_nan=False
             ):
                 raise ValueError(f"{label} independent frame-stat mismatch: {feature}/{statistic}")
     return sorted(expected)
@@ -177,6 +177,7 @@ def validate_split(
     split: LeRobotDataset,
     original_indices: list[int],
     split_root: Path,
+    frame_stat_rtol: float = 1e-5,
 ) -> dict:
     expected_mapping = {old: new for new, old in enumerate(sorted(original_indices))}
     expected_frames = sum(int(source.meta.episodes[index]["length"]) for index in original_indices)
@@ -193,7 +194,9 @@ def validate_split(
         raise FileNotFoundError(f"split stats are missing: {split_root / 'meta/stats.json'}")
     expected_stats = _episode_stats(source, original_indices)
     _assert_stats_close(actual_stats, expected_stats, str(split_root))
-    frame_features = _validate_frame_stats(actual_stats, _frame_stats(source, original_indices), str(split_root))
+    frame_features = _validate_frame_stats(
+        actual_stats, _frame_stats(source, original_indices), str(split_root), frame_stat_rtol
+    )
     return {
         "root": str(split_root),
         "repo_id": split.repo_id,
@@ -206,6 +209,7 @@ def validate_split(
             "episode_stats_aggregate": "passed",
             "independent_full_frame_mean_std": "passed",
             "independent_features": frame_features,
+            "independent_frame_stat_rtol": frame_stat_rtol,
         },
     }
 
@@ -226,7 +230,10 @@ def run_split(
     valid_per_shard: int,
     allow_legacy_action_source: bool = False,
     min_free_gib: float = 8.0,
+    frame_stat_rtol: float = 1e-5,
 ) -> dict:
+    if not math.isfinite(frame_stat_rtol) or not 0 < frame_stat_rtol <= 1e-3:
+        raise ValueError("frame-stat-rtol must be in (0, 1e-3]")
     source_root = dataset_root.expanduser().resolve(strict=True)
     output_root = output_dir.expanduser().resolve()
     if output_root.exists():
@@ -255,7 +262,7 @@ def run_split(
     output_root.mkdir(parents=True, exist_ok=False)
     created = split_dataset(source, indices, output_dir=output_root)
     split_records = {
-        name: validate_split(source, created[name], selected, output_root / name)
+        name: validate_split(source, created[name], selected, output_root / name, frame_stat_rtol)
         for name, selected in indices.items()
     }
     source_expected_stats = _episode_stats(source, list(range(source.meta.total_episodes)))
@@ -301,12 +308,15 @@ def main() -> None:
     parser.add_argument("--allow-legacy-action-source", action="store_true")
     parser.add_argument("--min-free-gib", type=float, default=8.0,
                         help="Free space required before writing; the split copies the source data once.")
+    parser.add_argument("--frame-stat-rtol", type=float, default=1e-5,
+                        help="Relative tolerance between stored split stats and float64 full-frame stats; "
+                             "float32 episode stats lose digits when a joint's mean is much larger than its std.")
     args = parser.parse_args()
     if not args.repo_id.strip():
         raise ValueError("repo-id must not be empty")
     marker = run_split(
         args.dataset_root, args.repo_id, args.output_dir, args.seed, args.shard_size,
-        args.valid_per_shard, args.allow_legacy_action_source, args.min_free_gib,
+        args.valid_per_shard, args.allow_legacy_action_source, args.min_free_gib, args.frame_stat_rtol,
     )
     print(json.dumps(marker, sort_keys=True), flush=True)
 
