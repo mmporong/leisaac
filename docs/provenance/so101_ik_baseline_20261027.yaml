@@ -1,0 +1,26 @@
+# Provenance for the black-box IK baseline: wrist-camera cube estimate + joint-space oracle (simulation only).
+# Evidence paths under outputs/ and datasets/ are local and git-ignored.
+
+wrist_cube_estimate:
+  module: source/leisaac/leisaac/datagen/state_machine/wrist_cube_perception.py
+  method: >-
+    largest red blob (R > 90, R > 1.8 G, R > 1.8 B); camera pose = CPU forward kinematics of the measured
+    joints + fitted wrist mount (docs/provenance/so101_finray_mount_20261026.yaml wrist_camera_fit);
+    start = blob back-projected onto the cube-center plane (table + 20 mm); refine x, y, yaw so the
+    projected cube silhouette maximizes intersection over union with the blob
+  simulated_renders:
+    measured_at: 2026-10-27
+    frames: "obs/wrist[2] of 60 Mimic demos (10 seed42 + 50 seed43), cube truth = states cube pose[1]"
+    sources:
+      - datasets/pick_cube_into_black_box_mimic_generated_10_seed42_20261027.hdf5
+      - datasets/pick_cube_into_black_box_mimic_generated_50_seed43_20261027.hdf5
+    detected: 60/60
+    position_error_mm: {mean: 0.34, p95: 0.59, max: 0.66}
+    yaw_error_deg: {mean: 1.16, max: 3.31}
+    runtime_ms_per_frame: 34
+    centroid_only_position_error_mm: {mean: 1.6, max: 1.9, note: "start estimate alone; view-dependent, 10 mm in the synthetic oblique test"}
+    limits: "the simulated camera matches the model exactly; a physical camera adds its fit error"
+  stale_first_frames: >-
+    obs/wrist[0] and [1] of every recorded demo (source oracle, annotated, Mimic) still show the previous
+    episode's render; the scene appears from frame 2. Frames update every second control step.
+  unit_tests: scripts/imitation_learning/test_wrist_cube_perception.py
