@@ -19,6 +19,8 @@ JOINT_NAMES = [
     "gripper.pos",
 ]
 CAMERA_KEYS = ("front", "wrist")
+# 'arm' drops the last action column (gripper), whose open/close command may jump in one step.
+STEP_NORM_JOINTS = ("all", "arm")
 DEFAULT_IMAGE_SIZE = 84
 MAX_IMAGE_SIZE = 256
 
@@ -45,6 +47,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--image-writer-threads", type=int, default=4)
     parser.add_argument("--max-action-step-norm", type=float, default=1.0)
+    parser.add_argument(
+        "--step-norm-joints", choices=STEP_NORM_JOINTS, default="all",
+        help="Joints in the action discontinuity check; 'arm' leaves out the open/close gripper command.",
+    )
     parser.add_argument("--image-size", type=int, default=DEFAULT_IMAGE_SIZE)
     parser.add_argument(
         "--action-source",
@@ -221,6 +227,7 @@ def build_provenance(
     joint_limits_provenance: dict | None = None,
     clipping_stats: list[dict] | None = None,
     cameras=CAMERA_KEYS,
+    step_norm_joints: str = "all",
 ) -> dict:
     provenance = {
         "input_path": str(input_path),
@@ -228,6 +235,7 @@ def build_provenance(
         "action_source": action_source,
         "image_size": image_size,
         "cameras": list(cameras),
+        "action_step_norm_joints": step_norm_joints,
         "episode_names": demo_names,
         "frame_counts": frame_counts,
         "episodes": [
@@ -269,9 +277,12 @@ def validate_demo(
     action_source: str = "stored",
     joint_limits: tuple[np.ndarray, np.ndarray] | None = None,
     cameras=CAMERA_KEYS,
+    step_norm_joints: str = "all",
 ) -> int:
     if not np.isfinite(max_action_step_norm) or max_action_step_norm <= 0:
         raise ValueError("max-action-step-norm must be finite and positive")
+    if step_norm_joints not in STEP_NORM_JOINTS:
+        raise ValueError(f"step-norm-joints must be one of {STEP_NORM_JOINTS}")
     if not bool(demo.attrs.get("success", False)):
         raise ValueError(f"dataset contains a non-successful episode: {demo.name}")
 
@@ -322,11 +333,12 @@ def validate_demo(
             post_step_joint_pos[:-1], demo["obs/joint_pos"][1:], rtol=0, atol=1e-6
         ):
             raise ValueError(f"pre/post-step recorder alignment does not match in {demo.name}")
-    action_step_norms = np.linalg.norm(np.diff(actions, axis=0), axis=1)
+    checked_actions = actions if step_norm_joints == "all" else actions[:, :-1]
+    action_step_norms = np.linalg.norm(np.diff(checked_actions, axis=0), axis=1)
     if len(action_step_norms) and float(action_step_norms.max()) > max_action_step_norm:
         raise ValueError(
-            f"action discontinuity in {demo.name}: max step norm={action_step_norms.max():.6f} "
-            f"> limit={max_action_step_norm:.6f}"
+            f"action discontinuity in {demo.name}: max {step_norm_joints}-joint step norm="
+            f"{action_step_norms.max():.6f} > limit={max_action_step_norm:.6f}"
         )
     return output_frame_count
 
@@ -339,13 +351,14 @@ def audit_demonstrations(
     action_source: str,
     joint_limits: tuple[np.ndarray, np.ndarray] | None,
     cameras=CAMERA_KEYS,
+    step_norm_joints: str = "all",
 ) -> list[dict]:
     results = []
     for name in demo_names:
         try:
             frame_count = validate_demo(
                 hdf[f"data/{name}"], max_action_step_norm, image_size,
-                action_source, joint_limits, cameras,
+                action_source, joint_limits, cameras, step_norm_joints,
             )
             results.append({"name": name, "accepted": True, "frame_count": frame_count})
         except Exception as error:
@@ -397,7 +410,7 @@ def main() -> None:
         if args.audit_only:
             audit = audit_demonstrations(
                 hdf, all_demo_names, args.max_action_step_norm, args.image_size,
-                args.action_source, joint_limits, args.cameras,
+                args.action_source, joint_limits, args.cameras, args.step_norm_joints,
             )
             assert audit_output is not None
             audit_output.parent.mkdir(parents=True, exist_ok=True)
@@ -405,6 +418,7 @@ def main() -> None:
                 "schema_version": 1, "input_path": str(input_path),
                 "input_sha256": input_sha256, "action_source": args.action_source,
                 "max_action_step_norm": args.max_action_step_norm,
+                "action_step_norm_joints": args.step_norm_joints,
                 "joint_limits": joint_limits_provenance,
                 "episode_count": len(audit),
                 "accepted_count": sum(item["accepted"] for item in audit),
@@ -433,6 +447,7 @@ def main() -> None:
                 args.action_source,
                 joint_limits,
                 args.cameras,
+                args.step_norm_joints,
             )
             for name in demo_names
         ]
@@ -491,6 +506,7 @@ def main() -> None:
         joint_limits_provenance,
         clipping_stats,
         args.cameras,
+        args.step_norm_joints,
     )
     assert output_root is not None
     (output_root / "conversion_provenance.json").write_text(

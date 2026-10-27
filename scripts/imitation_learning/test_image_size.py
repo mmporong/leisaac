@@ -264,6 +264,25 @@ class ImageSizeTest(unittest.TestCase):
         )
         self.assertEqual(provenance["cameras"], ["wrist"])
 
+    def test_arm_step_norm_ignores_one_step_gripper_command(self):
+        joint_pos = np.zeros((3, 6), dtype=np.float32)
+        joint_pos[2, 5] = 1.4
+        demo = Demo(
+            {
+                "obs/joint_pos": ArrayDataset(joint_pos),
+                "actions": ArrayDataset(np.zeros((3, 8), dtype=np.float32)),
+                "obs/wrist": ArrayDataset(np.zeros((3, 84, 84, 3), dtype=np.uint8)),
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "max all-joint step norm"):
+            self.converter.validate_demo(demo, 1.0, 84, "next_observed", None, ["wrist"])
+        self.assertEqual(
+            self.converter.validate_demo(demo, 1.0, 84, "next_observed", None, ["wrist"], "arm"), 3
+        )
+        joint_pos[2, 1] = 1.1
+        with self.assertRaisesRegex(ValueError, "max arm-joint step norm"):
+            self.converter.validate_demo(demo, 1.0, 84, "next_observed", None, ["wrist"], "arm")
+
     def test_stored_and_next_observed_actions(self):
         joint_pos = np.arange(18, dtype=np.float32).reshape(3, 6)
         stored = np.full((3, 6), 7.0, dtype=np.float32)
