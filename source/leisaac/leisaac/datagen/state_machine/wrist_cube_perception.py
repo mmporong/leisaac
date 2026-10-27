@@ -35,18 +35,26 @@ class CubeEstimate:
     pixel_count: int
 
 
-def red_cube_mask(rgb: np.ndarray, min_red: int = 90, ratio: float = 1.8) -> np.ndarray | None:
-    """Largest connected red region of an RGB uint8 image, or None when nothing red is visible."""
+def red_cube_mask(rgb: np.ndarray, min_red: int = 50, min_redness: int = 40) -> np.ndarray | None:
+    """Largest red region of an RGB uint8 image with holes filled, or None when nothing red is visible.
+
+    Redness is R minus the larger of G and B, so a dark, textured red cube (physical cube: median
+    RGB about (100, 8, 24)) passes while white or grey surfaces do not.
+    """
     if rgb.ndim != 3 or rgb.shape[2] < 3 or rgb.dtype != np.uint8:
         raise ValueError(f"expected an RGB uint8 image, got shape={rgb.shape} dtype={rgb.dtype}")
     r, g, b = (rgb[..., i].astype(np.int16) for i in range(3))
-    mask = ((r > min_red) & (r > ratio * g) & (r > ratio * b)).astype(np.uint8)
+    mask = ((r > min_red) & (r - np.maximum(g, b) > min_redness)).astype(np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
     count, labels, stats, _ = cv2.connectedComponentsWithStats(mask)
     if count <= 1:
         return None
-    largest = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
-    return labels == largest
+    largest = (labels == 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))).astype(np.uint8)
+    contours, _ = cv2.findContours(largest, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    filled = np.zeros_like(largest)
+    cv2.drawContours(filled, contours, -1, 1, thickness=cv2.FILLED)
+    return filled.astype(bool)
 
 
 def pixels_to_plane(

@@ -4,7 +4,7 @@
 wrist_cube_estimate:
   module: source/leisaac/leisaac/datagen/state_machine/wrist_cube_perception.py
   method: >-
-    largest red blob (R > 90, R > 1.8 G, R > 1.8 B); camera pose = CPU forward kinematics of the measured
+    largest red blob (R > 50 and R - max(G, B) > 40, closed and hole-filled); camera pose = CPU forward kinematics of the measured
     joints + fitted wrist mount (docs/provenance/so101_finray_mount_20261026.yaml wrist_camera_fit);
     start = blob back-projected onto the cube-center plane (table + 20 mm); refine x, y, yaw so the
     projected cube silhouette maximizes intersection over union with the blob
@@ -15,8 +15,9 @@ wrist_cube_estimate:
       - datasets/pick_cube_into_black_box_mimic_generated_10_seed42_20261027.hdf5
       - datasets/pick_cube_into_black_box_mimic_generated_50_seed43_20261027.hdf5
     detected: 60/60
-    position_error_mm: {mean: 0.34, p95: 0.59, max: 0.66}
-    yaw_error_deg: {mean: 1.16, max: 3.31}
+    position_error_mm: {mean: 0.23, max: 1.07}
+    yaw_error_deg: {max: 4.51}
+    first_mask_rule: "R > 90, R > 1.8 G, R > 1.8 B gave mean 0.34 / max 0.66 mm but covered only part of the darker physical cube"
     runtime_ms_per_frame: 34
     centroid_only_position_error_mm: {mean: 1.6, max: 1.9, note: "start estimate alone; view-dependent, 10 mm in the synthetic oblique test"}
     limits: "the simulated camera matches the model exactly; a physical camera adds its fit error"
@@ -39,3 +40,8 @@ privileged_oracle_regression_after_cube_pose_hook:
   command: "scripts/datagen/state_machine/generate.py --max_attempts 8 --seed 7100 (robot gravity off as in generate.py)"
   result: "8/8"
   source: outputs/pick_cube_into_black_box_ik_baseline_20261027/oracle_regression/summary.json
+physical_cube_color:
+  observed_at: 2026-10-27
+  image: "physical wrist frame from the robot dashboard /frame.jpg (352x288), cube 40 mm red"
+  cube_rgb: {median: [100, 8, 24], p10: [79, 0, 10], p90: [121, 30, 43]}
+  mask: "current rule covers the whole visible cube silhouette (16672 px); the first rule covered 10124 px in patches"
