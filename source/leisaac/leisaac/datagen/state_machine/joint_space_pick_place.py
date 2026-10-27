@@ -74,6 +74,13 @@ class JointSpacePickPlaceOracle(StateMachineBase):
     )
     _CLOSED_PHASES = frozenset({"grasp", "lift", "above_goal", "lower_goal"})
     _LIVE_CUBE_PHASES = frozenset({"at_cube", "grasp"})
+    # Distance (m) of the approach waypoint from the cube; the final approach starts there.
+    approach_height_m = _APPROACH_HEIGHT_M
+    # False: approach straight down. True: approach along the tilted finger direction, which keeps the
+    # cube in view of a wrist camera that looks past the finger tips (black-box task camera).
+    approach_along_fingers = False
+    # When set, the oracle holds at the end of this phase until resume() or replan_from_cube().
+    pause_after_phase: str | None = None
 
     def __init__(
         self,
@@ -111,10 +118,39 @@ class JointSpacePickPlaceOracle(StateMachineBase):
         self._extra_wait = 0
         self._waypoints: dict[str, torch.Tensor] = {}
         self._joint_target: torch.Tensor | None = None
+        self._paused = False
+        self._resume_requested = False
 
     @property
     def is_episode_done(self) -> bool:
         return self._episode_done
+
+    @property
+    def is_paused(self) -> bool:
+        return self._paused
+
+    def resume(self) -> None:
+        """Leave the pause at the end of pause_after_phase and continue with the next phase."""
+        self._paused = False
+        self._resume_requested = True
+
+    def replan_from_cube(self, env) -> None:
+        """Re-plan the approach from the current cube pose and restart it from the current joints.
+
+        The grasp tilt chosen at the start of the episode is kept, so repeated approaches view the
+        cube from the same gripper orientation.
+        """
+        self._plan_cube_waypoints(env)
+        self._above_cube_joints, self.reach_error_m = self._solve(
+            env, self._joint_target, self._waypoints["above_cube"], self._grasp_point(env), 0.0,
+            _WAYPOINT_IK_ITERATIONS,
+        )
+        self._step_count = 0
+        self._extra_wait = 0
+        self._converged = False
+        self._paused = False
+        self._resume_requested = False
+        self._episode_done = False
 
     def advance(self) -> None:
         _, name, _, phase_end = self._phase()
@@ -124,6 +160,10 @@ class JointSpacePickPlaceOracle(StateMachineBase):
             return
         if at_end:
             self._extra_wait = 0
+            if name == self.pause_after_phase and not self._resume_requested:
+                self._paused = True
+                return
+            self._resume_requested = False
         self._step_count += 1
         self._episode_done = self._step_count >= self._max_steps
 
@@ -133,6 +173,27 @@ class JointSpacePickPlaceOracle(StateMachineBase):
         robot = env.scene["robot"]
         self._arm_ids = robot.find_joints(list(ARM_JOINT_NAMES), preserve_order=True)[0]
         self._limits = robot.data.soft_joint_pos_limits[:, self._arm_ids]
+        self._plan_cube_waypoints(env)
+        self._held_point = self._grasp_point(env).clone()
+        self._joint_target = robot.data.joint_pos[:, self._arm_ids].clone()
+        self._sag_compensation = torch.zeros_like(self._joint_target)
+        self._phase_start_joints = self._joint_target.clone()
+        self._choose_tilt(env)
+
+        if bool(self._placed(env).all().item()):
+            start_phase = self._phase_names.index("retreat")
+        elif bool(self._grasped(env).all().item()):
+            start_phase = self._phase_names.index("lift")
+        else:
+            start_phase = 0
+        self._step_count = 0 if start_phase == 0 else self._phase_ends[start_phase - 1]
+        self._extra_wait = 0
+        self._paused = False
+        self._resume_requested = False
+        self._episode_done = False
+
+    def _plan_cube_waypoints(self, env) -> None:
+        """Closing axis, waypoints and pan turn from the cube pose the oracle plans with."""
         cube_pos, cube_quat = self._cube_pose_w(env)
 
         # Close across the cube face pair nearest the pan tangent.
@@ -150,7 +211,7 @@ class JointSpacePickPlaceOracle(StateMachineBase):
         cube_start = cube_pos.clone()
         place, above_place, self._turn = self._place_targets(env, cube_start)
         self._waypoints = {
-            "above_cube": cube_start + _APPROACH_HEIGHT_M * up,
+            "above_cube": cube_start + self._approach_offset(env, getattr(self, "_tilt", None)),
             "at_cube": cube_start,
             "grasp": cube_start,
             "lift": cube_start + LIFT_HEIGHT_M * up,
@@ -159,21 +220,6 @@ class JointSpacePickPlaceOracle(StateMachineBase):
             "release": place,
             "retreat": above_place,
         }
-        self._held_point = self._grasp_point(env).clone()
-        self._joint_target = robot.data.joint_pos[:, self._arm_ids].clone()
-        self._sag_compensation = torch.zeros_like(self._joint_target)
-        self._phase_start_joints = self._joint_target.clone()
-        self._choose_tilt(env)
-
-        if bool(self._placed(env).all().item()):
-            start_phase = self._phase_names.index("retreat")
-        elif bool(self._grasped(env).all().item()):
-            start_phase = self._phase_names.index("lift")
-        else:
-            start_phase = 0
-        self._step_count = 0 if start_phase == 0 else self._phase_ends[start_phase - 1]
-        self._extra_wait = 0
-        self._episode_done = False
 
     def get_action(self, env) -> torch.Tensor:
         if not self._waypoints:
@@ -215,7 +261,7 @@ class JointSpacePickPlaceOracle(StateMachineBase):
             if name in self._LIVE_CUBE_PHASES:
                 target_w = self._cube_pose_w(env)[0].clone()
                 if name == "at_cube":
-                    target_w[:, 2] += (1.0 - alpha) * _APPROACH_HEIGHT_M
+                    target_w = target_w + (1.0 - alpha) * self._approach_offset(env, self._tilt)
             joint_target, _ = self._solve(env, self._joint_target, target_w, point, turn)
         step = (joint_target - self._joint_target).clamp(-_MAX_JOINT_STEP_RAD, _MAX_JOINT_STEP_RAD)
         self._joint_target = self._joint_target + step
@@ -261,8 +307,9 @@ class JointSpacePickPlaceOracle(StateMachineBase):
         chosen = torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
         for tilt in self.tilt_candidates_rad:
             candidate = torch.full((env.num_envs,), tilt, device=env.device)
+            above_waypoint = self._waypoints["at_cube"] + self._approach_offset(env, candidate)
             above, above_error = self._solve(
-                env, self._joint_target, self._waypoints["above_cube"], point, 0.0, _WAYPOINT_IK_ITERATIONS,
+                env, self._joint_target, above_waypoint, point, 0.0, _WAYPOINT_IK_ITERATIONS,
                 tilt=candidate,
             )
             _, at_error = self._solve(
@@ -275,6 +322,17 @@ class JointSpacePickPlaceOracle(StateMachineBase):
             best_error = torch.where(take, error, best_error)
             chosen |= error < _REACH_TOLERANCE_M
         self.reach_error_m = best_error
+        self._waypoints["above_cube"] = self._waypoints["at_cube"] + self._approach_offset(env, self._tilt)
+
+    def _approach_offset(self, env, tilt) -> torch.Tensor:
+        """Offset (N, 3) from the cube to the approach waypoint: straight up, or back along the fingers."""
+        up = torch.tensor((0.0, 0.0, 1.0), device=env.device).expand(env.num_envs, 3)
+        if not self.approach_along_fingers or tilt is None:
+            return self.approach_height_m * up
+        back = torch.stack(
+            (-torch.sin(tilt) * self._radial[:, 0], -torch.sin(tilt) * self._radial[:, 1], torch.cos(tilt)), dim=-1
+        )
+        return self.approach_height_m * back
 
     def _solve(self, env, seed, target_w, point, turn, iterations: int = 30, tilt=None):
         robot = env.scene["robot"]

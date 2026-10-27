@@ -28,18 +28,14 @@ args_cli.enable_cameras = True
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
-import math
-
 import cv2
 import gymnasium as gym
 import numpy as np
 import torch
-from isaaclab.utils.math import matrix_from_quat
 from isaaclab_tasks.utils import parse_env_cfg
 
 import leisaac.tasks  # noqa: F401
 from leisaac.datagen.state_machine import PerceivedPickCubeIntoBlackBoxStateMachine
-from leisaac.datagen.state_machine.so101_kinematics import ARM_JOINT_NAMES
 from leisaac.datagen.state_machine.wrist_cube_perception import (
     PinholeCamera,
     estimate_cube_pose,
@@ -50,44 +46,11 @@ from leisaac.tasks.pick_cube_into_black_box.pick_cube_into_black_box_env_cfg imp
     WRIST_CAMERA_APERTURE_MM,
     WRIST_CAMERA_FOCAL_LENGTH_MM,
     WRIST_CAMERA_HEIGHT,
-    WRIST_CAMERA_POS_M,
-    WRIST_CAMERA_ROT_ROS_WXYZ,
     WRIST_CAMERA_WIDTH,
 )
 from leisaac.tasks.pick_cube_rot45.pick_cube_rot45_env_cfg import CUBE_HALF_EXTENT_M, TABLE_TOP_Z
 from leisaac.utils.env_utils import dynamic_reset_gripper_effort_limit_sim
-
-
-def fresh_wrist_frame(env, render_frames: int) -> np.ndarray:
-    """Re-render after reset so the frame shows the new scene, not the previous episode."""
-    for _ in range(render_frames):
-        env.sim.render()
-    camera = env.scene["wrist"]
-    camera.reset()
-    camera.update(0.0, force_recompute=True)
-    return camera.data.output["rgb"][0, ..., :3].detach().cpu().numpy().astype(np.uint8)
-
-
-def wrist_camera_pose_w(env, sm) -> tuple[np.ndarray, np.ndarray, float]:
-    """Camera pose from CPU forward kinematics of the measured joints, and the FK gripper error vs Isaac."""
-    robot = env.scene["robot"]
-    arm_ids = robot.find_joints(list(ARM_JOINT_NAMES), preserve_order=True)[0]
-    pos_b, rot_b = sm._kinematics.forward(robot.data.joint_pos[:, arm_ids].double().cpu())
-    root_rot = matrix_from_quat(robot.data.root_quat_w).double().cpu()
-    root_pos = robot.data.root_pos_w.double().cpu()
-    grip_pos = root_pos + torch.einsum("nij,nj->ni", root_rot, pos_b)
-    grip_rot = root_rot @ rot_b
-    isaac_pos = robot.data.body_link_pos_w[:, robot.find_bodies("gripper")[0][0]].double().cpu()
-    fk_error = float(torch.linalg.vector_norm(grip_pos - isaac_pos, dim=-1)[0])
-    mount_rot = matrix_from_quat(torch.tensor(WRIST_CAMERA_ROT_ROS_WXYZ, dtype=torch.float64))
-    cam_pos = grip_pos[0] + grip_rot[0] @ torch.tensor(WRIST_CAMERA_POS_M, dtype=torch.float64)
-    cam_rot = grip_rot[0] @ mount_rot
-    return cam_pos.numpy(), cam_rot.numpy(), fk_error
-
-
-def yaw_of(quat_wxyz) -> float:
-    w, x, y, z = (float(v) for v in quat_wxyz)
-    return math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))
+from wrist_view import fresh_wrist_frame, wrist_camera_pose_w, yaw_of
 
 
 def main() -> None:
@@ -127,7 +90,7 @@ def main() -> None:
                 sm.reset()
                 env.reset()
                 rgb = fresh_wrist_frame(env, args_cli.reset_render_frames)
-                cam_pos, cam_rot, fk_error = wrist_camera_pose_w(env, sm)
+                cam_pos, cam_rot, fk_error = wrist_camera_pose_w(env, sm._kinematics)
                 cube = env.scene["cube"].data
                 true_pos = cube.root_pos_w[0].detach().cpu().numpy()
                 true_yaw = yaw_of(cube.root_quat_w[0].detach().cpu())

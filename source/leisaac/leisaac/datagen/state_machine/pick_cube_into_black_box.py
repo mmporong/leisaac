@@ -32,7 +32,16 @@ _BOX_PARAMS = {
 
 
 class PickCubeIntoBlackBoxStateMachine(JointSpacePickPlaceOracle):
-    """Carry the cube over the box center and drop it in, turning about the pan axis."""
+    """Carry the cube over the box center and drop it in, turning about the pan axis.
+
+    The fitted wrist camera looks past the finger tips, about 47 degrees off the finger direction, so a
+    straight-down approach with tilted fingers loses the cube from view. Approaching back along the
+    fingers from 9 cm keeps the cube in the wrist frame until about 1 cm before the grasp
+    (docs/provenance/so101_ik_baseline_20261027.yaml).
+    """
+
+    approach_along_fingers = True
+    approach_height_m = 0.09
 
     def __init__(
         self, grasp_point_gripper=FINRAY_GRASP_POINT_GRIPPER, gripper_open_rad=FINRAY_GRIPPER_OPEN_RAD, **kwargs
