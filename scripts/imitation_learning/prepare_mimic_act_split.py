@@ -225,6 +225,7 @@ def run_split(
     shard_size: int,
     valid_per_shard: int,
     allow_legacy_action_source: bool = False,
+    min_free_gib: float = 8.0,
 ) -> dict:
     source_root = dataset_root.expanduser().resolve(strict=True)
     output_root = output_dir.expanduser().resolve()
@@ -233,7 +234,7 @@ def run_split(
     for required in (source_root / "meta/info.json", source_root / "meta/stats.json"):
         if not required.is_file():
             raise FileNotFoundError(required)
-    check_free_space(_nearest_existing_parent(output_root.parent), 8.0)
+    check_free_space(_nearest_existing_parent(output_root.parent), min_free_gib)
 
     source_contract = validate_aggregate_contract(
         source_root, allow_legacy=allow_legacy_action_source
@@ -298,12 +299,14 @@ def main() -> None:
     parser.add_argument("--shard-size", type=int, default=25)
     parser.add_argument("--valid-per-shard", type=int, default=5)
     parser.add_argument("--allow-legacy-action-source", action="store_true")
+    parser.add_argument("--min-free-gib", type=float, default=8.0,
+                        help="Free space required before writing; the split copies the source data once.")
     args = parser.parse_args()
     if not args.repo_id.strip():
         raise ValueError("repo-id must not be empty")
     marker = run_split(
         args.dataset_root, args.repo_id, args.output_dir, args.seed, args.shard_size,
-        args.valid_per_shard, args.allow_legacy_action_source,
+        args.valid_per_shard, args.allow_legacy_action_source, args.min_free_gib,
     )
     print(json.dumps(marker, sort_keys=True), flush=True)
 

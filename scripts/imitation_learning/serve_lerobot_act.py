@@ -104,6 +104,8 @@ def build_observation(
         "observation.state": torch.from_numpy(state).unsqueeze(0).to(device)
     }
     for camera in cameras:
+        if camera not in request:
+            raise ValueError(f"request has no {camera} image; the checkpoint expects {list(cameras)}")
         image_value = request[camera]
         if isinstance(image_value, bytes):
             expected_bytes = int(np.prod(expected_image_shape))

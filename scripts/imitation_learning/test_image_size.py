@@ -179,6 +179,8 @@ class ImageSizeTest(unittest.TestCase):
         self.assertEqual(
             sorted(observation), ["observation.images.wrist", "observation.state"]
         )
+        with self.assertRaisesRegex(ValueError, "request has no wrist image"):
+            self.server.build_observation({"state": [0.0] * 6}, torch.device("cpu"), 84, ("wrist",))
         with self.assertRaisesRegex(ValueError, "no observation.images"):
             self.server.checkpoint_cameras(
                 SimpleNamespace(input_features={"observation.state": SimpleNamespace(shape=(6,))})
