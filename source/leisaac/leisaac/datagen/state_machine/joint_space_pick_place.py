@@ -26,16 +26,21 @@ GRASP_TILT_CANDIDATES_RAD = (0.3, 0.4, 0.5, 0.6, 0.7, 0.8)
 _REACH_TOLERANCE_M = 0.001
 _APPROACH_HEIGHT_M = 0.10
 LIFT_HEIGHT_M = 0.10
-# Phases end only once every env's grasp point is within this distance of its
-# waypoint, or after the extra wait expires.
-_PHASE_POINT_TOLERANCE_M = {
-    "above_cube": 0.005, "at_cube": 0.003, "lift": 0.005, "above_goal": 0.005, "lower_goal": 0.003,
-}
+# These phases end only once every env's arm has caught up with its commanded joints, or
+# after the extra wait expires. Joint tracking is used rather than the Cartesian target,
+# because position-priority IK can leave a few millimetres of residual by design.
+_GATED_PHASES = frozenset({"above_cube", "at_cube", "lift", "above_goal", "lower_goal"})
+_JOINT_TRACKING_TOLERANCE_RAD = 0.01
 _MAX_EXTRA_WAIT_STEPS = 180
 # Long reconfigurations interpolate between solved joint targets; short moves track a
 # Cartesian line with warm-started IK.
 _JOINT_SPACE_PHASES = frozenset({"above_cube", "above_goal"})
 _MAX_JOINT_STEP_RAD = 0.05
+# The arm sags below its targets under gravity when stretched out (soft joint drives), so the
+# command adds an integral of the tracking error, like a leader operator pushing a bit further.
+_SAG_INTEGRAL_GAIN = 0.05
+_MAX_SAG_COMPENSATION_RAD = 0.15
+_SETTLED_STEP_RAD = 0.002
 _WAYPOINT_IK_ITERATIONS = 150
 
 
@@ -114,7 +119,7 @@ class JointSpacePickPlaceOracle(StateMachineBase):
     def advance(self) -> None:
         _, name, _, phase_end = self._phase()
         at_end = self._step_count == phase_end - 1
-        if at_end and name in _PHASE_POINT_TOLERANCE_M and not self._converged and self._extra_wait < _MAX_EXTRA_WAIT_STEPS:
+        if at_end and name in _GATED_PHASES and not self._converged and self._extra_wait < _MAX_EXTRA_WAIT_STEPS:
             self._extra_wait += 1
             return
         if at_end:
@@ -156,6 +161,7 @@ class JointSpacePickPlaceOracle(StateMachineBase):
         }
         self._held_point = self._grasp_point(env).clone()
         self._joint_target = robot.data.joint_pos[:, self._arm_ids].clone()
+        self._sag_compensation = torch.zeros_like(self._joint_target)
         self._phase_start_joints = self._joint_target.clone()
         self._choose_tilt(env)
 
@@ -214,11 +220,18 @@ class JointSpacePickPlaceOracle(StateMachineBase):
         step = (joint_target - self._joint_target).clamp(-_MAX_JOINT_STEP_RAD, _MAX_JOINT_STEP_RAD)
         self._joint_target = self._joint_target + step
 
-        point_error = torch.linalg.vector_norm(self._grasp_point_w(env, point) - target_w, dim=-1)
-        self._converged = bool((point_error < _PHASE_POINT_TOLERANCE_M.get(name, math.inf)).all().item())
+        lag = self._joint_target - env.scene["robot"].data.joint_pos[:, self._arm_ids]
+        # Integrate only while the target holds still, so motion lag is not mistaken for sag.
+        settling = (step.abs().amax(-1, keepdim=True) < _SETTLED_STEP_RAD).to(lag.dtype)
+        self._sag_compensation = (self._sag_compensation + settling * _SAG_INTEGRAL_GAIN * lag).clamp(
+            -_MAX_SAG_COMPENSATION_RAD, _MAX_SAG_COMPENSATION_RAD
+        )
+        self._converged = bool((lag.abs().amax(-1) < _JOINT_TRACKING_TOLERANCE_RAD).all().item())
         gripper = GRIPPER_CLOSE_RAD if name in self._CLOSED_PHASES else self.gripper_open_rad
         gripper_cmd = torch.full((env.num_envs, 1), gripper, device=env.device)
-        return torch.cat((self._joint_target, gripper_cmd), dim=-1)
+        command = torch.minimum(torch.maximum(self._joint_target + self._sag_compensation, self._limits[..., 0]),
+                                self._limits[..., 1])
+        return torch.cat((command, gripper_cmd), dim=-1)
 
     def observe_step(self, env) -> None:
         self._success(env)

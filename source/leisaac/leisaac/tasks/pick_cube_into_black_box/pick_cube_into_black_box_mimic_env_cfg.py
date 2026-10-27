@@ -10,7 +10,8 @@ class PickCubeIntoBlackBoxMimicEnvCfg(PickCubeIntoBlackBoxEnvCfg, MimicEnvCfg):
         super().__post_init__()
         self.datagen_config.name = "pick_cube_into_black_box_leisaac_task_v0"
         self.datagen_config.generation_guarantee = True
-        self.datagen_config.generation_keep_failed = True
+        # Failed attempts are not used for training; dropping them keeps image datasets within disk space.
+        self.datagen_config.generation_keep_failed = False
         self.datagen_config.generation_num_trials = 10
         self.datagen_config.generation_select_src_per_subtask = True
         self.datagen_config.generation_transform_first_robot_pose = False
