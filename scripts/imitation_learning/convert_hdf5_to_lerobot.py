@@ -61,6 +61,10 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Evaluation JSON containing joint limits; required for recorded_target only.",
     )
+    parser.add_argument(
+        "--cameras", nargs="+", choices=CAMERA_KEYS, default=list(CAMERA_KEYS),
+        help="Camera observations to convert, e.g. only 'wrist' for a wrist-camera policy.",
+    )
     return parser.parse_args()
 
 
@@ -184,7 +188,7 @@ def aggregate_clipping_stats(stats: list[dict]) -> dict:
     }
 
 
-def build_features(image_size: int) -> dict:
+def build_features(image_size: int, cameras=CAMERA_KEYS) -> dict:
     return {
         "action": {"dtype": "float32", "shape": (6,), "names": JOINT_NAMES},
         "observation.state": {"dtype": "float32", "shape": (6,), "names": JOINT_NAMES},
@@ -194,7 +198,7 @@ def build_features(image_size: int) -> dict:
                 "shape": (image_size, image_size, 3),
                 "names": ["height", "width", "channel"],
             }
-            for camera in CAMERA_KEYS
+            for camera in cameras
         },
     }
 
@@ -216,12 +220,14 @@ def build_provenance(
     frame_counts: list[int],
     joint_limits_provenance: dict | None = None,
     clipping_stats: list[dict] | None = None,
+    cameras=CAMERA_KEYS,
 ) -> dict:
     provenance = {
         "input_path": str(input_path),
         "input_sha256": input_sha256,
         "action_source": action_source,
         "image_size": image_size,
+        "cameras": list(cameras),
         "episode_names": demo_names,
         "frame_counts": frame_counts,
         "episodes": [
@@ -262,6 +268,7 @@ def validate_demo(
     image_size: int = DEFAULT_IMAGE_SIZE,
     action_source: str = "stored",
     joint_limits: tuple[np.ndarray, np.ndarray] | None = None,
+    cameras=CAMERA_KEYS,
 ) -> int:
     if not np.isfinite(max_action_step_norm) or max_action_step_norm <= 0:
         raise ValueError("max-action-step-norm must be finite and positive")
@@ -291,7 +298,7 @@ def validate_demo(
     if not np.isfinite(actions).all():
         raise ValueError(f"non-finite values in {demo.name}/actions")
 
-    for camera in CAMERA_KEYS:
+    for camera in cameras:
         images = demo[f"obs/{camera}"]
         if images.shape != (frame_count, image_size, image_size, 3) or images.dtype != np.uint8:
             raise ValueError(
@@ -331,13 +338,14 @@ def audit_demonstrations(
     image_size: int,
     action_source: str,
     joint_limits: tuple[np.ndarray, np.ndarray] | None,
+    cameras=CAMERA_KEYS,
 ) -> list[dict]:
     results = []
     for name in demo_names:
         try:
             frame_count = validate_demo(
                 hdf[f"data/{name}"], max_action_step_norm, image_size,
-                action_source, joint_limits,
+                action_source, joint_limits, cameras,
             )
             results.append({"name": name, "accepted": True, "frame_count": frame_count})
         except Exception as error:
@@ -389,7 +397,7 @@ def main() -> None:
         if args.audit_only:
             audit = audit_demonstrations(
                 hdf, all_demo_names, args.max_action_step_norm, args.image_size,
-                args.action_source, joint_limits,
+                args.action_source, joint_limits, args.cameras,
             )
             assert audit_output is not None
             audit_output.parent.mkdir(parents=True, exist_ok=True)
@@ -424,6 +432,7 @@ def main() -> None:
                 args.image_size,
                 args.action_source,
                 joint_limits,
+                args.cameras,
             )
             for name in demo_names
         ]
@@ -433,7 +442,7 @@ def main() -> None:
                 recorded_target_clipping_stats(hdf[f"data/{name}"], joint_limits)
                 for name in demo_names
             ]
-        features = build_features(args.image_size)
+        features = build_features(args.image_size, args.cameras)
         assert output_root is not None
         dataset = LeRobotDataset.create(
             repo_id=args.repo_id,
@@ -457,8 +466,10 @@ def main() -> None:
                     {
                         "action": actions[frame_index].astype(np.float32),
                         "observation.state": demo["obs/joint_pos"][frame_index].astype(np.float32),
-                        "observation.images.front": demo["obs/front"][frame_index],
-                        "observation.images.wrist": demo["obs/wrist"][frame_index],
+                        **{
+                            f"observation.images.{camera}": demo[f"obs/{camera}"][frame_index]
+                            for camera in args.cameras
+                        },
                         "task": args.task,
                     }
                 )
@@ -479,6 +490,7 @@ def main() -> None:
         frame_counts,
         joint_limits_provenance,
         clipping_stats,
+        args.cameras,
     )
     assert output_root is not None
     (output_root / "conversion_provenance.json").write_text(

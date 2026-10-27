@@ -30,8 +30,8 @@ def write_policy_images(output_dir, trial, step, state_before, images):
     state = np.asarray(state_before)
     if trial < 1 or step < 1 or state.shape != (6,) or not np.isfinite(state).all():
         raise ValueError("invalid one-based dump index or joint state")
-    if set(images) != {"front", "wrist"}:
-        raise ValueError("front and wrist inputs are both required")
+    if not images or not set(images) <= {"front", "wrist"}:
+        raise ValueError("images must be a non-empty subset of front and wrist")
     for pixels in images.values():
         if pixels.dtype != np.uint8 or pixels.shape != (224, 224, 3):
             raise ValueError("policy image dumps require uint8 RGB (224,224,3) arrays")

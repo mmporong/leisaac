@@ -31,6 +31,8 @@ parser.add_argument("--n-action-steps", type=int, default=None)
 parser.add_argument("--render-width", type=int, default=320)
 parser.add_argument("--render-height", type=int, default=240)
 parser.add_argument("--policy-image-size", type=int, default=84)
+parser.add_argument("--cameras", nargs="+", choices=("front", "wrist"), default=["front", "wrist"],
+                    help="Cameras sent to the policy; must match the checkpoint inputs.")
 parser.add_argument(
     "--reset-render-frames", type=int, default=4,
     help="Render without advancing physics before the first action; 0 reproduces legacy observations.",
@@ -229,7 +231,7 @@ def scene_state_sha256(state: dict) -> str:
     return digest.hexdigest()
 
 
-def refresh_reset_images(env, observations: dict, render_frames: int) -> dict:
+def refresh_reset_images(env, observations: dict, render_frames: int, cameras=("front", "wrist")) -> dict:
     """Refresh RTX output and camera caches without advancing the physical state."""
     if render_frames < 0:
         raise ValueError("reset-render-frames cannot be negative")
@@ -239,7 +241,7 @@ def refresh_reset_images(env, observations: dict, render_frames: int) -> dict:
     for _ in range(render_frames):
         env.sim.render()
     policy = dict(observations["policy"])
-    for name in ("front", "wrist"):
+    for name in cameras:
         camera = env.scene[name]
         camera.reset()
         camera.update(0.0, force_recompute=True)
@@ -309,7 +311,7 @@ def main() -> None:
         connection = connect_to_server(server_process)
         env_cfg = parse_env_cfg(args_cli.task, device=args_cli.device, num_envs=1)
         env_cfg.use_teleop_device("so101leader")
-        for camera_name in ("front", "wrist"):
+        for camera_name in args_cli.cameras:
             camera_cfg = getattr(env_cfg.scene, camera_name)
             camera_cfg.width = args_cli.render_width
             camera_cfg.height = args_cli.render_height
@@ -354,7 +356,7 @@ def main() -> None:
                 env.scene.write_data_to_sim()
                 observations = env.obs_buf
             initial_scene_state_sha256 = scene_state_sha256(env.scene.get_state(is_relative=True))
-            observations = refresh_reset_images(env, observations, args_cli.reset_render_frames)
+            observations = refresh_reset_images(env, observations, args_cli.reset_render_frames, args_cli.cameras)
             send_request(connection, {"command": "reset"})
             initial_cube_xyz = env.scene["cube"].data.root_pos_w[0, :3].detach().cpu().tolist()
             cube_xy = initial_cube_xyz[:2]
@@ -384,28 +386,28 @@ def main() -> None:
             try:
                 for step in range(args_cli.horizon):
                     policy_obs = observations["policy"]
-                    front = resize_policy_image(policy_obs["front"][0], args_cli.policy_image_size)
-                    wrist = resize_policy_image(policy_obs["wrist"][0], args_cli.policy_image_size)
+                    images = {
+                        name: resize_policy_image(policy_obs[name][0], args_cli.policy_image_size)
+                        for name in args_cli.cameras
+                    }
                     if should_dump(step + 1, args_cli.dump_policy_images_every, dump_bounds):
                         policy_image_manifest.append(write_policy_images(
                             output_dir, trial + 1, step + 1,
                             policy_obs["joint_pos"][0].detach().cpu().numpy(),
-                            {"front": front, "wrist": wrist},
+                            images,
                         ))
                     if initial_observation_sha256 is None:
                         initial_observation_sha256 = {
-                            "front": hashlib.sha256(front.tobytes()).hexdigest(),
-                            "wrist": hashlib.sha256(wrist.tobytes()).hexdigest(),
+                            name: hashlib.sha256(pixels.tobytes()).hexdigest() for name, pixels in images.items()
                         }
-                        for name, pixels in (("front", front), ("wrist", wrist)):
+                        for name, pixels in images.items():
                             imageio.imwrite(output_dir / f"initial_{trial + 1:03d}_{name}.png", pixels)
                     response = send_request(
                         connection,
                         {
                             "command": "predict",
                             "state": policy_obs["joint_pos"][0].detach().cpu().tolist(),
-                            "front": front.tobytes(),
-                            "wrist": wrist.tobytes(),
+                            **{name: pixels.tobytes() for name, pixels in images.items()},
                         },
                     )
                     action = torch.as_tensor(
@@ -472,9 +474,10 @@ def main() -> None:
                     ):
                         trial_state_snapshots.append(capture_state(env, trial_seed, completed_step))
                     if video_writer is not None:
-                        front = observations["policy"]["front"][0].detach().cpu().numpy()
-                        wrist = observations["policy"]["wrist"][0].detach().cpu().numpy()
-                        video_writer.append_data(np.concatenate((front, wrist), axis=1))
+                        video_writer.append_data(np.concatenate(
+                            [observations["policy"][name][0].detach().cpu().numpy() for name in args_cli.cameras],
+                            axis=1,
+                        ))
                     if bool(success_term.func(env, **success_term.params)[0]):
                         success = True
                         break
@@ -570,6 +573,7 @@ def main() -> None:
             "render_width": args_cli.render_width,
             "render_height": args_cli.render_height,
             "policy_image_size": args_cli.policy_image_size,
+            "cameras": list(args_cli.cameras),
             "lift_threshold_m": args_cli.lift_threshold_m,
             "outcome_counts": outcome_counts,
             "results": results,

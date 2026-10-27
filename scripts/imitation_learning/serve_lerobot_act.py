@@ -59,15 +59,23 @@ def validate_image_size(image_size: int) -> int:
     return image_size
 
 
-def validate_checkpoint_image_size(config, image_size: int) -> None:
-    expected_shape = (3, image_size, image_size)
+def checkpoint_cameras(config) -> tuple[str, ...]:
+    """Camera names the checkpoint was trained on, in a stable order."""
     input_features = getattr(config, "input_features", None)
     if input_features is None:
         raise ValueError("checkpoint config has no input_features")
-    for camera in ("front", "wrist"):
+    prefix = "observation.images."
+    cameras = tuple(sorted(key[len(prefix):] for key in input_features if key.startswith(prefix)))
+    if not cameras:
+        raise ValueError("checkpoint config has no observation.images.* inputs")
+    return cameras
+
+
+def validate_checkpoint_image_size(config, image_size: int) -> None:
+    expected_shape = (3, image_size, image_size)
+    input_features = config.input_features
+    for camera in checkpoint_cameras(config):
         key = f"observation.images.{camera}"
-        if key not in input_features:
-            raise ValueError(f"checkpoint config is missing {key}")
         feature = input_features[key]
         shape = (
             feature.get("shape")
@@ -85,6 +93,7 @@ def build_observation(
     request: dict,
     device: torch.device,
     image_size: int = DEFAULT_IMAGE_SIZE,
+    cameras: tuple[str, ...] = ("front", "wrist"),
 ) -> dict[str, torch.Tensor]:
     validate_image_size(image_size)
     expected_image_shape = (image_size, image_size, 3)
@@ -94,7 +103,7 @@ def build_observation(
     observation = {
         "observation.state": torch.from_numpy(state).unsqueeze(0).to(device)
     }
-    for camera in ("front", "wrist"):
+    for camera in cameras:
         image_value = request[camera]
         if isinstance(image_value, bytes):
             expected_bytes = int(np.prod(expected_image_shape))
@@ -134,6 +143,7 @@ def main() -> None:
     torch.use_deterministic_algorithms(True, warn_only=True)
     model = ACTPolicy.from_pretrained(checkpoint).to(device).eval()
     validate_checkpoint_image_size(model.config, args.image_size)
+    cameras = checkpoint_cameras(model.config)
     if args.n_action_steps is not None:
         if not 1 <= args.n_action_steps <= model.config.chunk_size:
             raise ValueError(
@@ -151,7 +161,7 @@ def main() -> None:
     with socket.create_server((args.host, args.port), reuse_port=False) as server:
         print(
             f"ACT_SERVER_READY {args.host}:{args.port} n_action_steps={model.config.n_action_steps} "
-            f"image_size={args.image_size}",
+            f"image_size={args.image_size} cameras={','.join(cameras)}",
             flush=True,
         )
         connection, _ = server.accept()
@@ -169,7 +179,7 @@ def main() -> None:
                 if command != "predict":
                     raise ValueError(f"unsupported command: {command}")
 
-                observation = build_observation(request, device, args.image_size)
+                observation = build_observation(request, device, args.image_size, cameras)
                 with torch.inference_mode():
                     action = postprocessor(model.select_action(preprocessor(observation)))
                 action_array = action.squeeze(0).detach().cpu().numpy()

@@ -164,6 +164,26 @@ class ImageSizeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not match --image-size 224"):
             self.server.validate_checkpoint_image_size(config_84, 224)
 
+    def test_server_uses_cameras_listed_in_checkpoint(self):
+        wrist_only = SimpleNamespace(
+            input_features={
+                "observation.state": SimpleNamespace(shape=(6,)),
+                "observation.images.wrist": SimpleNamespace(shape=(3, 84, 84)),
+            }
+        )
+        self.assertEqual(self.server.checkpoint_cameras(wrist_only), ("wrist",))
+        self.server.validate_checkpoint_image_size(wrist_only, 84)
+        request = self.make_request(84)
+        del request["front"]
+        observation = self.server.build_observation(request, torch.device("cpu"), 84, ("wrist",))
+        self.assertEqual(
+            sorted(observation), ["observation.images.wrist", "observation.state"]
+        )
+        with self.assertRaisesRegex(ValueError, "no observation.images"):
+            self.server.checkpoint_cameras(
+                SimpleNamespace(input_features={"observation.state": SimpleNamespace(shape=(6,))})
+            )
+
     def test_image_sizes_are_positive_and_bounded_by_protocol_limit(self):
         for image_size in (84, 224, 256):
             self.assertEqual(self.converter.validate_image_size(image_size), image_size)
@@ -218,6 +238,29 @@ class ImageSizeTest(unittest.TestCase):
         self.assertEqual(provenance["episode_names"], ["demo_2"])
         self.assertEqual(provenance["frame_counts"], [3])
         self.assertEqual(provenance["episodes"], [{"name": "demo_2", "frame_count": 3}])
+
+    def test_conversion_can_keep_only_the_wrist_camera(self):
+        features = self.converter.build_features(84, ["wrist"])
+        self.assertIn("observation.images.wrist", features)
+        self.assertNotIn("observation.images.front", features)
+        self.assertIn("observation.images.front", self.converter.build_features(84))
+        demo = Demo(
+            {
+                "obs/joint_pos": ArrayDataset(np.zeros((2, 6), dtype=np.float32)),
+                "actions": ArrayDataset(np.zeros((2, 8), dtype=np.float32)),
+                "obs/wrist": ArrayDataset(np.zeros((2, 84, 84, 3), dtype=np.uint8)),
+            }
+        )
+        self.assertEqual(
+            self.converter.validate_demo(demo, 1.0, 84, "next_observed", None, ["wrist"]), 2
+        )
+        with self.assertRaises(KeyError):
+            self.converter.validate_demo(demo, 1.0, 84, "next_observed")
+        provenance = self.converter.build_provenance(
+            Path("/tmp/input.hdf5"), "a" * 64, "next_observed", 84, ["demo_0"], [2],
+            cameras=["wrist"],
+        )
+        self.assertEqual(provenance["cameras"], ["wrist"])
 
     def test_stored_and_next_observed_actions(self):
         joint_pos = np.arange(18, dtype=np.float32).reshape(3, 6)

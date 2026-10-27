@@ -27,7 +27,7 @@ class PolicyImageDumpTests(unittest.TestCase):
         self.assertLess(send.lineno, physics.lineno)
         self.assertEqual(ast.unparse(dump.args[2]), "step + 1")
         self.assertEqual(ast.unparse(dump.args[3]), "policy_obs['joint_pos'][0].detach().cpu().numpy()")
-        self.assertEqual(ast.unparse(dump.args[4]), "{'front': front, 'wrist': wrist}")
+        self.assertEqual(ast.unparse(dump.args[4]), "images")
         state = next(node for node in ast.walk(main) if isinstance(node, ast.Assign)
                      and any(ast.unparse(target) == "state_before" for target in node.targets))
         self.assertLess(state.lineno, physics.lineno)
@@ -77,6 +77,16 @@ class PolicyImageDumpTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 write_policy_images(root, 1, 249, state, {"front": image, "wrist": image})
 
+
+    def test_wrist_only_dump_and_unknown_camera(self):
+        image = np.zeros((224, 224, 3), dtype=np.uint8)
+        with tempfile.TemporaryDirectory() as folder:
+            row = write_policy_images(Path(folder), 1, 1, np.zeros(6), {"wrist": image})
+            self.assertIn("wrist", row)
+            self.assertNotIn("front", row)
+            for images in ({}, {"side": image}):
+                with self.assertRaises(ValueError):
+                    write_policy_images(Path(folder), 1, 2, np.zeros(6), images)
 
 if __name__ == "__main__":
     unittest.main()
