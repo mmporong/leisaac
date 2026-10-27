@@ -24,3 +24,18 @@ wrist_cube_estimate:
     obs/wrist[0] and [1] of every recorded demo (source oracle, annotated, Mimic) still show the previous
     episode's render; the scene appears from frame 2. Frames update every second control step.
   unit_tests: scripts/imitation_learning/test_wrist_cube_perception.py
+
+ik_baseline_closed_loop_sim:
+  script: scripts/evaluation/ik_baseline_pick_cube_into_black_box.py
+  measured_at: 2026-10-27
+  conditions: "LeIsaac-SO101-PickCubeIntoBlackBox-v0, seed 7000, robot gravity on, 4 render frames after reset, one wrist frame per episode"
+  result: "10/10 cube released in the black box (stable_release_v2)"
+  estimate_error_xy_mm: {mean: 0.39, max: 0.87}
+  estimate_yaw_error_deg: {max: 3.48}
+  fk_vs_isaac_gripper_error_m: "below 1e-6"
+  source: outputs/pick_cube_into_black_box_ik_baseline_20261027/gravity_on/summary.json
+  first_attempt: "stopped after episode 1 (success) because env.reset ran outside inference mode; kept in gravity_on_run1_stopped_after_1/"
+privileged_oracle_regression_after_cube_pose_hook:
+  command: "scripts/datagen/state_machine/generate.py --max_attempts 8 --seed 7100 (robot gravity off as in generate.py)"
+  result: "8/8"
+  source: outputs/pick_cube_into_black_box_ik_baseline_20261027/oracle_regression/summary.json

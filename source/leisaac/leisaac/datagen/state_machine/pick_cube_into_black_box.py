@@ -65,3 +65,32 @@ class PickCubeIntoBlackBoxStateMachine(JointSpacePickPlaceOracle):
 
     def _success(self, env) -> torch.Tensor:
         return cube_released_in_box(env, **_BOX_PARAMS, open_threshold_rad=FINRAY_RELEASED_MIN_GRIPPER_RAD)
+
+
+class PerceivedPickCubeIntoBlackBoxStateMachine(PickCubeIntoBlackBoxStateMachine):
+    """The same oracle planned from a cube pose estimated once, e.g. from the wrist camera.
+
+    Only the cube pose changes source: the approach, grasp and carried point use the estimate
+    instead of the simulator state, so the motion is what the physical arm would run. Robot
+    kinematics and the box position stay as configured. The starting-phase check and the success
+    judgement still read the simulator; they evaluate the run and do not steer it.
+    """
+
+    def reset(self) -> None:
+        super().reset()
+        self._estimate: tuple[torch.Tensor, torch.Tensor] | None = None
+
+    def set_cube_estimate(self, position_w: torch.Tensor, yaw: torch.Tensor) -> None:
+        """Cube center (N, 3) in the world frame and yaw (N,) in rad; call after reset(), before begin_episode()."""
+        half = yaw / 2
+        zero = torch.zeros_like(half)
+        self._estimate = (position_w.clone(), torch.stack((torch.cos(half), zero, zero, torch.sin(half)), dim=-1))
+
+    def _cube_pose_w(self, env) -> tuple[torch.Tensor, torch.Tensor]:
+        if self._estimate is None:
+            raise RuntimeError("set_cube_estimate() must be called before begin_episode()")
+        return self._estimate
+
+    def _cube_in_hand_w(self, env) -> torch.Tensor:
+        # Assume the cube sits where it was estimated when the fingers closed.
+        return self._waypoints["grasp"]

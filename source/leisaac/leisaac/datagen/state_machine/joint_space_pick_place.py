@@ -133,12 +133,12 @@ class JointSpacePickPlaceOracle(StateMachineBase):
         robot = env.scene["robot"]
         self._arm_ids = robot.find_joints(list(ARM_JOINT_NAMES), preserve_order=True)[0]
         self._limits = robot.data.soft_joint_pos_limits[:, self._arm_ids]
-        cube = env.scene["cube"].data
+        cube_pos, cube_quat = self._cube_pose_w(env)
 
         # Close across the cube face pair nearest the pan tangent.
-        radial = cube.root_pos_w[:, :2] - self._pan_xy(env)
+        radial = cube_pos[:, :2] - self._pan_xy(env)
         self._radial = radial / torch.linalg.vector_norm(radial, dim=-1, keepdim=True)
-        w, x, y, z = cube.root_quat_w.unbind(-1)
+        w, x, y, z = cube_quat.unbind(-1)
         cube_yaw = torch.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))
         tangent_yaw = torch.atan2(self._radial[:, 1], self._radial[:, 0]) + math.pi / 2
         closing_yaw = cube_yaw + torch.round((tangent_yaw - cube_yaw) / (math.pi / 2)) * (math.pi / 2)
@@ -147,7 +147,7 @@ class JointSpacePickPlaceOracle(StateMachineBase):
         )
 
         up = torch.tensor((0.0, 0.0, 1.0), device=env.device)
-        cube_start = cube.root_pos_w.clone()
+        cube_start = cube_pos.clone()
         place, above_place, self._turn = self._place_targets(env, cube_start)
         self._waypoints = {
             "above_cube": cube_start + _APPROACH_HEIGHT_M * up,
@@ -186,7 +186,7 @@ class JointSpacePickPlaceOracle(StateMachineBase):
             if name == "lift":
                 # Carry the cube where it actually sits in the hand.
                 gripper_pos, gripper_quat = self._gripper_pose_w(env)
-                cube_pos = env.scene["cube"].data.root_pos_w
+                cube_pos = self._cube_in_hand_w(env)
                 self._held_point = quat_apply(quat_inv(gripper_quat), cube_pos - gripper_pos)
                 self._waypoints["grasp"] = cube_pos.clone()
             if name == "above_goal":
@@ -213,7 +213,7 @@ class JointSpacePickPlaceOracle(StateMachineBase):
         else:
             target_w = torch.lerp(self._waypoints[self._phase_names[index - 1]], self._waypoints[name], alpha)
             if name in self._LIVE_CUBE_PHASES:
-                target_w = env.scene["cube"].data.root_pos_w.clone()
+                target_w = self._cube_pose_w(env)[0].clone()
                 if name == "at_cube":
                     target_w[:, 2] += (1.0 - alpha) * _APPROACH_HEIGHT_M
             joint_target, _ = self._solve(env, self._joint_target, target_w, point, turn)
@@ -293,6 +293,15 @@ class JointSpacePickPlaceOracle(StateMachineBase):
             self._limits,
             iterations=iterations,
         )
+
+    def _cube_pose_w(self, env) -> tuple[torch.Tensor, torch.Tensor]:
+        """Cube position and quaternion (wxyz) the oracle plans and approaches with: the simulator state."""
+        cube = env.scene["cube"].data
+        return cube.root_pos_w, cube.root_quat_w
+
+    def _cube_in_hand_w(self, env) -> torch.Tensor:
+        """Cube position that fixes the carried point when the lift starts: the simulator state."""
+        return env.scene["cube"].data.root_pos_w
 
     def _pan_xy(self, env) -> torch.Tensor:
         robot = env.scene["robot"]
