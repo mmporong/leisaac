@@ -13,9 +13,11 @@ from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
+from isaaclab.sensors import TiledCameraCfg
 from isaaclab.sim.utils import find_matching_prim_paths
 from isaaclab.utils import configclass
 from leisaac.assets.robots.so101_finray import SO101_FOLLOWER_FINRAY_CFG
+from leisaac.assets.robots.so101_finray_geometry import FINRAY_CLOSED_GRIPPER_RAD
 from leisaac.assets.scenes.simple import TABLE_WITH_CUBE_USD_PATH
 from leisaac.tasks.pick_cube_into_box import mdp as box_mdp
 from leisaac.tasks.pick_cube_into_box.pick_cube_into_box_env_cfg import (
@@ -39,16 +41,26 @@ from leisaac.utils.env_utils import delete_attribute
 
 from . import mdp
 
-# Provisional joint pose (rad) applied at reset, chosen for LeIsaac's stock wrist camera with
-# wrist_roll near its calibrated middle. The physical camera sits elsewhere, so re-derive it
-# after the real camera mount is calibrated (docs/provenance/so101_finray_mount_20261026.yaml).
+# Wrist camera fitted to a physical wrist frame by matching the FinRay finger silhouette
+# (pose in the gripper link frame, ROS convention); see docs/provenance/so101_finray_mount_20261026.yaml.
+WRIST_CAMERA_POS_M = (-0.00934, 0.04828, -0.07344)
+WRIST_CAMERA_ROT_ROS_WXYZ = (0.303987, 0.588847, 0.702262, -0.260153)
+WRIST_CAMERA_FOCAL_LENGTH_MM = 39.491
+WRIST_CAMERA_APERTURE_MM = 36.83
+WRIST_CAMERA_WIDTH, WRIST_CAMERA_HEIGHT = 352, 288
+
+# The cube is reset within this XY half range around its nominal spot; with the fitted camera a
+# wider area cannot be seen clear of the fingers from any pose that keeps wrist_roll near middle.
+CUBE_RESET_HALF_RANGE_M = 0.04
+# Joint pose (rad) applied at reset: the fitted wrist camera sees the whole cube reset area
+# clear of the closed FinRay fingers (offline search, same provenance file).
 OBSERVATION_JOINT_POS = {
-    "shoulder_pan": -0.524,
-    "shoulder_lift": -0.791,
-    "elbow_flex": 0.409,
+    "shoulder_pan": -0.338,
+    "shoulder_lift": -0.965,
+    "elbow_flex": 0.38,
     "wrist_flex": 1.508,
-    "wrist_roll": 0.083,
-    "gripper": 0.0,
+    "wrist_roll": -0.238,
+    "gripper": FINRAY_CLOSED_GRIPPER_RAD,
 }
 
 # Gripper split between holding the 40 mm cube with the FinRay fingers and released, and the
@@ -71,6 +83,24 @@ def spawn_white_table_without_source_cube(prim_path, cfg, translation=None, orie
         _WHITE_TABLE.func(material_path, _WHITE_TABLE)
         sim_utils.bind_visual_material(f"{scene_path}/{table_child}", material_path)
     return prim
+
+
+def _physical_wrist_camera_cfg() -> TiledCameraCfg:
+    return TiledCameraCfg(
+        prim_path="{ENV_REGEX_NS}/Robot/gripper/wrist_camera",
+        offset=TiledCameraCfg.OffsetCfg(pos=WRIST_CAMERA_POS_M, rot=WRIST_CAMERA_ROT_ROS_WXYZ, convention="ros"),
+        data_types=["rgb"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=WRIST_CAMERA_FOCAL_LENGTH_MM,
+            focus_distance=400.0,
+            horizontal_aperture=WRIST_CAMERA_APERTURE_MM,
+            clipping_range=(0.01, 50.0),
+            lock_camera=True,
+        ),
+        width=WRIST_CAMERA_WIDTH,
+        height=WRIST_CAMERA_HEIGHT,
+        update_period=1 / 30.0,
+    )
 
 
 def _black_box_part(name: str, size: tuple[float, float, float], pos: tuple[float, float, float]):
@@ -112,8 +142,9 @@ class PickCubeIntoBlackBoxSceneCfg(PickCubeIntoBoxSceneCfg):
 
     def __post_init__(self):
         super().__post_init__()
-        # The physical follower has only the wrist camera.
+        # The physical follower has only the wrist camera, mounted beside the fingers.
         delete_attribute(self, "front")
+        self.wrist = _physical_wrist_camera_cfg()
 
 
 _GRASP_PARAMS = {
@@ -179,8 +210,12 @@ class PickCubeIntoBlackBoxEnvCfg(PickCubeIntoBoxEnvCfg):
             params={"asset_cfg": SceneEntityCfg("robot"), "joint_pos": dict(OBSERVATION_JOINT_POS)},
         )
 
-        # LiftCube randomizes the front camera, which this task removes.
+        # LiftCube randomizes the front camera, which this task removes, and the cube over a wider area.
         for name, term in list(self.events.__dict__.items()):
             params = getattr(term, "params", None) or {}
-            if getattr(params.get("asset_cfg"), "name", None) == "front":
+            asset = getattr(params.get("asset_cfg"), "name", None)
+            if asset == "front":
                 delattr(self.events, name)
+            elif asset == "cube":
+                params["pose_range"]["x"] = (-CUBE_RESET_HALF_RANGE_M, CUBE_RESET_HALF_RANGE_M)
+                params["pose_range"]["y"] = (-CUBE_RESET_HALF_RANGE_M, CUBE_RESET_HALF_RANGE_M)

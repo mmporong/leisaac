@@ -38,9 +38,27 @@ finray_hold_gripper_angle_40mm:
   source: "outputs/pick_cube_into_black_box_smoke_20261026T153727/smoke_result.json"
   used_by: "FINRAY_GRASPED_MAX_GRIPPER_RAD = FINRAY_RELEASED_MIN_GRIPPER_RAD = 0.85, FINRAY_GRASP_JAW_DISTANCE_M = 0.045"
 
+wrist_camera_fit:
+  pose_in_gripper_link:
+    pos_m: [-0.00934, 0.04828, -0.07344]
+    rot_ros_wxyz: [0.303987, 0.588847, 0.702262, -0.260153]
+  hfov_deg: 50.0
+  resolution: [352, 288]
+  measured_at: 2026-10-27
+  source_image: "physical wrist frame task_view_after_gpu_repair.jpg (352x288, sha256 a12b962c76e288e742f97ee44bb4f7b7f7cfd628a50b85984f8bcad8281bb519), gripper closed"
+  method: "LeIsaac stock wrist camera turned -90 deg about its optical axis and -10 deg in pitch, then field of view and distance chosen so the closed FinRay lips project to pixel (145, 128) and the finger silhouettes overlap the photo; compared visually over grids, not least-squares"
+  accuracy: "rough: lips and upper finger align; the lower finger reaches further down in the photo; no checkerboard intrinsics"
+  check: "Isaac render overlays the offline projection exactly (outputs/pick_cube_into_black_box_smoke_20261027T090003/wrist_sim_vs_real.png)"
+
+cube_reset_half_range:
+  value: 0.04
+  unit: m
+  measured_at: 2026-10-27
+  method: "offline search: +-0.075 m and +-0.05 m areas cannot be seen clear of the closed FinRay fingers from poses with |wrist_roll| <= 0.3 rad; +-0.04 m leaves a 12 px margin"
+
 observation_joint_pose:
-  value: {shoulder_pan: -0.524, shoulder_lift: -0.791, elbow_flex: 0.409, wrist_flex: 1.508, wrist_roll: 0.083}
+  value: {shoulder_pan: -0.338, shoulder_lift: -0.965, elbow_flex: 0.38, wrist_flex: 1.508, wrist_roll: -0.238, gripper: -0.1745}
   unit: rad
-  measured_at: 2026-10-26
-  method: "offline random search on the USD kinematics with LeIsaac's stock wrist camera offset; wrist_roll kept within 0.3 rad"
-  status: "provisional: the physical wrist camera is mounted elsewhere (it sees the FinRay fingers from the side), so this pose is re-derived after the real camera mount is calibrated"
+  measured_at: 2026-10-27
+  method: "offline random search on the USD kinematics with the fitted wrist camera and the static closed-finger mask; wrist_roll kept within 0.3 rad and joints 0.15 rad inside their limits"
+  check: "cube at the four +-0.04 m corners, yawed 30 deg, gives 3001..4975 red pixels in the simulated wrist frame (same smoke output)"

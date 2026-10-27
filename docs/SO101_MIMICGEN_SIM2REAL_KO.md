@@ -80,9 +80,10 @@ SO101 팔로워 1대 실물 평가
 | Gym ID | `LeIsaac-SO101-PickCubeIntoBlackBox-v0`, Mimic용 `LeIsaac-SO101-PickCubeIntoBlackBox-Mimic-v0` |
 | 상자 | 박스 과제와 같은 위치·크기(회전축에서 36.6 cm, 정면 기준 오른쪽 43°, 안쪽 12×12 cm, 벽 높이 약 7.5 cm), 검은색 |
 | 책상·큐브 | USD 3 cm 큐브를 비활성화하고 4 cm 빨간 큐브, 책상은 흰색 |
-| 카메라 | 앞 카메라와 그 랜덤화 이벤트를 제거하고 손목 카메라만 관측 |
+| 카메라 | 앞 카메라와 그 랜덤화 이벤트를 제거하고 손목 카메라만 관측. 실물 손목 사진의 FinRay 윤곽에 맞춰 위치·방향·화각(50°)·해상도(352×288)를 대략 맞춤 |
 | 그리퍼 | FinRay STL을 고정·움직이는 죠에 붙인 강체 근사(convex hull). 실물 TPU의 휘어짐은 표현하지 않는다 |
-| 시작 자세 | 리셋 이벤트로 관찰 자세 적용(잠정값, 실물 카메라 보정 뒤 재계산) |
+| 시작 자세 | 리셋 이벤트로 관찰 자세 적용. 맞춘 카메라로 큐브 범위 전체가 닫힌 손가락에 가리지 않고 보이는 자세 |
+| 큐브 범위 | 기본 위치 기준 ±4 cm(가로세로 8 cm), yaw ±30°. 더 넓으면 어느 관찰 자세에서도 다 보이지 않음 |
 | 성공 | 상자 판정 함수 그대로, 그리퍼 열림 경계만 0.85 rad |
 
 FinRay STL은 라이선스를 확인하지 못해 저장소에 넣지 않는다. 로컬 에셋 폴더
@@ -97,11 +98,12 @@ FinRay STL은 라이선스를 확인하지 못해 저장소에 넣지 않는다.
 | 검사 | 결과 | 근거 |
 |---|---|---|
 | CPU 단위 테스트(FinRay 장착) | 5개 통과 | `scripts/imitation_learning/test_so101_finray_geometry.py` |
-| GPU 통합 smoke(env 2개) | 10개 검사 통과 | `outputs/pick_cube_into_black_box_smoke_20261026T153727/smoke_result.json` |
-| `generate.py` 무작위 배치 | 6회 중 5회 성공 | `outputs/pick_cube_into_black_box_generate_check_20261026T153946/summary.json` |
+| GPU 통합 smoke(env 2개) | 11개 검사 통과(큐브 범위 네 모서리가 손목 영상에 보임) | `outputs/pick_cube_into_black_box_smoke_20261027T090003/smoke_result.json` |
+| 시뮬·실물 손목 영상 비교 | 손가락 위치·손끝 대략 일치 | `outputs/pick_cube_into_black_box_smoke_20261027T090003/wrist_sim_vs_real.png` |
+| `generate.py` 무작위 배치 | 8회 중 7회 성공 | `outputs/pick_cube_into_black_box_generate_check_20261027T090247/summary.json` |
 | 왼쪽 45도 과제 회귀 | 25개 검사 통과 | `outputs/pick_cube_rot45_smoke_20261026T153946/smoke_result.json` |
 
-생성 실패 1회는 큐브가 상자 벽에 걸렸다. 성공 회차도 상자 중심에서 2~3 cm 치우쳐 떨어졌다.
+생성 실패 1회는 큐브가 벽에 붙은 채 끝났다. 성공 회차도 상자 중심에서 x·y로 약 3 cm 치우쳐 떨어졌다.
 
 ```bash
 "$LEISAAC_PYTHON" scripts/evaluation/smoke_pick_cube_into_black_box.py \
@@ -114,8 +116,9 @@ FinRay STL은 라이선스를 확인하지 못해 저장소에 넣지 않는다.
 
 ### 남은 일
 
-- 실물 손목 카메라의 장착 위치와 내부 파라미터 보정. 실물 카메라는 FinRay를 옆에서 보는 위치이고,
-  시뮬 카메라는 LeIsaac 기본 장착이라 시점이 다르다. 보정 뒤 시뮬 카메라와 시작 자세를 다시 정한다.
+- 손목 카메라는 사진 한 장으로 대략 맞췄다(체커보드 보정 없음). 남은 차이는 학습 때 영상 증강(이동·확대·회전·색)으로 흡수한다.
+  실물에서 시점 문제로 빗나가면 그때 체커보드 보정을 한다.
+- 시뮬 그리퍼 본체는 노란색이라 손가락 갈빗살 사이로 보인다. 실물 색과 맞추거나 색 증강이 필요하다.
 - 원본 시연 생성 → Mimic 증강 → 손목 카메라 ACT 학습·평가.
 - 실물 상자·큐브 배치를 팔 기준으로 표시하고, 관절 부호·영점을 실물과 대조한다.
 

@@ -11,6 +11,7 @@ Usage:
 import argparse
 import itertools
 import json
+import math
 from pathlib import Path
 
 from isaaclab.app import AppLauncher
@@ -19,6 +20,7 @@ parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
 parser.add_argument("--output_dir", type=Path, required=True, help="New directory for evidence files.")
 parser.add_argument("--num_envs", type=int, default=2)
 parser.add_argument("--seed", type=int, default=7)
+parser.add_argument("--real_wrist_image", type=Path, default=None, help="Optional physical wrist frame for a side-by-side image.")
 AppLauncher.add_app_launcher_args(parser)
 args_cli = parser.parse_args()
 output_dir = args_cli.output_dir.expanduser().resolve()
@@ -34,7 +36,6 @@ import numpy as np  # noqa: E402
 import omni.usd  # noqa: E402
 import torch  # noqa: E402
 from isaaclab.managers import TerminationTermCfg  # noqa: E402
-from isaaclab.utils.math import quat_apply, quat_inv  # noqa: E402
 from isaaclab_tasks.utils import parse_env_cfg  # noqa: E402
 from leisaac.datagen.state_machine import PickCubeIntoBlackBoxStateMachine  # noqa: E402
 from leisaac.tasks.pick_cube_into_black_box import pick_cube_into_black_box_env_cfg as task  # noqa: E402
@@ -50,7 +51,6 @@ from pxr import PhysxSchema, Usd, UsdGeom, UsdPhysics, UsdShade  # noqa: E402
 TASK_ID = "LeIsaac-SO101-PickCubeIntoBlackBox-v0"
 MIMIC_TASK_ID = "LeIsaac-SO101-PickCubeIntoBlackBox-Mimic-v0"
 DEVICE_TYPE = PickCubeIntoBlackBoxStateMachine.TELEOP_DEVICE
-CUBE_RESET_HALF_RANGE_M = 0.075
 
 checks: dict[str, dict] = {}
 metrics: dict[str, object] = {}
@@ -94,42 +94,57 @@ def stage_checks(env) -> None:
         )
 
 
-def project_to_wrist(env, points_w: torch.Tensor) -> torch.Tensor:
-    """Pinhole projection ``(N, P, 3)`` -> pixel coordinates and depth ``(N, P, 3)``."""
-    camera = env.scene["wrist"]
-    rel = points_w - camera.data.pos_w.unsqueeze(1)
-    rotation = camera.data.quat_w_ros.unsqueeze(1).expand(-1, points_w.shape[1], -1)
-    local = quat_apply(quat_inv(rotation), rel)
-    pixels = torch.einsum("nij,npj->npi", camera.data.intrinsic_matrices, local)
-    return torch.cat((pixels[..., :2] / pixels[..., 2:3], local[..., 2:3]), dim=-1)
+def red_pixels(image: torch.Tensor) -> int:
+    rgb = image[..., :3].int()
+    return int(((rgb[..., 0] > 120) & (rgb[..., 1] < 70) & (rgb[..., 2] < 70)).sum())
+
+
+def hold_action(env) -> torch.Tensor:
+    gripper = torch.full((env.num_envs, 1), task.OBSERVATION_JOINT_POS["gripper"], device=env.device)
+    return torch.cat((env.scene["robot"].data.joint_pos[:, :5], gripper), -1)
 
 
 def observation_pose_checks(env) -> None:
+    """Place the cube at each corner of the reset area (yawed) and look for it in the wrist image."""
     robot = env.scene["robot"]
     expected = torch.tensor([task.OBSERVATION_JOINT_POS[n] for n in robot.joint_names], device=env.device)
     pose_error = float((robot.data.joint_pos - expected).abs().max())
-    nominal = env.scene["cube"].data.default_root_state[:, :3] + env.scene.env_origins
-    corners = [
-        (sx * (CUBE_RESET_HALF_RANGE_M + CUBE_HALF_EXTENT_M), sy * (CUBE_RESET_HALF_RANGE_M + CUBE_HALF_EXTENT_M), dz)
-        for sx, sy, dz in itertools.product((-1, 1), (-1, 1), (-CUBE_HALF_EXTENT_M, CUBE_HALF_EXTENT_M))
-    ]
-    points = nominal.unsqueeze(1) + torch.tensor(corners, device=env.device).unsqueeze(0)
-    projected = project_to_wrist(env, points)
-    width, height = env.scene["wrist"].cfg.width, env.scene["wrist"].cfg.height
-    margin = torch.minimum(
-        torch.minimum(projected[..., 0], width - projected[..., 0]),
-        torch.minimum(projected[..., 1], height - projected[..., 1]),
-    )
-    detail = {"joint_pose_error_rad": pose_error, "min_margin_px": tolist(margin.min(-1).values),
-              "min_depth_m": tolist(projected[..., 2].min(-1).values)}
-    camera, gripper_id = env.scene["wrist"], robot.find_bodies("gripper")[0][0]
-    gripper_quat = robot.data.body_link_quat_w[:, gripper_id]
-    detail["camera_in_gripper_pos_m"] = tolist(quat_apply(quat_inv(gripper_quat),
-                                                          camera.data.pos_w - robot.data.body_link_pos_w[:, gripper_id]))
-    metrics["observation_pose"] = detail
-    # The sim wrist camera is LeIsaac's stock mount, not the physical one, so coverage is
-    # recorded only; the pose is re-derived once the real camera mount is calibrated.
-    check("observation_pose_applied_at_reset", pose_error < 0.02, **detail)
+    check("observation_pose_applied_at_reset", pose_error < 0.02, joint_pose_error_rad=pose_error)
+    half = task.CUBE_RESET_HALF_RANGE_M
+    corners = [(sx * half, sy * half, yaw) for sx, sy in itertools.product((-1, 1), (-1, 1)) for yaw in (0.52,)]
+    cube = env.scene["cube"]
+    counts = {}
+    for start in range(0, len(corners), env.num_envs):
+        batch = corners[start:start + env.num_envs]
+        pose = cube.data.default_root_state[:, :7].clone()
+        pose[:, :3] += env.scene.env_origins
+        for e, (dx, dy, yaw) in enumerate(batch):
+            pose[e, 0] += dx
+            pose[e, 1] += dy
+            pose[e, 3:7] = torch.tensor([math.cos(yaw / 2), 0.0, 0.0, math.sin(yaw / 2)], device=env.device)
+        cube.write_root_pose_to_sim(pose)
+        cube.write_root_velocity_to_sim(torch.zeros((env.num_envs, 6), device=env.device))
+        for _ in range(4):
+            obs, *_ = env.step(hold_action(env))
+        for e, corner in enumerate(batch):
+            image = obs["policy"]["wrist"][e]
+            counts[str(corner)] = red_pixels(image)
+            Image.fromarray(image.detach().cpu().numpy().astype(np.uint8)[..., :3]).save(
+                output_dir / f"wrist_cube_corner_{start + e}.png")
+    metrics["cube_corner_red_pixels"] = counts
+    check("wrist_camera_sees_cube_reset_corners", min(counts.values()) >= 300, red_pixels=counts)
+
+
+def save_real_comparison(obs) -> None:
+    """Side by side: simulated wrist frame (gripper closed) next to a physical wrist frame."""
+    if args_cli.real_wrist_image is None or not args_cli.real_wrist_image.exists():
+        return
+    sim = Image.fromarray(obs["policy"]["wrist"][0].detach().cpu().numpy().astype(np.uint8)[..., :3])
+    real = Image.open(args_cli.real_wrist_image).convert("RGB").resize(sim.size)
+    canvas = Image.new("RGB", (sim.width * 2, sim.height), "white")
+    canvas.paste(sim, (0, 0))
+    canvas.paste(real, (sim.width, 0))
+    canvas.save(output_dir / "wrist_sim_vs_real.png")
 
 
 def main():
@@ -143,8 +158,6 @@ def main():
     env_cfg.use_teleop_device(DEVICE_TYPE)
     env_cfg.seed = args_cli.seed
     env_cfg.recorders = None
-    # Camera pose data is otherwise frozen at spawn; projections need the live pose.
-    env_cfg.scene.wrist.update_latest_camera_pose = True
     event_names = [n for n in env_cfg.events.__dict__ if not n.startswith("_")]
     check("front_camera_event_removed", all(
         getattr((getattr(env_cfg.events, n).params or {}).get("asset_cfg"), "name", None) != "front" for n in event_names
@@ -161,14 +174,15 @@ def main():
         stage_checks(env)
         check("policy_observes_wrist_only", "wrist" in obs["policy"] and "front" not in obs["policy"],
               keys=sorted(obs["policy"].keys()))
-        hold = torch.cat((env.scene["robot"].data.joint_pos[:, :5], torch.zeros(env.num_envs, 1, device=env.device)), -1)
         for _ in range(10):
-            obs, *_ = env.step(hold)
-        observation_pose_checks(env)
+            obs, *_ = env.step(hold_action(env))
         save_wrist(obs, "observation_pose")
+        save_real_comparison(obs)
         bottom = env.scene["cube"].data.root_pos_w[:, 2] - env.scene.env_origins[:, 2] - TABLE_TOP_Z - CUBE_HALF_EXTENT_M
         check("cube_rests_on_white_table", bool((bottom.abs() < 0.001).all()), bottom_offset_m=tolist(bottom))
 
+        observation_pose_checks(env)
+        obs, _ = env.reset(seed=args_cli.seed + 1)
         env.termination_manager.set_term_cfg(
             "time_out", TerminationTermCfg(func=lambda env: torch.zeros(env.num_envs, dtype=torch.bool, device=env.device))
         )
